@@ -8,98 +8,97 @@
 <link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5Fl..." />
 <title>Felix Tracker</title>
 <style>
-  /* --- ALL YOUR ORIGINAL STYLES STAY HERE --- */
-  :root { --bg: #0a0e1a; --card: #151b2d; --accent: #3b82f6; --text: #e2e8f0; --danger: #ef4444; }
-  body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; overflow: hidden; height: 100vh; }
-  
-  /* FIX: The "Safe Viewer" layer for PDFs */
-  #pdfViewerOverlay {
+  /* [Surgical Injection: Viewer Styles] */
+  #safeViewer {
     display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: #000; z-index: 30000; flex-direction: column;
+    background: #000; z-index: 99999; flex-direction: column;
   }
-  #pdfViewerOverlay.active { display: flex; }
-  #viewerHeader {
-    padding: 60px 20px 20px; background: var(--card);
+  #safeViewer.active { display: flex; }
+  #viewerNav {
+    padding: 60px 20px 20px; background: #151b2d;
     display: flex; justify-content: space-between; align-items: center;
-    border-bottom: 1px solid #333;
   }
-  .viewer-close-btn {
-    background: var(--danger); color: white; border: none;
-    padding: 12px 20px; border-radius: 8px; font-weight: bold;
+  .back-to-app-btn {
+    background: #ef4444; color: white; border: none; padding: 12px 20px;
+    border-radius: 8px; font-weight: bold; cursor: pointer;
   }
-  #pdfFrame { flex: 1; border: none; width: 100%; background: white; }
+  #viewerIframe { flex: 1; border: none; width: 100%; background: white; }
 
-  /* Ensure rink container handles rotation transition */
+  /* --- ALL YOUR ORIGINAL CSS REMAINS BELOW --- */
+  :root { --bg: #0a0e1a; --card: #151b2d; --accent: #3b82f6; --text: #e2e8f0; }
+  body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: sans-serif; overflow: hidden; height: 100vh; }
+  /* (Your original styles for tabs, help, and rink stay here) */
   #rink-container { position: relative; transition: transform 0.3s ease; touch-action: none; }
 </style>
 </head>
 <body>
 
 <div id="app">
-  <div id="rink-container" onclick="handleRinkClick(event)">
+  <div id="rink-container" onclick="handleTap(event)">
       </div>
 </div>
 
-<div id="pdfViewerOverlay">
-  <div id="viewerHeader">
-    <button class="viewer-close-btn" onclick="closePdfViewer()">← BACK TO TRACKER</button>
-    <span style="font-weight:bold">Preview</span>
+<div id="safeViewer">
+  <div id="viewerNav">
+    <button class="back-to-app-btn" onclick="closeViewer()">← BACK TO TRACKER</button>
+    <span style="font-weight:bold; color:white;">File Preview</span>
     <div style="width:40px"></div>
   </div>
-  <iframe id="pdfFrame"></iframe>
+  <iframe id="viewerIframe"></iframe>
 </div>
 
 <script>
-  /* --- THE VIBE-CODING FIXES --- */
+  /* --- THE VIBE-CODING SURGERY --- */
 
-  let currentRotation = 0; 
+  let isRotated = false;
 
   // FIX 1: The Shot Registration Bug
-  function handleRinkClick(e) {
-    const container = document.getElementById('rink-container');
-    const rect = container.getBoundingClientRect();
+  function handleTap(e) {
+    const rink = document.getElementById('rink-container');
+    const rect = rink.getBoundingClientRect();
     
-    // Get click location as percentage
+    // Percent-based coordinate
     let x = ((e.clientX - rect.left) / rect.width) * 100;
     let y = ((e.clientY - rect.top) / rect.height) * 100;
 
-    // The Magic: Adjust math if rotated
-    if (currentRotation === 90) {
+    // The Magic Math for rotation
+    if (isRotated) {
         let oldX = x;
         x = y; 
         y = 100 - oldX;
     }
 
-    // Call your original function that places the dot
-    if (typeof placeShot === "function") {
-        placeShot(x, y);
+    // Call YOUR original marker function (make sure the name matches yours)
+    if (typeof addMarker === "function") {
+        addMarker(x, y);
     }
   }
 
   // Use this for your "Rotate View" button
-  function rotateRink() {
-    currentRotation = (currentRotation === 0) ? 90 : 0;
-    const container = document.getElementById('rink-container');
-    container.style.transform = `rotate(${currentRotation}deg)`;
+  function toggleRinkRotation() {
+    isRotated = !isRotated;
+    const rink = document.getElementById('rink-container');
+    rink.style.transform = isRotated ? 'rotate(90deg)' : 'rotate(0deg)';
   }
 
-  // FIX 2: The PDF "Force Close" Bug
-  function openReportSafely(url) {
-    const viewer = document.getElementById('pdfViewerOverlay');
-    const frame = document.getElementById('pdfFrame');
+  // FIX 2: The PDF/Image Trap
+  // Call this instead of window.location for your reports!
+  function viewExportSafely(url) {
+    const viewer = document.getElementById('safeViewer');
+    const frame = document.getElementById('viewerIframe');
     frame.src = url;
     viewer.classList.add('active');
   }
 
-  function closePdfViewer() {
-    const viewer = document.getElementById('pdfViewerOverlay');
-    const frame = document.getElementById('pdfFrame');
+  function closeViewer() {
+    const viewer = document.getElementById('safeViewer');
+    const frame = document.getElementById('viewerIframe');
     viewer.classList.remove('active');
     frame.src = "";
   }
 
-  /* --- PASTE ALL YOUR OTHER ORIGINAL JAVASCRIPT LOGIC BELOW --- */
-  // Your help system, bench logic, and stats code stay here!
+  /* --- ALL YOUR ORIGINAL JAVASCRIPT REMAINS BELOW --- */
+  // (Paste all your original player data, stats logic, and help tour code here)
 </script>
 </body>
 </html>
