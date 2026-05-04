@@ -12,8 +12,6 @@
   :root { --bg: #0a0e1a; --card: #151b2d; --accent: #3b82f6; --text: #e2e8f0; --danger: #ef4444; }
   body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; overflow: hidden; height: 100vh; }
   
-  /* ... (Existing styles for Tabs, Rink, and Help continue here) ... */
-
   /* FIX: The "Safe Viewer" layer for PDFs */
   #pdfViewerOverlay {
     display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -31,7 +29,7 @@
   }
   #pdfFrame { flex: 1; border: none; width: 100%; background: white; }
 
-  /* Your original Rink Container - Ensure it handles rotation smoothly */
+  /* Ensure rink container handles rotation transition */
   #rink-container { position: relative; transition: transform 0.3s ease; touch-action: none; }
 </style>
 </head>
@@ -45,7 +43,7 @@
 <div id="pdfViewerOverlay">
   <div id="viewerHeader">
     <button class="viewer-close-btn" onclick="closePdfViewer()">← BACK TO TRACKER</button>
-    <span style="font-weight:bold">Document Preview</span>
+    <span style="font-weight:bold">Preview</span>
     <div style="width:40px"></div>
   </div>
   <iframe id="pdfFrame"></iframe>
@@ -54,27 +52,25 @@
 <script>
   /* --- THE VIBE-CODING FIXES --- */
 
-  let rotationState = 0; // 0, 90, 180, 270
+  let currentRotation = 0; 
 
   // FIX 1: The Shot Registration Bug
   function handleRinkClick(e) {
     const container = document.getElementById('rink-container');
     const rect = container.getBoundingClientRect();
     
-    // Calculate raw percentage of where you clicked inside the box
+    // Get click location as percentage
     let x = ((e.clientX - rect.left) / rect.width) * 100;
     let y = ((e.clientY - rect.top) / rect.height) * 100;
 
-    // MATH FIX: Adjust for rotation
-    // If the rink is rotated 90 degrees, we must swap X and Y
-    if (rotationState === 90) {
+    // The Magic: Adjust math if rotated
+    if (currentRotation === 90) {
         let oldX = x;
         x = y; 
         y = 100 - oldX;
     }
 
-    // Now call your original function that places the dot
-    // Replace 'placeShot' with whatever your original function was named
+    // Call your original function that places the dot
     if (typeof placeShot === "function") {
         placeShot(x, y);
     }
@@ -82,13 +78,12 @@
 
   // Use this for your "Rotate View" button
   function rotateRink() {
-    rotationState = (rotationState === 0) ? 90 : 0; // Simple toggle for now
+    currentRotation = (currentRotation === 0) ? 90 : 0;
     const container = document.getElementById('rink-container');
-    container.style.transform = `rotate(${rotationState}deg)`;
+    container.style.transform = `rotate(${currentRotation}deg)`;
   }
 
   // FIX 2: The PDF "Force Close" Bug
-  // Call this instead of window.location for your reports
   function openReportSafely(url) {
     const viewer = document.getElementById('pdfViewerOverlay');
     const frame = document.getElementById('pdfFrame');
@@ -103,8 +98,8 @@
     frame.src = "";
   }
 
-  /* --- ALL YOUR ORIGINAL JAVASCRIPT LOGIC BELOW --- */
-  // Paste your original helper functions, player data, and tab logic here!
+  /* --- PASTE ALL YOUR OTHER ORIGINAL JAVASCRIPT LOGIC BELOW --- */
+  // Your help system, bench logic, and stats code stay here!
 </script>
 </body>
 </html>
