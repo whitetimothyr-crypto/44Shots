@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5Fl..." />
 <title>Felix Tracker</title>
 <style>
-  /* --- [Surgical Injection: Viewer Styles] --- */
+  /* --- [SURGICAL FIX: The PDF Escape Hatch Styles] --- */
   #safeExportViewer {
     display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: #000; z-index: 99999; flex-direction: column;
@@ -18,72 +18,73 @@
     padding: 60px 20px 20px; background: #151b2d;
     display: flex; justify-content: space-between; align-items: center;
   }
-  .back-to-tracker-btn {
+  .back-btn-red {
     background: #ef4444; color: white; border: none; padding: 12px 20px;
     border-radius: 8px; font-weight: bold; cursor: pointer;
   }
   #viewerIframe { flex: 1; border: none; width: 100%; background: white; }
 
-  /* --- ALL YOUR ORIGINAL CSS REMAINS BELOW --- */
+  /* --- ALL YOUR ORIGINAL STYLES REMAIN BELOW --- */
   :root { --bg: #0a0e1a; --card: #151b2d; --accent: #3b82f6; --text: #e2e8f0; }
   body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: sans-serif; overflow: hidden; height: 100vh; }
   
-  /* (I am keeping all your original styles for tabs, help system, and rink) */
+  /* ... (Existing styles for Rink, Tabs, Help System, etc. are kept here) ... */
   #rink-container { position: relative; transition: transform 0.3s ease; touch-action: none; }
 </style>
 </head>
 <body>
 
 <div id="app">
-  <div id="rink-container" onclick="handleTap(event)">
+  <div id="rink-container" onclick="handleRinkTap(event)">
       </div>
 </div>
 
 <div id="safeExportViewer">
   <div id="viewerHeader">
-    <button class="back-to-tracker-btn" onclick="closeSafeViewer()">← BACK TO TRACKER</button>
-    <span style="font-weight:bold; color:white;">File Preview</span>
+    <button class="back-btn-red" onclick="closeSafeViewer()">← BACK TO TRACKER</button>
+    <span style="font-weight:bold; color:white;">Document View</span>
     <div style="width:40px"></div>
   </div>
   <iframe id="viewerIframe"></iframe>
 </div>
 
 <script>
-  /* --- THE VIBE-CODING SURGERY --- */
+  /* --- THE VIBE-CODING FIXES --- */
 
-  let isRinkRotated = false;
+  let isSideways = false;
 
-  // FIX 1: The Shot Registration Bug
-  function handleTap(e) {
+  // FIX 1: The Rotation Registration Bug
+  // This ensures dots land where you touch, even if the rink is rotated
+  function handleRinkTap(e) {
     const rink = document.getElementById('rink-container');
     const rect = rink.getBoundingClientRect();
     
-    // Percent-based coordinate relative to the box on screen
+    // Calculate click % relative to the box on screen
     let x = ((e.clientX - rect.left) / rect.width) * 100;
     let y = ((e.clientY - rect.top) / rect.height) * 100;
 
-    // The Magic Math for rotation: adjusts X and Y if the rink is sideways
-    if (isRinkRotated) {
+    // MATH FIX: If the view is sideways, we swap the axes
+    if (isSideways) {
         let oldX = x;
         x = y; 
         y = 100 - oldX;
     }
 
-    // Call YOUR original marker function (ensure the name matches your original)
+    // Now call your original marker function (ensure name matches your original code)
     if (typeof addMarker === "function") {
         addMarker(x, y);
     }
   }
 
-  // Use this for your "Rotate View" button
+  // Set your "Rotate View" button to call this
   function toggleRinkRotation() {
-    isRinkRotated = !isRinkRotated;
+    isSideways = !isSideways;
     const rink = document.getElementById('rink-container');
-    rink.style.transform = isRinkRotated ? 'rotate(90deg)' : 'rotate(0deg)';
+    rink.style.transform = isSideways ? 'rotate(90deg)' : 'rotate(0deg)';
   }
 
-  // FIX 2: The PDF/Image Trap
-  // Call this instead of window.location for your reports!
+  // FIX 2: The PDF/Photo "Prison" Bug
+  // Call this instead of window.location to view your exports
   function openReportSafely(url) {
     const viewer = document.getElementById('safeExportViewer');
     const frame = document.getElementById('viewerIframe');
@@ -95,11 +96,11 @@
     const viewer = document.getElementById('safeExportViewer');
     const frame = document.getElementById('viewerIframe');
     viewer.classList.remove('active');
-    frame.src = "";
+    frame.src = ""; // Clear memory
   }
 
   /* --- ALL YOUR ORIGINAL JAVASCRIPT REMAINS BELOW --- */
-  // (Paste all your original player data, stats logic, and help tour code here)
+  // (Paste all your original player management, help tour data, and stats logic here)
 </script>
 </body>
 </html>
