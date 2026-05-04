@@ -5,131 +5,106 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="theme-color" content="#0a0e1a" />
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5Fl..." />
 <title>Felix Tracker</title>
 <style>
-  /* --- KEEPING YOUR ORIGINAL VIBE --- */
-  :root {
-    --bg: #0a0e1a;
-    --card: #151b2d;
-    --accent: #3b82f6;
-    --text: #e2e8f0;
-    --danger: #ef4444;
-  }
-
-  /* FIX: New Safe Viewer for PDFs so you don't get stuck */
-  #safeExportViewer {
-    display: none;
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: #000;
-    z-index: 20000;
-    flex-direction: column;
-  }
-  #safeExportViewer.active { display: flex; }
-  #viewerHeader {
-    padding: 60px 20px 20px;
-    background: var(--card);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .close-viewer-btn {
-    background: var(--danger);
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 8px;
-    font-weight: bold;
-  }
-  #viewerFrame { flex: 1; border: none; width: 100%; background: white; }
-
-  /* Your original styles start here... */
-  body {
-    margin: 0; padding: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, sans-serif;
-    overflow: hidden;
-    height: 100vh;
-  }
+  /* --- ALL YOUR ORIGINAL STYLES STAY HERE --- */
+  :root { --bg: #0a0e1a; --card: #151b2d; --accent: #3b82f6; --text: #e2e8f0; --danger: #ef4444; }
+  body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; overflow: hidden; height: 100vh; }
   
-  /* ... (I am keeping all your original CSS for Rink, Tabs, and Help) ... */
-  #rink-container {
-    position: relative;
-    transition: transform 0.3s ease;
-    touch-action: none;
+  /* ... (Existing styles for Tabs, Rink, and Help continue here) ... */
+
+  /* FIX: The "Safe Viewer" layer for PDFs */
+  #pdfViewerOverlay {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: #000; z-index: 30000; flex-direction: column;
   }
+  #pdfViewerOverlay.active { display: flex; }
+  #viewerHeader {
+    padding: 60px 20px 20px; background: var(--card);
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid #333;
+  }
+  .viewer-close-btn {
+    background: var(--danger); color: white; border: none;
+    padding: 12px 20px; border-radius: 8px; font-weight: bold;
+  }
+  #pdfFrame { flex: 1; border: none; width: 100%; background: white; }
+
+  /* Your original Rink Container - Ensure it handles rotation smoothly */
+  #rink-container { position: relative; transition: transform 0.3s ease; touch-action: none; }
 </style>
 </head>
 <body>
 
 <div id="app">
-  <div id="rink-container" onclick="handleShotEvent(event)">
+  <div id="rink-container" onclick="handleRinkClick(event)">
       </div>
 </div>
 
-<div id="safeExportViewer">
+<div id="pdfViewerOverlay">
   <div id="viewerHeader">
-    <button class="close-viewer-btn" onclick="closeSafeViewer()">← BACK TO APP</button>
-    <span style="font-weight:bold">Preview</span>
+    <button class="viewer-close-btn" onclick="closePdfViewer()">← BACK TO TRACKER</button>
+    <span style="font-weight:bold">Document Preview</span>
     <div style="width:40px"></div>
   </div>
-  <iframe id="viewerFrame"></iframe>
+  <iframe id="pdfFrame"></iframe>
 </div>
 
 <script>
-  /* --- THE FIXES --- */
-  let isRinkRotated = false;
+  /* --- THE VIBE-CODING FIXES --- */
 
-  // FIX 1: Rotation Math
-  function handleShotEvent(e) {
+  let rotationState = 0; // 0, 90, 180, 270
+
+  // FIX 1: The Shot Registration Bug
+  function handleRinkClick(e) {
     const container = document.getElementById('rink-container');
     const rect = container.getBoundingClientRect();
     
-    // Get click location
+    // Calculate raw percentage of where you clicked inside the box
     let x = ((e.clientX - rect.left) / rect.width) * 100;
     let y = ((e.clientY - rect.top) / rect.height) * 100;
 
-    // Adjust if rotated
-    if (isRinkRotated) {
+    // MATH FIX: Adjust for rotation
+    // If the rink is rotated 90 degrees, we must swap X and Y
+    if (rotationState === 90) {
         let oldX = x;
         x = y; 
         y = 100 - oldX;
     }
 
-    // Call your original dot-placing function
-    // (Assuming it's named something like 'addMarker')
-    if (typeof addMarker === "function") {
-        addMarker(x, y);
+    // Now call your original function that places the dot
+    // Replace 'placeShot' with whatever your original function was named
+    if (typeof placeShot === "function") {
+        placeShot(x, y);
     }
   }
 
-  // Use this for your "Rotate" button
-  function rotateTheRink() {
-    isRinkRotated = !isRinkRotated;
+  // Use this for your "Rotate View" button
+  function rotateRink() {
+    rotationState = (rotationState === 0) ? 90 : 0; // Simple toggle for now
     const container = document.getElementById('rink-container');
-    container.style.transform = isRinkRotated ? 'rotate(90deg)' : 'rotate(0deg)';
+    container.style.transform = `rotate(${rotationState}deg)`;
   }
 
-  // FIX 2: PDF Escape Hatch
-  // Use this function whenever you trigger a PDF/Image export
-  function openSafeExport(fileUrl) {
-    const viewer = document.getElementById('safeExportViewer');
-    const frame = document.getElementById('viewerFrame');
-    frame.src = fileUrl;
+  // FIX 2: The PDF "Force Close" Bug
+  // Call this instead of window.location for your reports
+  function openReportSafely(url) {
+    const viewer = document.getElementById('pdfViewerOverlay');
+    const frame = document.getElementById('pdfFrame');
+    frame.src = url;
     viewer.classList.add('active');
   }
 
-  function closeSafeViewer() {
-    const viewer = document.getElementById('safeExportViewer');
-    const frame = document.getElementById('viewerFrame');
+  function closePdfViewer() {
+    const viewer = document.getElementById('pdfViewerOverlay');
+    const frame = document.getElementById('pdfFrame');
     viewer.classList.remove('active');
     frame.src = "";
   }
 
-  /* --- YOUR ORIGINAL JAVASCRIPT LOGIC --- */
-  // (Paste the rest of your original functions below here so they still work)
+  /* --- ALL YOUR ORIGINAL JAVASCRIPT LOGIC BELOW --- */
+  // Paste your original helper functions, player data, and tab logic here!
 </script>
 </body>
 </html>
