@@ -1,106 +1,60 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="theme-color" content="#0a0e1a" />
-<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5Fl..." />
-<title>Felix Tracker</title>
 <style>
-  /* --- [SURGICAL FIX: The PDF Escape Hatch Styles] --- */
-  #safeExportViewer {
-    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: #000; z-index: 99999; flex-direction: column;
+  body.viewer-open {
+    overflow: hidden;
+    touch-action: none;
   }
-  #safeExportViewer.active { display: flex; }
-  #viewerHeader {
-    padding: 60px 20px 20px; background: #151b2d;
-    display: flex; justify-content: space-between; align-items: center;
-  }
-  .back-btn-red {
-    background: #ef4444; color: white; border: none; padding: 12px 20px;
-    border-radius: 8px; font-weight: bold; cursor: pointer;
-  }
-  #viewerIframe { flex: 1; border: none; width: 100%; background: white; }
 
-  /* --- ALL YOUR ORIGINAL STYLES REMAIN BELOW --- */
-  :root { --bg: #0a0e1a; --card: #151b2d; --accent: #3b82f6; --text: #e2e8f0; }
-  body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: sans-serif; overflow: hidden; height: 100vh; }
-  
-  /* ... (Existing styles for Rink, Tabs, Help System, etc. are kept here) ... */
-  #rink-container { position: relative; transition: transform 0.3s ease; touch-action: none; }
+  .fullscreen-viewer {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    overflow: auto;
+    background: rgba(8, 12, 18, 0.92);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .fullscreen-viewer[hidden],
+  .fullscreen-viewer.hidden {
+    display: none !important;
+  }
+
+  .viewer-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    background: linear-gradient(180deg, rgba(8, 12, 18, 0.96), rgba(8, 12, 18, 0.72));
+    backdrop-filter: blur(10px);
+  }
+
+  .viewer-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.02em;
+  }
+
+  .viewer-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 14px;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 999px;
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .viewer-close:active {
+    transform: scale(0.98);
+  }
 </style>
-</head>
-<body>
-
-<div id="app">
-  <div id="rink-container" onclick="handleRinkTap(event)">
-      </div>
-</div>
-
-<div id="safeExportViewer">
-  <div id="viewerHeader">
-    <button class="back-btn-red" onclick="closeSafeViewer()">← BACK TO TRACKER</button>
-    <span style="font-weight:bold; color:white;">Document View</span>
-    <div style="width:40px"></div>
-  </div>
-  <iframe id="viewerIframe"></iframe>
-</div>
-
-<script>
-  /* --- THE VIBE-CODING FIXES --- */
-
-  let isSideways = false;
-
-  // FIX 1: The Rotation Registration Bug
-  // This ensures dots land where you touch, even if the rink is rotated
-  function handleRinkTap(e) {
-    const rink = document.getElementById('rink-container');
-    const rect = rink.getBoundingClientRect();
-    
-    // Calculate click % relative to the box on screen
-    let x = ((e.clientX - rect.left) / rect.width) * 100;
-    let y = ((e.clientY - rect.top) / rect.height) * 100;
-
-    // MATH FIX: If the view is sideways, we swap the axes
-    if (isSideways) {
-        let oldX = x;
-        x = y; 
-        y = 100 - oldX;
-    }
-
-    // Now call your original marker function (ensure name matches your original code)
-    if (typeof addMarker === "function") {
-        addMarker(x, y);
-    }
-  }
-
-  // Set your "Rotate View" button to call this
-  function toggleRinkRotation() {
-    isSideways = !isSideways;
-    const rink = document.getElementById('rink-container');
-    rink.style.transform = isSideways ? 'rotate(90deg)' : 'rotate(0deg)';
-  }
-
-  // FIX 2: The PDF/Photo "Prison" Bug
-  // Call this instead of window.location to view your exports
-  function openReportSafely(url) {
-    const viewer = document.getElementById('safeExportViewer');
-    const frame = document.getElementById('viewerIframe');
-    frame.src = url;
-    viewer.classList.add('active');
-  }
-
-  function closeSafeViewer() {
-    const viewer = document.getElementById('safeExportViewer');
-    const frame = document.getElementById('viewerIframe');
-    viewer.classList.remove('active');
-    frame.src = ""; // Clear memory
-  }
-
-  /* --- ALL YOUR ORIGINAL JAVASCRIPT REMAINS BELOW --- */
-  // (Paste all your original player management, help tour data, and stats logic here)
-</script>
-</body>
-</html>
