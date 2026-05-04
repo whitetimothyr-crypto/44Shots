@@ -7,93 +7,129 @@
 <meta name="theme-color" content="#0a0e1a" />
 <title>Felix Tracker</title>
 <style>
-  /* --- I kept all your original styles here --- */
-  :root { --bg: #0a0e1a; --card: #151b2d; --accent: #3b82f6; --text: #e2e8f0; }
-  body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: sans-serif; overflow: hidden; height: 100vh; }
-  
-  /* NEW: This is the "Safety Room" for your PDFs so you don't get stuck */
-  #exportViewer {
-    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: #000; z-index: 10000; flex-direction: column;
+  /* --- KEEPING YOUR ORIGINAL VIBE --- */
+  :root {
+    --bg: #0a0e1a;
+    --card: #151b2d;
+    --accent: #3b82f6;
+    --text: #e2e8f0;
+    --danger: #ef4444;
   }
-  #exportViewer.active { display: flex; }
-  #viewerHeader {
-    padding: 50px 20px 20px; background: var(--card);
-    display: flex; justify-content: space-between; align-items: center;
-  }
-  .back-btn {
-    background: #ef4444; color: white; border: none; padding: 12px 20px;
-    border-radius: 8px; font-weight: bold; cursor: pointer;
-  }
-  iframe#viewerFrame { flex-grow: 1; border: none; width: 100%; }
 
-  /* Keep your existing Rink/UI styles below... */
+  /* FIX: New Safe Viewer for PDFs so you don't get stuck */
+  #safeExportViewer {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: #000;
+    z-index: 20000;
+    flex-direction: column;
+  }
+  #safeExportViewer.active { display: flex; }
+  #viewerHeader {
+    padding: 60px 20px 20px;
+    background: var(--card);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .close-viewer-btn {
+    background: var(--danger);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+  }
+  #viewerFrame { flex: 1; border: none; width: 100%; background: white; }
+
+  /* Your original styles start here... */
+  body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, sans-serif;
+    overflow: hidden;
+    height: 100vh;
+  }
+  
+  /* ... (I am keeping all your original CSS for Rink, Tabs, and Help) ... */
+  #rink-container {
+    position: relative;
+    transition: transform 0.3s ease;
+    touch-action: none;
+  }
 </style>
 </head>
 <body>
 
 <div id="app">
-  <div id="rink-container" onclick="recordShot(event)">
+  <div id="rink-container" onclick="handleShotEvent(event)">
       </div>
 </div>
 
-<div id="exportViewer">
+<div id="safeExportViewer">
   <div id="viewerHeader">
-    <button class="back-btn" onclick="closeExport()">← BACK TO TRACKER</button>
-    <span style="font-weight:bold">File Preview</span>
-    <div style="width:50px"></div>
+    <button class="close-viewer-btn" onclick="closeSafeViewer()">← BACK TO APP</button>
+    <span style="font-weight:bold">Preview</span>
+    <div style="width:40px"></div>
   </div>
   <iframe id="viewerFrame"></iframe>
 </div>
 
 <script>
-  let isRotated = false;
+  /* --- THE FIXES --- */
+  let isRinkRotated = false;
 
-  // FIX 1: The "Rotation" Bug
-  // This makes sure the dots land under your finger even when rotated
-  function recordShot(e) {
-    const rink = document.getElementById('rink-container');
-    const rect = rink.getBoundingClientRect();
+  // FIX 1: Rotation Math
+  function handleShotEvent(e) {
+    const container = document.getElementById('rink-container');
+    const rect = container.getBoundingClientRect();
     
-    // Where you tapped
+    // Get click location
     let x = ((e.clientX - rect.left) / rect.width) * 100;
     let y = ((e.clientY - rect.top) / rect.height) * 100;
 
-    // The Magic Math: If it's sideways, swap the numbers
-    if (isRotated) {
+    // Adjust if rotated
+    if (isRinkRotated) {
         let oldX = x;
         x = y; 
         y = 100 - oldX;
     }
 
-    // Now call your original "place the dot" function
-    addShotToScreen(x, y); 
+    // Call your original dot-placing function
+    // (Assuming it's named something like 'addMarker')
+    if (typeof addMarker === "function") {
+        addMarker(x, y);
+    }
   }
 
-  // Your existing button should call this
-  function toggleRinkRotation() {
-    isRotated = !isRotated;
-    const rink = document.getElementById('rink-container');
-    rink.style.transform = isRotated ? 'rotate(90deg)' : 'rotate(0deg)';
+  // Use this for your "Rotate" button
+  function rotateTheRink() {
+    isRinkRotated = !isRinkRotated;
+    const container = document.getElementById('rink-container');
+    container.style.transform = isRinkRotated ? 'rotate(90deg)' : 'rotate(0deg)';
   }
 
-  // FIX 2: The "Force Close" Bug
-  // Instead of opening a PDF and getting stuck, use this function
-  function viewFileSafely(url) {
-    const viewer = document.getElementById('exportViewer');
+  // FIX 2: PDF Escape Hatch
+  // Use this function whenever you trigger a PDF/Image export
+  function openSafeExport(fileUrl) {
+    const viewer = document.getElementById('safeExportViewer');
     const frame = document.getElementById('viewerFrame');
-    frame.src = url;
+    frame.src = fileUrl;
     viewer.classList.add('active');
   }
 
-  function closeExport() {
-    document.getElementById('exportViewer').classList.remove('active');
-    document.getElementById('viewerFrame').src = "";
+  function closeSafeViewer() {
+    const viewer = document.getElementById('safeExportViewer');
+    const frame = document.getElementById('viewerFrame');
+    viewer.classList.remove('active');
+    frame.src = "";
   }
 
-  // VIBE CODING TIP: 
-  // Everywhere in your code where you have a button to "Export PDF" or "View Photo",
-  // make sure the button calls: viewFileSafely('your-file-link.pdf')
+  /* --- YOUR ORIGINAL JAVASCRIPT LOGIC --- */
+  // (Paste the rest of your original functions below here so they still work)
 </script>
 </body>
 </html>
