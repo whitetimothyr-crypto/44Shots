@@ -1024,7 +1024,6 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     redrawAll(); // redraw to show linked rebound line
   }
   rinkSvg.addEventListener("pointerdown", handleRinkTap);
-  rinkSvg.addEventListener("click", handleRinkTap);
 
   function updateArmedUI(){
     document.body.classList.toggle("armed", !!state.armedForRebound);
