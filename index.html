@@ -122,7 +122,7 @@ font-family:var(--sans);font-size:12px;letter-spacing:.18em;text-transform:upper
 .armed .rink-wrap.surface { animation: armedRink 1.2s ease-in-out infinite }
 .armed .lsBtn[data-action=“rebound”] { animation: armedReb 1s ease-in-out infinite !important }
 
-.marker{cursor:pointer}
+.marker{pointer-events:none}
 .pulse{animation:pulse .6s ease-out}
 @keyframes pulse{
 0%{transform:scale(.4);opacity:0}
@@ -164,6 +164,50 @@ font-family:var(--sans);font-size:12px;letter-spacing:.16em;text-transform:upper
 opacity:0;transition:all .25s ease;pointer-events:none;z-index:99
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Settings modal */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:2500;display:none;align-items:center;justify-content:center;padding:20px;font-family:var(--sans)}
+.modal-backdrop.active{display:flex}
+.modal-card{background:var(--panel);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:20px 22px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.modal-card h2{margin:0 0 16px;font-family:var(--sans);font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--text);font-weight:700}
+.modal-card .group{margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.06)}
+.modal-card .group:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
+.modal-card .label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;font-weight:700}
+.modal-card .desc{font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.4}
+.modal-card .row{display:flex;gap:6px;flex-wrap:wrap}
+.modal-card .opt{flex:1;min-width:80px;padding:10px 8px;background:var(--bg);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:var(--text);font-size:11px;letter-spacing:.08em;font-weight:600;cursor:pointer;text-align:center;transition:all .15s ease}
+.modal-card .opt.active{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.modal-card .opt[disabled]{opacity:.35;cursor:not-allowed}
+.modal-card .close-row{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.modal-card .close-row button{padding:9px 18px;background:var(--accent);color:var(--bg);border:0;border-radius:8px;font-size:11px;letter-spacing:.14em;font-weight:700;cursor:pointer}
+
+/* Edit popover (long-press) */
+.edit-popover{position:fixed;z-index:2600;background:var(--panel);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:8px;font-family:var(--sans);box-shadow:0 12px 32px rgba(0,0,0,.6);display:none;min-width:240px}
+.edit-popover.active{display:block}
+.edit-popover::after{content:"";position:absolute;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent}
+.edit-popover.below::after{top:-7px;left:var(--anchor-x,20px);border-bottom:7px solid var(--panel)}
+.edit-popover.above::after{bottom:-7px;left:var(--anchor-x,20px);border-top:7px solid var(--panel)}
+.edit-popover .ep-row{display:flex;gap:4px;margin-bottom:4px}
+.edit-popover .ep-row:last-child{margin-bottom:0}
+.edit-popover button{flex:1;padding:8px 6px;background:var(--bg);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:var(--text);font-size:10px;letter-spacing:.08em;font-weight:700;cursor:pointer;min-height:34px}
+.edit-popover button.active{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.edit-popover button.danger{background:var(--red,#c8262b);color:#fff;border-color:var(--red,#c8262b)}
+.edit-popover .ep-meta{font-size:9px;color:var(--text-muted);letter-spacing:.1em;text-transform:uppercase;padding:2px 4px 6px;font-weight:700}
+
+/* PP/PK persistent highlight */
+body.gs-pp::before, body.gs-pk::before{content:"";position:fixed;top:0;left:0;right:0;height:5px;z-index:3000;pointer-events:none;background:var(--accent-2);animation:gsPulseBar 1.2s ease-in-out infinite;box-shadow:0 0 14px var(--accent-2)}
+body.gs-pp::after, body.gs-pk::after{content:attr(data-gs-label);position:fixed;top:9px;left:50%;z-index:3000;pointer-events:none;background:var(--accent-2);color:var(--bg);font-family:var(--sans);font-size:11px;letter-spacing:.22em;font-weight:800;padding:5px 14px;border-radius:999px;text-transform:uppercase;box-shadow:0 4px 16px rgba(255,90,31,.5);transform-origin:50% 50%;animation:gsPulsePill 1.2s ease-in-out infinite}
+/* Pulse the active PP or PK button in the segmented control */
+body.gs-pp #gameStateSeg button[data-gs="pp"], body.gs-pk #gameStateSeg button[data-gs="pk"]{
+  background:var(--accent-2);color:var(--bg);font-weight:800;animation:gsPulseBtn 1.2s ease-in-out infinite;box-shadow:0 0 0 2px var(--accent-2),0 0 12px rgba(255,90,31,.5)
+}
+@keyframes gsPulseBar{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes gsPulsePill{0%,100%{transform:translateX(-50%) scale(1);opacity:1}50%{transform:translateX(-50%) scale(1.06);opacity:.85}}
+@keyframes gsPulseBtn{0%,100%{box-shadow:0 0 0 2px var(--accent-2),0 0 12px rgba(255,90,31,.5)}50%{box-shadow:0 0 0 4px var(--accent-2),0 0 20px rgba(255,90,31,.8)}}
+
+/* New-features popup */
+#whatsNewBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:2700;display:none;align-items:center;justify-content:center;padding:20px;font-family:var(--sans)}
+#whatsNewBackdrop.active{display:flex}
 
 /* Help / coachmark overlay */
 @keyframes coachPulse {
@@ -232,19 +276,22 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   <button data-tab="report">Report</button>
 </nav>
 
+<!-- Global game-control row: Period selector + End Game (visible across all tabs) -->
+<div id="globalGameRow" style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg-2);border-bottom:1px solid rgba(255,255,255,.06)">
+  <span style="font-family:var(--sans);font-size:9px;letter-spacing:.18em;color:var(--text-muted);flex:0 0 auto">PERIOD</span>
+  <div class="seg" id="periodSegGlobal" style="flex:1">
+    <button class="on" data-period="1">P1</button>
+    <button data-period="2">P2</button>
+    <button data-period="3">P3</button>
+    <button data-period="4">OT</button>
+  </div>
+  <button id="endGameBtn" class="btn" style="padding:8px 14px;font-size:10px;letter-spacing:.14em;flex:0 0 auto;background:var(--accent-2);color:var(--bg);border:0;border-radius:8px;font-weight:700">END GAME</button>
+</div>
+
 <main>
   <!-- RINK PANEL -->
   <section class="panel active" id="panel-rink">
-    <!-- Line 1: NEW GAME + WE ARE toggle -->
-    <div id="weAreRow" style="display:flex;align-items:center;gap:8px">
-      <button id="newGameBtnTop" class="btn ghost" style="padding:11px 14px;font-size:10px;letter-spacing:.14em;flex:0 0 auto;white-space:nowrap">NEW GAME</button>
-      <span style="font-family:var(--sans);font-size:11px;color:var(--text-muted);letter-spacing:.18em;flex:0 0 auto">WE ARE:</span>
-      <div class="seg" id="weAreSeg" style="flex:1">
-        <button class="on" data-we="home">HOME</button>
-        <button data-we="away">AWAY</button>
-      </div>
-    </div>
-    <!-- Line 2: Active goalie info + CHANGE GOALIE -->
+    <!-- Active goalie info + CHANGE GOALIE -->
     <div id="goalieInfoRow" style="display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 12px">
       <div style="flex:1;font-family:var(--sans);font-size:11px;color:var(--text-muted);letter-spacing:.1em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
         <span style="font-size:9px;letter-spacing:.18em">IN NET</span>
@@ -256,36 +303,49 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     <!-- Hidden compat anchors -->
     <div id="goalieInfo" style="display:none"></div>
     <div id="goalieBanner" style="display:none"></div>
+    <!-- Hidden compat anchor for legacy weAreSeg/newGameBtnTop bindings -->
+    <div id="weAreRow" style="display:none">
+      <button id="newGameBtnTop"></button>
+      <div class="seg" id="weAreSeg">
+        <button class="on" data-we="home">HOME</button>
+        <button data-we="away">AWAY</button>
+      </div>
+    </div>
 
 ```
-<!-- 2. Game state + Period -->
+<!-- Game state row (5v5 / PP / PK) — period selector lives in global row above -->
 <div class="controls">
-  <div class="seg" id="gameStateSeg">
+  <div class="seg" id="gameStateSeg" style="flex:1">
     <button class="on" data-gs="5v5">5v5</button>
     <button data-gs="pp">PP</button>
     <button data-gs="pk">PK</button>
   </div>
-  <div class="seg" id="periodSeg">
-    <button class="on" data-period="1">P1</button>
-    <button data-period="2">P2</button>
-    <button data-period="3">P3</button>
-  </div>
+</div>
+<!-- Hidden compat anchor for legacy periodSeg bindings -->
+<div id="periodSeg" style="display:none">
+  <button class="on" data-period="1"></button>
+  <button data-period="2"></button>
+  <button data-period="3"></button>
+  <button data-period="4"></button>
 </div>
 <div id="gameStateHint" style="font-family:var(--sans);font-size:10px;color:var(--text-muted);letter-spacing:.06em;padding:0 4px;min-height:14px"></div>
 
-<!-- 3. Last Shot bar -->
-<div id="lastShotBar" style="background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:8px 10px;font-family:var(--sans);display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-  <div style="font-size:11px;color:var(--text);flex:1;min-width:80px;font-weight:700" id="lastShotLabel">Last: —</div>
-  <button class="lsBtn" data-action="goal" style="background:var(--accent-2);color:var(--bg);border:0;padding:7px 10px;font-size:10px;letter-spacing:.1em;font-weight:700;border-radius:6px;opacity:.4" disabled>GOAL</button>
-  <button class="lsBtn" data-action="miss" style="background:var(--text-muted);color:var(--bg);border:0;padding:7px 10px;font-size:10px;letter-spacing:.1em;font-weight:700;border-radius:6px;opacity:.4" disabled>MISS</button>
-  <span style="width:1px;height:20px;background:rgba(255,255,255,.15);margin:0 2px"></span>
-  <button class="lsBtn" data-action="rebound" style="background:var(--panel);color:var(--accent);border:1px solid var(--accent);padding:7px 10px;font-size:10px;letter-spacing:.1em;font-weight:700;border-radius:6px">REB</button>
-  <button class="lsBtn" data-action="wraparound" style="background:var(--panel);color:var(--accent);border:1px solid var(--accent);padding:7px 10px;font-size:10px;letter-spacing:.1em;font-weight:700;border-radius:6px;opacity:.4" disabled>WRAP</button>
-  <button class="lsBtn" data-action="tip" style="background:var(--panel);color:var(--accent);border:1px solid var(--accent);padding:7px 10px;font-size:10px;letter-spacing:.1em;font-weight:700;border-radius:6px;opacity:.4" disabled>TIP</button>
+<!-- Rotate View + Settings row (above Last Shot bar) -->
+<div style="display:flex;justify-content:space-between;align-items:center;padding:0 4px;gap:8px">
+  <button id="settingsBtn" class="btn ghost" style="padding:6px 10px;font-size:10px;letter-spacing:.12em" aria-label="Settings">⚙ Settings</button>
+  <button id="rotateRinkBtn" class="btn ghost" style="padding:6px 10px;font-size:10px;letter-spacing:.12em">↻ Rotate View</button>
 </div>
 
-<div style="display:flex;justify-content:flex-end;padding:0 4px">
-  <button id="rotateRinkBtn" class="btn ghost" style="padding:6px 10px;font-size:10px;letter-spacing:.12em">↻ Rotate View</button>
+<!-- Last Shot bar (directly above rink, sticky) -->
+<div id="lastShotBar" style="position:sticky;top:0;z-index:20;background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 12px;font-family:var(--sans);display:flex;align-items:center;gap:8px;flex-wrap:wrap;box-shadow:0 4px 12px rgba(0,0,0,.25)">
+  <div style="font-size:12px;color:var(--text);flex:1;min-width:90px;font-weight:700" id="lastShotLabel">Last: —</div>
+  <button class="lsBtn" data-action="goal" style="background:var(--accent-2);color:var(--bg);border:0;padding:11px 14px;font-size:12px;letter-spacing:.1em;font-weight:700;border-radius:8px;opacity:.4;min-width:58px" disabled>GOAL</button>
+  <button class="lsBtn" data-action="miss" style="background:var(--text-muted);color:var(--bg);border:0;padding:11px 14px;font-size:12px;letter-spacing:.1em;font-weight:700;border-radius:8px;opacity:.4;min-width:58px" disabled>MISS</button>
+  <button class="lsBtn" data-action="block" style="background:#8aa0b8;color:var(--bg);border:0;padding:11px 12px;font-size:12px;letter-spacing:.1em;font-weight:700;border-radius:8px;opacity:.4;min-width:54px" disabled>BLK</button>
+  <span style="width:1px;height:24px;background:rgba(255,255,255,.15);margin:0 2px"></span>
+  <button class="lsBtn" data-action="rebound" style="background:var(--panel);color:var(--accent);border:1px solid var(--accent);padding:11px 12px;font-size:12px;letter-spacing:.1em;font-weight:700;border-radius:8px;min-width:54px">REB</button>
+  <button class="lsBtn" data-action="wraparound" style="background:var(--panel);color:var(--accent);border:1px solid var(--accent);padding:11px 12px;font-size:12px;letter-spacing:.1em;font-weight:700;border-radius:8px;opacity:.4;min-width:60px" disabled>WRAP</button>
+  <button class="lsBtn" data-action="tip" style="background:var(--panel);color:var(--accent);border:1px solid var(--accent);padding:11px 12px;font-size:12px;letter-spacing:.1em;font-weight:700;border-radius:8px;opacity:.4;min-width:54px" disabled>TIP</button>
 </div>
 
 <div class="surface rink-wrap">
@@ -362,7 +422,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 
 <div class="row">
   <button class="btn ghost" id="undoBtn">Undo</button>
-  <button class="btn danger" id="clearBtn">Reset Game</button>
+  <button class="btn danger" id="clearBtn" style="display:none">Reset Game</button>
 </div>
 ```
 
@@ -414,16 +474,15 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   <!-- STATS PANEL -->
 
   <section class="panel" id="panel-stats">
-    <!-- Stats sub-tabs -->
-    <div id="statsTabs" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;margin-bottom:8px;background:var(--panel);border-radius:8px;padding:3px">
-      <button class="statsTab on" data-stab="goalie" style="padding:8px;background:var(--accent);color:var(--bg);border:0;border-radius:6px;font-weight:700;font-size:11px;letter-spacing:.12em;font-family:var(--sans);cursor:pointer">GOALIE</button>
-      <button class="statsTab" data-stab="ours" style="padding:8px;background:transparent;color:var(--text);border:0;border-radius:6px;font-weight:700;font-size:11px;letter-spacing:.12em;font-family:var(--sans);cursor:pointer">OUR TEAM</button>
-      <button class="statsTab" data-stab="opp" style="padding:8px;background:transparent;color:var(--text);border:0;border-radius:6px;font-weight:700;font-size:11px;letter-spacing:.12em;font-family:var(--sans);cursor:pointer">OPPONENT</button>
+    <!-- Stats sub-tabs: two team tabs, by name -->
+    <div id="statsTabs" style="display:grid;grid-template-columns:1fr 1fr;gap:0;margin-bottom:8px;background:var(--panel);border-radius:8px;padding:3px">
+      <button class="statsTab on" data-stab="ours" id="statsTabOurs" style="padding:8px;background:var(--accent);color:var(--bg);border:0;border-radius:6px;font-weight:700;font-size:11px;letter-spacing:.12em;font-family:var(--sans);cursor:pointer">OUR TEAM</button>
+      <button class="statsTab" data-stab="opp" id="statsTabOpp" style="padding:8px;background:transparent;color:var(--text);border:0;border-radius:6px;font-weight:700;font-size:11px;letter-spacing:.12em;font-family:var(--sans);cursor:pointer">OPPONENT</button>
     </div>
 
 ```
-<!-- GOALIE sub-panel (default visible) -->
-<div class="statsSubPanel" id="stats-goalie" style="display:block">
+<!-- GOALIE sub-panel (hidden — content moved to OUR TEAM tab; IDs kept as compat anchors) -->
+<div class="statsSubPanel" id="stats-goalie" style="display:none">
   <div class="stats-grid">
     <div class="stat-card"><div class="lab">Shots Faced</div><div class="val" id="sShots">0</div><div class="sub" id="sShotsSub">on net + goals against</div></div>
     <div class="stat-card"><div class="lab">Goals Against</div><div class="val" id="sGoals">0</div><div class="sub" id="sShootPct">--% save</div></div>
@@ -450,59 +509,79 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   </div>
 </div>
 
-<!-- OUR TEAM sub-panel -->
-<div class="statsSubPanel" id="stats-ours" style="display:none">
-  <div style="font-size:10px;letter-spacing:.18em;color:var(--text-muted);margin-bottom:8px" id="oursTeamLabel">OUR TEAM</div>
+<!-- OUR TEAM sub-panel (default visible) -->
+<div class="statsSubPanel" id="stats-ours" style="display:block">
+  <div style="font-size:11px;letter-spacing:.18em;color:var(--accent);margin-bottom:8px;font-weight:700" id="oursTeamLabel">OUR TEAM</div>
 
   <!-- OFFENSE column -->
   <div class="stat-card">
     <div class="lab" style="color:var(--accent)">OFFENSE</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px">
-      <div><div style="font-size:9px;letter-spacing:.14em;color:var(--text-muted)">SOG</div><div style="font-size:22px;font-weight:700;color:#fff" id="ourOffSOG">0</div></div>
-      <div><div style="font-size:9px;letter-spacing:.14em;color:var(--text-muted)">GOALS</div><div style="font-size:22px;font-weight:700;color:var(--accent-2)" id="ourOffG">0</div></div>
-      <div><div style="font-size:9px;letter-spacing:.14em;color:var(--text-muted)">SH%</div><div style="font-size:22px;font-weight:700;color:#fff" id="ourOffSH">--</div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-top:8px">
+      <div><div style="font-size:9px;letter-spacing:.14em;color:var(--text-muted)">SOG</div><div style="font-size:20px;font-weight:700;color:#fff" id="ourOffSOG">0</div></div>
+      <div><div style="font-size:9px;letter-spacing:.14em;color:var(--text-muted)">GOALS</div><div style="font-size:20px;font-weight:700;color:var(--accent-2)" id="ourOffG">0</div></div>
+      <div><div style="font-size:9px;letter-spacing:.14em;color:var(--text-muted)">SH%</div><div style="font-size:20px;font-weight:700;color:#fff" id="ourOffSH">--</div></div>
+      <div><div style="font-size:9px;letter-spacing:.14em;color:var(--text-muted)">BLKD</div><div style="font-size:20px;font-weight:700;color:#8aa0b8" id="ourOffBlocked">0</div></div>
     </div>
     <div style="margin-top:10px;font-size:11px;color:var(--text);line-height:1.55" id="ourOffBreakdown">No offense logged yet.</div>
   </div>
 
-  <!-- DEFENSE column -->
+  <!-- DEFENSE column (= our goalie's stats) -->
   <div class="stat-card">
-    <div class="lab" style="color:var(--accent)">DEFENSE (shots faced)</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px">
-      <div><div style="font-size:9px;letter-spacing:.14em;color:var(--text-muted)">SHOTS</div><div style="font-size:22px;font-weight:700;color:#fff" id="ourDefShots">0</div></div>
-      <div><div style="font-size:9px;letter-spacing:.14em;color:var(--text-muted)">GA</div><div style="font-size:22px;font-weight:700;color:var(--accent)" id="ourDefGA">0</div></div>
-      <div><div style="font-size:9px;letter-spacing:.14em;color:var(--text-muted)">SV%</div><div style="font-size:22px;font-weight:700;color:var(--accent-2)" id="ourDefSV">--</div></div>
+    <div class="lab" style="color:var(--accent)">GOALIE</div>
+    <div id="oursGoalieName" style="margin-top:4px;font-size:12px;color:var(--text);font-weight:700">—</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-top:8px">
+      <div><div style="font-size:9px;letter-spacing:.14em;color:var(--text-muted)">FACED</div><div style="font-size:20px;font-weight:700;color:#fff" id="ourDefShots">0</div></div>
+      <div><div style="font-size:9px;letter-spacing:.14em;color:var(--text-muted)">GA</div><div style="font-size:20px;font-weight:700;color:var(--accent)" id="ourDefGA">0</div></div>
+      <div><div style="font-size:9px;letter-spacing:.14em;color:var(--text-muted)">SV%</div><div style="font-size:20px;font-weight:700;color:var(--accent-2)" id="ourDefSV">--</div></div>
+      <div><div style="font-size:9px;letter-spacing:.14em;color:var(--text-muted)">MISS</div><div style="font-size:20px;font-weight:700;color:var(--text-muted)" id="ourDefMiss">0</div></div>
     </div>
+    <div id="ourPeriodSplit" style="margin-top:8px;font-size:11px;color:var(--text-muted);letter-spacing:.06em">P1 0 · P2 0 · P3 0</div>
     <div style="margin-top:10px;font-size:11px;color:var(--text);line-height:1.55" id="ourDefBreakdown">No shots faced yet.</div>
+    <div style="margin-top:8px">
+      <div style="font-size:10px;letter-spacing:.14em;color:var(--text-muted);font-weight:700;margin-bottom:4px">GOAL ZONES (BEAT BY)</div>
+      <div id="ourHeatList" style="font-size:11px;color:var(--text);line-height:1.6">No goals against yet.</div>
+    </div>
+    <div id="ourGoalieBreakdownCard" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08)">
+      <div style="font-size:10px;letter-spacing:.14em;color:var(--text-muted);font-weight:700;margin-bottom:4px">PER GOALIE</div>
+      <div id="ourGoalieBreakdown" style="font-size:11px;color:var(--text);line-height:1.6"></div>
+    </div>
+  </div>
+
+  <div class="stat-card" style="background:linear-gradient(135deg,var(--panel),var(--panel-hi));border:1px solid var(--accent);margin-top:8px">
+    <div class="lab" style="color:var(--accent-2)">Consensus Snapshot</div>
+    <div id="oursConsensusBox" style="margin-top:8px;font-family:'Iowan Old Style',Palatino,var(--serif);font-size:13px;line-height:1.5;color:var(--text)">
+      Log some shots to see the consensus.
+    </div>
   </div>
 </div>
 
 <!-- OPPONENT sub-panel -->
 <div class="statsSubPanel" id="stats-opp" style="display:none">
-  <div style="font-size:10px;letter-spacing:.18em;color:var(--text-muted);margin-bottom:8px" id="oppTeamLabel">OPPONENT</div>
+  <div style="font-size:11px;letter-spacing:.18em;color:var(--accent);margin-bottom:8px;font-weight:700" id="oppTeamLabel">OPPONENT</div>
 
   <div class="stat-card">
-    <div class="lab" style="color:var(--accent)">THEIR OFFENSE (shots on us)</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px">
-      <div><div style="font-size:9px;letter-spacing:.14em;color:var(--text-muted)">SOG</div><div style="font-size:22px;font-weight:700;color:#fff" id="oppOffSOG">0</div></div>
-      <div><div style="font-size:9px;letter-spacing:.14em;color:var(--text-muted)">GOALS</div><div style="font-size:22px;font-weight:700;color:var(--accent-2)" id="oppOffG">0</div></div>
-      <div><div style="font-size:9px;letter-spacing:.14em;color:var(--text-muted)">SH%</div><div style="font-size:22px;font-weight:700;color:#fff" id="oppOffSH">--</div></div>
+    <div class="lab" style="color:var(--accent)">OFFENSE</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-top:8px">
+      <div><div style="font-size:9px;letter-spacing:.14em;color:var(--text-muted)">SOG</div><div style="font-size:20px;font-weight:700;color:#fff" id="oppOffSOG">0</div></div>
+      <div><div style="font-size:9px;letter-spacing:.14em;color:var(--text-muted)">GOALS</div><div style="font-size:20px;font-weight:700;color:var(--accent-2)" id="oppOffG">0</div></div>
+      <div><div style="font-size:9px;letter-spacing:.14em;color:var(--text-muted)">SH%</div><div style="font-size:20px;font-weight:700;color:#fff" id="oppOffSH">--</div></div>
+      <div><div style="font-size:9px;letter-spacing:.14em;color:var(--text-muted)">BLKD</div><div style="font-size:20px;font-weight:700;color:#8aa0b8" id="oppOffBlocked">0</div></div>
     </div>
     <div style="margin-top:10px;font-size:11px;color:var(--text);line-height:1.55" id="oppOffBreakdown">No shots logged yet.</div>
   </div>
 
   <div class="stat-card">
-    <div class="lab" style="color:var(--accent)">THEIR DEFENSE (vs our offense)</div>
+    <div class="lab" style="color:var(--accent)">GOALIE</div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px">
-      <div><div style="font-size:9px;letter-spacing:.14em;color:var(--text-muted)">SHOTS FACED</div><div style="font-size:22px;font-weight:700;color:#fff" id="oppDefShots">0</div></div>
+      <div><div style="font-size:9px;letter-spacing:.14em;color:var(--text-muted)">FACED</div><div style="font-size:22px;font-weight:700;color:#fff" id="oppDefShots">0</div></div>
       <div><div style="font-size:9px;letter-spacing:.14em;color:var(--text-muted)">GA</div><div style="font-size:22px;font-weight:700;color:var(--accent)" id="oppDefGA">0</div></div>
       <div><div style="font-size:9px;letter-spacing:.14em;color:var(--text-muted)">SV%</div><div style="font-size:22px;font-weight:700;color:var(--accent-2)" id="oppDefSV">--</div></div>
     </div>
     <div style="margin-top:10px;font-size:11px;color:var(--text);line-height:1.55" id="oppDefBreakdown">No shots logged yet.</div>
   </div>
 
-  <div style="font-size:10px;color:var(--text-muted);letter-spacing:.06em;margin-top:8px;line-height:1.5;font-style:italic">
-    Note: We don't track individual opposing goalies in this version. Save % shown is vs our team's offense.
+  <div style="font-size:10px;color:var(--text-muted);letter-spacing:.04em;margin-top:8px;line-height:1.5;font-style:italic">
+    Note: opposing goalies aren't named individually in this version. Multi-tracker name-sharing arrives with cloud sync.
   </div>
 </div>
 
@@ -559,6 +638,11 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 <div class="row" style="margin-top:4px">
   <button class="btn ghost" id="exportTxtBtn">Export TXT</button>
   <button class="btn ghost" id="exportJsonBtn">Export Data</button>
+</div>
+
+<!-- Path forward after end-game: start the next game right from the report tab -->
+<div class="row" style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)">
+  <button class="btn primary" id="reportNewGameBtn" style="background:var(--accent-2);color:var(--bg);font-weight:700">Start New Game</button>
 </div>
 
 <p style="font-family:var(--sans);font-size:10px;color:var(--text-muted);margin:6px 4px;letter-spacing:.06em;line-height:1.5">
@@ -652,9 +736,98 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   </div>
 </div>
 
-<footer>44 Shots <span style="color:var(--accent)">v2.0</span> · Goalie #<span id="numEdit" style="text-decoration:underline" role="button" tabindex="0">?</span></footer>
+<footer>44 Shots <span style="color:var(--accent)">v2.1.5</span> · Goalie #<span id="numEdit" style="text-decoration:underline" role="button" tabindex="0">?</span></footer>
 
 <div class="toast" id="toast">Saved</div>
+
+<!-- Settings modal -->
+<div class="modal-backdrop" id="settingsBackdrop">
+  <div class="modal-card">
+    <h2>Settings</h2>
+
+    <div class="group">
+      <div class="label">Auto-Rebound Detection</div>
+      <div class="row" id="reboundModeRow">
+        <button class="opt" data-mode="doubletap">Double-Tap</button>
+        <button class="opt" data-mode="time">Time</button>
+        <button class="opt" data-mode="both">Both</button>
+        <button class="opt" data-mode="off">Off</button>
+      </div>
+      <div class="desc"><b>Double-Tap</b> (default) = quickly tap the same spot twice; the gesture places ONE shot, marked as a rebound to whatever shot came before. <b>Time</b> = any shot within the time window of a save is auto-tagged. <b>Both</b> = either trigger. <b>Off</b> = use the REB button or long-press menu only.</div>
+    </div>
+
+    <div class="group" id="reboundWindowGroup">
+      <div class="label">Rebound Time Window</div>
+      <div class="row" id="reboundWindowRow">
+        <button class="opt" data-window="1">1 sec</button>
+        <button class="opt" data-window="2">2 sec</button>
+        <button class="opt" data-window="3">3 sec</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="label">Coming in v2.2</div>
+      <div class="row">
+        <button class="opt" disabled>Blocks</button>
+        <button class="opt" disabled>Breakaway</button>
+      </div>
+      <div class="desc">Block tracking and breakaway flagging are next up. Not yet wired in.</div>
+    </div>
+
+    <div class="group">
+      <div class="label">Saved Games</div>
+      <div class="row">
+        <button class="opt" id="settingsExportBtn">Export All (JSON)</button>
+        <button class="opt" id="settingsImportBtn">Import (JSON)</button>
+        <input type="file" id="settingsImportFile" accept="application/json,.json" style="display:none"/>
+      </div>
+      <div class="desc">Each ended game is archived locally on this device. Export creates a downloadable backup. Import restores from a backup file. Drive sync coming next.</div>
+    </div>
+
+    <div class="close-row">
+      <button id="settingsCloseBtn">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit popover (long-press) -->
+<div class="edit-popover" id="editPopover">
+  <div class="ep-meta" id="epMeta">Shot</div>
+  <div class="ep-row">
+    <button data-result="goal" id="epGoal">GOAL</button>
+    <button data-result="shot" id="epSave">SAVE</button>
+    <button data-result="miss" id="epMiss">MISS</button>
+    <button data-result="block" id="epBlock">BLK</button>
+  </div>
+  <div class="ep-row">
+    <button data-style="rebound" id="epReb">REB</button>
+    <button data-style="wraparound" id="epWrap">WRAP</button>
+    <button data-style="tip" id="epTip">TIP</button>
+  </div>
+  <div class="ep-row">
+    <button class="danger" id="epDelete">DELETE SHOT</button>
+  </div>
+</div>
+
+<!-- What's New popup -->
+<div id="whatsNewBackdrop">
+  <div class="modal-card">
+    <h2>What's New in v2.1.5</h2>
+    <div style="font-size:12px;color:var(--text);line-height:1.55">
+      <p style="margin:0 0 10px"><b style="color:var(--accent)">Period selector + End Game moved up.</b> A persistent row under the main tabs has Period (P1 / P2 / P3 / OT) and the new End Game button.</p>
+      <p style="margin:0 0 10px"><b style="color:var(--accent)">End Game flow.</b> Saves the game to your local archive, prompts for notes, and jumps you to the report. Reset Game is gone — End Game + New Game replace it.</p>
+      <p style="margin:0 0 10px"><b style="color:var(--accent)">Period mini-reports.</b> When you switch periods, a quick summary card pops up with shots and goals for the period just ended.</p>
+      <p style="margin:0 0 10px"><b style="color:var(--accent)">Stats by team name.</b> No more "Our Team" / "Opponent" — your team and the opposing team appear by name throughout stats and reports.</p>
+      <p style="margin:0 0 10px"><b style="color:var(--accent)">HOME / AWAY moved.</b> The on-rink toggle is gone. Set it once in the New Game modal. Reclaims screen real estate.</p>
+      <p style="margin:0 0 10px"><b style="color:var(--accent)">Game archive + Export/Import.</b> Every End Game is saved locally. Settings → Saved Games to export a JSON backup or import one. Drive sync arrives next.</p>
+      <p style="margin:0 0 10px"><b style="color:var(--accent)">Long-press a marker</b> to edit or delete. <b style="color:var(--accent)">Double-tap</b> for rebounds.</p>
+      <p style="margin:0;color:var(--text-muted);font-size:11px">Distance calculations remain calibrated to NHL-spec rink geometry.</p>
+    </div>
+    <div class="close-row">
+      <button id="whatsNewCloseBtn">Got it</button>
+    </div>
+  </div>
+</div>
 
 <!-- SheetJS for XLSX export -->
 
@@ -669,7 +842,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   let state = load() || { events:[], netEvents:[], result:"shot", period:1 };
   // ALWAYS start in P1 on app open. Don't trust persisted period.
   state.period = state.period || 1;
-  if(!state.period || state.period < 1 || state.period > 3) state.period = 1;
+  if(!state.period || state.period < 1 || state.period > 4) state.period = 1;
   // Source of truth: which team are WE
   if(!state.weAre) state.weAre = "home"; // "home" or "away"
   // Game state for current shot logging (5v5, PP, PK)
@@ -780,6 +953,36 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     return newPeriod;
   });
 
+  // Wire the visible global period selector. It's the user-facing control;
+  // the legacy hidden #periodSeg is kept only so older bindings don't crash.
+  const periodSegGlobal = document.getElementById("periodSegGlobal");
+  function syncGlobalPeriodUI(){
+    const p = state.period || 1;
+    [...periodSegGlobal.querySelectorAll("button")].forEach(b=>{
+      b.classList.toggle("on", parseInt(b.dataset.period,10) === p);
+    });
+  }
+  if(periodSegGlobal){
+    periodSegGlobal.addEventListener("click", e=>{
+      const b = e.target.closest("button"); if(!b) return;
+      const newPeriod = parseInt(b.dataset.period,10);
+      const oldPeriod = state.period;
+      if(newPeriod === oldPeriod) return;
+      // Show mini-report for the period we're leaving (if it had data)
+      if(oldPeriod && state.events.some(ev => ev.period === oldPeriod)){
+        showPeriodMiniReport(oldPeriod);
+      }
+      state.period = newPeriod;
+      syncGlobalPeriodUI();
+      redrawMarkersForPeriod(newPeriod);
+      updateGoalieMarkers();
+      lastEventIndex = -1;
+      updateLastShotBar();
+      save();
+    });
+    syncGlobalPeriodUI();
+  }
+
   function redrawMarkersForPeriod(period){
     const mg = document.getElementById("markers");
     if(!mg) return;
@@ -818,60 +1021,45 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     [...weAreSeg.querySelectorAll("button")].forEach(b=>b.classList.toggle("on", b.dataset.we===state.weAre));
   }
 
-  // Wire game state (5v5 / PP / PK) with auto-revert
-  let gameStateRevertTimer = null;
+  // Wire game state (5v5 / PP / PK) — manual-only as of v2.1
+  // (auto-revert removed: a real penalty kill requires start/stop time tracking,
+  // which is too complex for live tap-tracking. Persistent highlight reminds
+  // the user to toggle back to 5v5.)
   const gameStateSeg = document.getElementById("gameStateSeg");
-  function setGameState(gs, autoRevert){
+  function applyGameStateHighlight(){
+    const gs = state.gameState || "5v5";
+    document.body.classList.toggle("gs-pp", gs === "pp");
+    document.body.classList.toggle("gs-pk", gs === "pk");
+    if(gs === "pp")      document.body.setAttribute("data-gs-label", "POWER PLAY · TAP 5v5 WHEN OVER");
+    else if(gs === "pk") document.body.setAttribute("data-gs-label", "PENALTY KILL · TAP 5v5 WHEN OVER");
+    else document.body.removeAttribute("data-gs-label");
+  }
+  function setGameState(gs){
     state.gameState = gs;
     [...gameStateSeg.querySelectorAll("button")].forEach(x=>x.classList.toggle("on", x.dataset.gs===gs));
-    if(gameStateRevertTimer){ clearTimeout(gameStateRevertTimer); gameStateRevertTimer = null; }
-    state.gameStateExpiresAt = null;
-    if(autoRevert && (gs==="pp" || gs==="pk")){
-      // 1:30 = 90,000 ms standard youth minor penalty
-      const expiresAt = Date.now() + 90000;
-      state.gameStateExpiresAt = expiresAt;
-      gameStateRevertTimer = setTimeout(()=>{
-        if(state.gameState === gs){
-          setGameState("5v5", false);
-          toast("Penalty over · back to 5v5");
-        }
-      }, 90000);
-    }
+    state.gameStateExpiresAt = null; // legacy field, no longer used
     updateGameStateHint();
+    applyGameStateHighlight();
     save();
   }
   if(gameStateSeg){
     gameStateSeg.addEventListener("click", e=>{
       const b = e.target.closest("button"); if(!b) return;
-      setGameState(b.dataset.gs, b.dataset.gs !== "5v5");
+      setGameState(b.dataset.gs);
     });
     // Restore active state on load
     [...gameStateSeg.querySelectorAll("button")].forEach(b=>b.classList.toggle("on", b.dataset.gs===state.gameState));
-    // If a penalty was active and time has passed, recover or revert
-    if(state.gameStateExpiresAt){
-      const remaining = state.gameStateExpiresAt - Date.now();
-      if(remaining > 0 && (state.gameState==="pp" || state.gameState==="pk")){
-        gameStateRevertTimer = setTimeout(()=>{
-          if(state.gameState === state.gameState){ setGameState("5v5", false); toast("Penalty over · back to 5v5"); }
-        }, remaining);
-      } else {
-        setGameState("5v5", false);
-      }
-    }
+    // Clear any stale legacy auto-revert timestamp from old game data
+    if(state.gameStateExpiresAt){ state.gameStateExpiresAt = null; save(); }
+    applyGameStateHighlight();
   }
   function updateGameStateHint(){
     const hint = document.getElementById("gameStateHint");
     if(!hint) return;
-    if(state.gameState === "pp" || state.gameState === "pk"){
-      const remaining = state.gameStateExpiresAt ? Math.max(0, Math.ceil((state.gameStateExpiresAt - Date.now())/1000)) : 0;
-      const mm = Math.floor(remaining/60), ss = remaining%60;
-      hint.textContent = state.gameState.toUpperCase()+" active · auto-reverts in "+mm+":"+String(ss).padStart(2,"0");
-    } else {
-      hint.textContent = "";
-    }
+    if(state.gameState === "pp")      hint.textContent = "POWER PLAY active · tap 5v5 when over";
+    else if(state.gameState === "pk") hint.textContent = "PENALTY KILL active · tap 5v5 when over";
+    else hint.textContent = "";
   }
-  // Tick the hint every second while special-teams active
-  setInterval(()=>{ if(state.gameState==="pp"||state.gameState==="pk") updateGameStateHint(); }, 1000);
 
   // Position H/A goalie markers based on which end each team defends this period
   function updateGoalieMarkers(){
@@ -913,6 +1101,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   // Restore segmented state on load
   function syncSegs(){
     document.querySelectorAll("#periodSeg button").forEach(b=>b.classList.toggle("on", parseInt(b.dataset.period,10)===state.period));
+    if(typeof syncGlobalPeriodUI === "function") syncGlobalPeriodUI();
   }
   syncSegs();
 
@@ -933,6 +1122,32 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   let rinkLastHandled = 0;
   let lastEventIndex = -1;
   const MARKER_HIT_RADIUS = 25; // SVG units
+  const LONG_PRESS_MS = 500;
+  const LONG_PRESS_MOVE_TOL = 10;       // screen px before press cancels
+  const DOUBLE_TAP_MS = 280;            // gap between taps to count as a double-tap gesture
+  const DOUBLE_TAP_MOVE_TOL = 40;       // SVG units of finger-placement variation between the two taps
+  const REBOUND_LINK_MAX_AGE_MS = 5000; // max age of the prior shot that a rebound can link to
+  const JITTER_RADIUS = 8;              // SVG units; nudge new shot if landing this close to existing
+  const JITTER_AMOUNT = 3;              // SVG units of nudge
+
+  // ---- Settings (separate localStorage key, persists across game resets) ----
+  const SETTINGS_KEY = "felix-settings-v5";
+  const SETTINGS_DEFAULTS = {
+    reboundMode: "doubletap", // "time" | "doubletap" | "both" | "off" — double-tap is the default
+    reboundWindowSec: 3,      // 1 | 2 | 3 — only used by Time mode
+    seenWhatsNew: ""          // last version the user dismissed the popup for
+  };
+  let settings = (function loadSettings(){
+    try {
+      const raw = localStorage.getItem(SETTINGS_KEY);
+      if(!raw) return {...SETTINGS_DEFAULTS};
+      return {...SETTINGS_DEFAULTS, ...JSON.parse(raw)};
+    } catch(e) { return {...SETTINGS_DEFAULTS}; }
+  })();
+  function saveSettings(){
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch(e){}
+  }
+  window.felixSettings = () => settings; // for debugging
 
   function findEventNearPoint(p){
     // Search in reverse so most recent shots are found first
@@ -944,57 +1159,191 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     return -1;
   }
 
+  // Apply jitter so a new shot doesn't sit exactly on top of another
+  function applyJitter(p){
+    for(let i=state.events.length-1; i>=0; i--){
+      const ev = state.events[i];
+      if(ev.period !== state.period) continue;
+      const dx = ev.x - p.x, dy = ev.y - p.y;
+      if(Math.sqrt(dx*dx+dy*dy) < JITTER_RADIUS){
+        // nudge perpendicular-ish using a small random angle
+        const ang = Math.random()*Math.PI*2;
+        return { x: p.x + Math.cos(ang)*JITTER_AMOUNT, y: p.y + Math.sin(ang)*JITTER_AMOUNT };
+      }
+    }
+    return p;
+  }
+
+  // Track most recent placement for double-tap detection
+  let lastPlacement = { t: 0, x: 0, y: 0, idx: -1 };
+
+  // ---- Long-press state machine ----
+  let lpTimer = null;
+  let lpStart = null;       // { svgPt, clientX, clientY, pointerId, origEvt }
+  let lpFired = false;      // edit popover opened, suppress tap
+  let lpCancelled = false;  // movement exceeded tolerance
+
+  function clearLongPress(){
+    if(lpTimer){ clearTimeout(lpTimer); lpTimer = null; }
+    lpStart = null;
+  }
+
+  function handleRinkPointerDown(evt){
+    lpFired = false;
+    lpCancelled = false;
+    const p = svgPoint(rinkSvg, evt);
+    if(p.x<60||p.x>940||p.y<40||p.y>560){ lpCancelled = true; return; }
+    lpStart = {
+      svgPt: { x: p.x, y: p.y },
+      clientX: evt.clientX,
+      clientY: evt.clientY,
+      pointerId: evt.pointerId,
+      origEvt: evt
+    };
+    lpTimer = setTimeout(()=>{
+      lpTimer = null;
+      if(!lpStart) return;
+      const idx = findEventNearPoint(lpStart.svgPt);
+      if(idx >= 0){
+        lpFired = true;
+        if(navigator.vibrate) try{ navigator.vibrate(15); }catch(e){}
+        openEditPopover(idx, lpStart.clientX, lpStart.clientY);
+      }
+      // No marker nearby: do nothing on long-press; pointerup will not place a shot because we don't reset lpFired here, BUT we want shots to still be possible on long-hold-then-release in empty space. So we leave lpFired false and let pointerup place the shot.
+    }, LONG_PRESS_MS);
+  }
+  function handleRinkPointerMove(evt){
+    if(!lpStart || lpStart.pointerId !== evt.pointerId) return;
+    const dx = evt.clientX - lpStart.clientX;
+    const dy = evt.clientY - lpStart.clientY;
+    if(Math.sqrt(dx*dx+dy*dy) > LONG_PRESS_MOVE_TOL){
+      lpCancelled = true;
+      clearLongPress();
+    }
+  }
+  function handleRinkPointerUp(evt){
+    if(lpStart && lpStart.pointerId !== evt.pointerId) return;
+    const wasFired = lpFired;
+    const wasCancelled = lpCancelled;
+    const start = lpStart;
+    clearLongPress();
+    if(wasFired || wasCancelled) return;
+    if(!start) return;
+    handleRinkTap(start.origEvt);
+  }
+  function handleRinkPointerCancel(){
+    lpCancelled = true;
+    clearLongPress();
+  }
+
   function handleRinkTap(evt){
     const now = Date.now();
-    if(now - rinkLastHandled < 250) return;
+    if(now - rinkLastHandled < 80) return; // 80ms anti-jitter, allows legitimate double-taps through
     rinkLastHandled = now;
-    const p = svgPoint(rinkSvg, evt);
+    let p = svgPoint(rinkSvg, evt);
     if(p.x<60||p.x>940||p.y<40||p.y>560) return;
 
-    // Tap on existing marker = edit menu
-    const existingIdx = findEventNearPoint(p);
-    if(existingIdx >= 0){
-      openEditMenu(existingIdx);
-      return;
+    // ---- Double-tap gesture detection (runs FIRST, before any FOR/AGAINST prompts) ----
+    // The second tap of a double-tap pair does NOT place a new marker.
+    // Instead it adds a rebound halo to the marker just placed by the first
+    // tap of the pair, and draws a line to the shot that came before that.
+    // Constraints (no exceptions):
+    //   - second tap within 280ms of the first
+    //   - second tap within 40 SVG units of the first
+    //   - link target must attack the SAME net (no cross-ice rebounds)
+    //   - link target must be within 5 seconds of the just-placed marker
+    {
+      const dtMode = settings.reboundMode || "doubletap";
+      const dtAllowed = (dtMode === "doubletap" || dtMode === "both");
+      if(dtAllowed && lastPlacement.idx >= 0 && state.events[lastPlacement.idx]){
+        const justPlaced = state.events[lastPlacement.idx];
+        const dt = now - lastPlacement.t;
+        const dxdt = lastPlacement.x - p.x, dydt = lastPlacement.y - p.y;
+        const nearSameSpot = Math.sqrt(dxdt*dxdt + dydt*dydt) <= DOUBLE_TAP_MOVE_TOL;
+        if(dt <= DOUBLE_TAP_MS && nearSameSpot && justPlaced.period === state.period){
+          // Find the shot before justPlaced in the same period AND same attacking net,
+          // within the 5-second link window.
+          let priorIdx = -1;
+          for(let i = lastPlacement.idx - 1; i >= 0; i--){
+            const candidate = state.events[i];
+            if(candidate.period !== state.period){
+              if(candidate.period < state.period) break;
+              continue;
+            }
+            if(candidate.attackingNet !== justPlaced.attackingNet) continue;
+            if(justPlaced.t - candidate.t > REBOUND_LINK_MAX_AGE_MS) break;
+            priorIdx = i;
+            break;
+          }
+          // Mutate the just-placed marker into a rebound. Do NOT place a new marker.
+          if(!justPlaced.styles) justPlaced.styles = [];
+          if(!justPlaced.styles.includes("rebound")) justPlaced.styles.push("rebound");
+          if(priorIdx >= 0) justPlaced.linkedTo = priorIdx;
+          lastPlacement = { t: 0, x: 0, y: 0, idx: -1 }; // prevent triple-tap looping
+          save();
+          redrawAll();
+          updateLastShotBar();
+          toast(priorIdx >= 0 ? "Rebound" : "Rebound (no prior shot)");
+          return;
+        }
+      }
     }
 
-    // Auto-attribute FOR/AGAINST based on which net the shot is closer to.
-    // Left def zone (x<370): puck attacking left net.
-    // Right def zone (x>630): puck attacking right net.
-    // Neutral zone (370-630): need to ask.
+    // Not a double-tap — proceed with normal shot placement.
+    // Attribute based on which net the shot attacks (= whose defensive zone the tap is in).
+    // The H/A markers on the rink show which team defends which side this period.
+    // Left zone (x<370): puck attacking left net = AGAINST whoever defends left.
+    // Right zone (x>630): puck attacking right net = AGAINST whoever defends right.
+    // Neutral zone (370-630): ask which TEAM took the shot (by name).
     const ourSide = getOurDefendingSide(state.period);
+    const ourTeamName = (state.gameInfo && state.gameInfo.ourTeam) || "Our Team";
+    const oppTeamName = (state.gameInfo && state.gameInfo.opponent) || "Opponent";
     let attackingNet, forOrAgainst;
     if(p.x < 370){
       attackingNet = "left";
     } else if(p.x > 630){
       attackingNet = "right";
     } else {
-      // Neutral zone — prompt
-      const choice = confirm("Neutral zone shot.\n\nOK = FOR our team\nCancel = AGAINST our team");
+      // Neutral zone — prompt with actual team names.
+      // OK = our team took the shot (= attacking the net our team is NOT defending = FOR us).
+      // Cancel = opponent took the shot (= attacking our net = AGAINST us).
+      const choice = confirm("Neutral zone shot.\n\nWho took the shot?\n\nOK = "+ourTeamName+"\nCancel = "+oppTeamName);
       attackingNet = choice ? (ourSide === "left" ? "right" : "left") : ourSide;
       forOrAgainst = choice ? "for" : "against";
     }
     if(!forOrAgainst){
-      // If puck is heading toward OUR goalie's end, it's against us.
+      // Puck heading toward OUR goalie's end = against us; otherwise = for us.
       forOrAgainst = (attackingNet === ourSide) ? "against" : "for";
     }
 
-    // Auto-detect rebound: prior shot in same period within 3 sec, within 80px
+    // ---- Rebound detection: armed-mode or Time-mode only (double-tap handled above) ----
     let rebound = false;
     let linkedTo = null;
+
     if(state.armedForRebound && state.lastShotIdForRebound != null && state.events[state.lastShotIdForRebound]){
-      // ARMED mode: this shot is a manual rebound linked to the armed origin
+      // ARMED mode (REB button pressed) — always wins, links to the armed origin
       rebound = true;
       linkedTo = state.lastShotIdForRebound;
     } else {
-      for(let i = state.events.length - 1; i >= 0; i--){
-        const prev = state.events[i];
-        if(prev.period !== state.period) break;
-        if(now - prev.t > 3000) break;
-        const dx = prev.x - p.x, dy = prev.y - p.y;
-        if(Math.sqrt(dx*dx+dy*dy) <= 80){ rebound = true; linkedTo = i; break; }
+      const mode = settings.reboundMode || "doubletap";
+      const winMs = (settings.reboundWindowSec || 3) * 1000;
+      const checkTime = (mode === "time" || mode === "both");
+      if(checkTime){
+        for(let i = state.events.length - 1; i >= 0; i--){
+          const prev = state.events[i];
+          if(prev.period !== state.period) break;
+          if(now - prev.t > winMs) break;
+          if(prev.result !== "shot") break;              // only saves seed time-rebounds
+          if(prev.attackingNet !== attackingNet) break;   // no cross-ice rebounds
+          rebound = true;
+          linkedTo = i;
+          break;
+        }
       }
     }
+
+    // Apply jitter so two same-spot taps remain visually distinct
+    p = applyJitter(p);
 
     const ev = {
       x: p.x, y: p.y,
@@ -1011,6 +1360,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     };
     state.events.push(ev);
     lastEventIndex = state.events.length - 1;
+    lastPlacement = { t: now, x: p.x, y: p.y, idx: lastEventIndex };
     // Disarm rebound mode after consuming
     if(state.armedForRebound){
       state.armedForRebound = false;
@@ -1022,8 +1372,13 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     save();
     updateLastShotBar();
     redrawAll(); // redraw to show linked rebound line
+    if(rebound) toast("Rebound");
   }
-  rinkSvg.addEventListener("pointerdown", handleRinkTap);
+  rinkSvg.addEventListener("pointerdown", handleRinkPointerDown);
+  rinkSvg.addEventListener("pointermove", handleRinkPointerMove);
+  rinkSvg.addEventListener("pointerup", handleRinkPointerUp);
+  rinkSvg.addEventListener("pointercancel", handleRinkPointerCancel);
+  rinkSvg.addEventListener("pointerleave", handleRinkPointerCancel);
 
   function updateArmedUI(){
     document.body.classList.toggle("armed", !!state.armedForRebound);
@@ -1056,7 +1411,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       return;
     }
     const ev = state.events[lastEventIndex];
-    const resultMap = { shot:"Save", goal:"GOAL", miss:"Miss" };
+    const resultMap = { shot:"Save", goal:"GOAL", miss:"Miss", block:"Blocked" };
     let txt = "Last: " + (resultMap[ev.result] || ev.result);
     if(ev.styles && ev.styles.length){
       txt += " (" + ev.styles.map(s=>s[0].toUpperCase()).join("") + ")";
@@ -1067,7 +1422,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     buttons.forEach(b=>{
       b.disabled = false;
       const action = b.dataset.action;
-      const isResult = ["goal","miss"].includes(action);
+      const isResult = ["goal","miss","block"].includes(action);
       const isStyle = ["rebound","wraparound","tip"].includes(action);
       let active = false;
       if(isResult) active = ev.result === action;
@@ -1126,7 +1481,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       if(lastEventIndex < 0 || !state.events[lastEventIndex]) return;
       const ev = state.events[lastEventIndex];
       const action = b.dataset.action;
-      if(action === "goal" || action === "miss"){
+      if(action === "goal" || action === "miss" || action === "block"){
         // Mutually exclusive with each other and with default save
         if(ev.result === action){
           ev.result = "shot"; // toggle off back to save
@@ -1153,87 +1508,153 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     });
   });
 
-  function openEditMenu(idx){
+  // Long-press popover — replaces the old prompt() menu.
+  // Flip For/Against removed (zone of play dictates attribution at tap time).
+  let editingIdx = -1;
+  const editPopover = document.getElementById("editPopover");
+
+  function openEditPopover(idx, clientX, clientY){
     const ev = state.events[idx];
     if(!ev) return;
-    const stylesStr = (ev.styles && ev.styles.length) ? " ["+ev.styles.join(",")+"]" : "";
-    const choice = prompt(
-      "Edit shot · P"+ev.period+"\nCurrent: "+ev.result.toUpperCase()+stylesStr+"\n"+
-      (ev.forOrAgainst ? "Team: "+ev.forOrAgainst.toUpperCase()+"\n" : "")+"\n"+
-      "Type to change result:\n  S = Save · G = Goal · M = Miss\n"+
-      "Toggle style: R = Rebound · W = Wrap · T = Tip\n"+
-      "F = Flip For/Against\n"+
-      "D = Delete shot\n",
-      ""
-    );
-    if(!choice) return;
-    const c = choice.trim().toUpperCase()[0];
-    if(c === "D"){
-      state.events.splice(idx, 1);
-      if(idx === lastEventIndex) lastEventIndex = state.events.length - 1;
-      else if(idx < lastEventIndex) lastEventIndex--;
-      save(); redrawAll(); updateLastShotBar();
-      toast("Shot deleted");
-      return;
-    }
-    if(c === "F"){
-      ev.forOrAgainst = ev.forOrAgainst === "for" ? "against" : "for";
-      lastEventIndex = idx;
-      save(); redrawAll(); updateLastShotBar();
-      toast("Flipped to "+ev.forOrAgainst.toUpperCase());
-      return;
-    }
-    const resultMap = { S:"shot", G:"goal", M:"miss" };
-    const styleMap = { R:"rebound", W:"wraparound", T:"tip" };
-    if(resultMap[c]){
-      ev.result = resultMap[c];
-      lastEventIndex = idx;
-      save(); redrawAll(); updateLastShotBar();
-      toast("Updated to "+resultMap[c].toUpperCase());
-    } else if(styleMap[c]){
-      if(!ev.styles) ev.styles = [];
-      const i = ev.styles.indexOf(styleMap[c]);
-      if(i >= 0) ev.styles.splice(i, 1);
-      else ev.styles.push(styleMap[c]);
-      lastEventIndex = idx;
-      save(); redrawAll(); updateLastShotBar();
-      toast("Style "+(i>=0?"removed":"added")+": "+styleMap[c]);
-    }
+    editingIdx = idx;
+    refreshEditPopoverState();
+    // Position off-screen first to avoid flash, activate, measure, then place
+    editPopover.style.left = "-9999px";
+    editPopover.style.top = "-9999px";
+    editPopover.classList.add("active");
+    const w = editPopover.offsetWidth;
+    const h = editPopover.offsetHeight;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    let left = clientX - w/2;
+    let top  = clientY + 14; // below by default
+    let placement = "below";
+    if(top + h > vh - 8){ top = clientY - h - 14; placement = "above"; }
+    if(left < 8) left = 8;
+    if(left + w > vw - 8) left = vw - w - 8;
+    editPopover.style.left = left + "px";
+    editPopover.style.top  = top + "px";
+    editPopover.classList.toggle("below", placement === "below");
+    editPopover.classList.toggle("above", placement === "above");
+    // Anchor pointer arrow horizontal offset
+    const anchorX = Math.max(12, Math.min(w-12, clientX - left));
+    editPopover.style.setProperty("--anchor-x", anchorX + "px");
   }
+  function closeEditPopover(){
+    editPopover.classList.remove("active");
+    editingIdx = -1;
+  }
+  function refreshEditPopoverState(){
+    const ev = state.events[editingIdx];
+    if(!ev) return;
+    const meta = document.getElementById("epMeta");
+    const stylesStr = (ev.styles && ev.styles.length) ? " · "+ev.styles.join(", ").toUpperCase() : "";
+    meta.textContent = "P"+ev.period+" · "+(ev.forOrAgainst||"").toUpperCase()+" · "+ev.result.toUpperCase()+stylesStr;
+    // Highlight active result
+    editPopover.querySelectorAll("[data-result]").forEach(b=>{
+      b.classList.toggle("active", b.dataset.result === ev.result);
+    });
+    // Highlight active styles
+    const styles = ev.styles || [];
+    editPopover.querySelectorAll("[data-style]").forEach(b=>{
+      b.classList.toggle("active", styles.includes(b.dataset.style));
+    });
+  }
+
+  // Wire popover buttons
+  editPopover.querySelectorAll("[data-result]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      if(editingIdx < 0) return;
+      const ev = state.events[editingIdx];
+      ev.result = btn.dataset.result;
+      lastEventIndex = editingIdx;
+      save(); redrawAll(); updateLastShotBar();
+      refreshEditPopoverState();
+      toast("Updated to "+ev.result.toUpperCase());
+    });
+  });
+  editPopover.querySelectorAll("[data-style]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      if(editingIdx < 0) return;
+      const ev = state.events[editingIdx];
+      const s = btn.dataset.style;
+      if(!ev.styles) ev.styles = [];
+      const i = ev.styles.indexOf(s);
+      if(i>=0) ev.styles.splice(i,1); else ev.styles.push(s);
+      lastEventIndex = editingIdx;
+      save(); redrawAll(); updateLastShotBar();
+      refreshEditPopoverState();
+      toast(s.toUpperCase()+" "+(i>=0?"removed":"added"));
+    });
+  });
+  document.getElementById("epDelete").addEventListener("click", ()=>{
+    if(editingIdx < 0) return;
+    state.events.splice(editingIdx, 1);
+    if(editingIdx === lastEventIndex) lastEventIndex = state.events.length - 1;
+    else if(editingIdx < lastEventIndex) lastEventIndex--;
+    closeEditPopover();
+    save(); redrawAll(); updateLastShotBar();
+    toast("Shot deleted");
+  });
+  // Dismiss on outside click / escape
+  document.addEventListener("pointerdown", (e)=>{
+    if(!editPopover.classList.contains("active")) return;
+    if(editPopover.contains(e.target)) return;
+    closeEditPopover();
+  }, true);
+  document.addEventListener("keydown", (e)=>{
+    if(e.key === "Escape" && editPopover.classList.contains("active")) closeEditPopover();
+  });
 
   // Initialize bar on load
   setTimeout(updateLastShotBar, 100);
 
   function drawMarker(ev, animate){
-    const c = document.createElementNS("http://www.w3.org/2000/svg","circle");
-    c.setAttribute("cx",ev.x); c.setAttribute("cy",ev.y);
-    c.setAttribute("class","marker"+(animate?" pulse":""));
-    if(ev.result==="goal"){ c.setAttribute("r",13); c.setAttribute("fill","var(--accent-2)"); c.setAttribute("stroke","var(--bg)"); c.setAttribute("stroke-width","2.5"); }
-    else if(ev.result==="miss"){ c.setAttribute("r",8); c.setAttribute("fill","none"); c.setAttribute("stroke","var(--text-muted)"); c.setAttribute("stroke-width","2.5"); c.setAttribute("stroke-dasharray","2 3"); }
-    else {
-      // Save: orange = AGAINST our goalie (priority); teal = FOR (our offense)
-      // Saves: HOME team = orange, AWAY team = teal
-      // A shot's team identity = (we are HOME and FOR) OR (we are AWAY and AGAINST) → HOME team
-      const isFor = ev.forOrAgainst === "for";
-      const weAreHome = (ev.weAre || state.weAre) === "home";
-      const isHomeTeamShot = (weAreHome && isFor) || (!weAreHome && !isFor);
-      c.setAttribute("r", 9);
-      c.setAttribute("fill", isHomeTeamShot ? "var(--home)" : "var(--away)");
-      c.setAttribute("stroke","var(--bg)");
-      c.setAttribute("stroke-width","1.5");
+    let mainEl;
+    if(ev.result === "block"){
+      // Block: small gray-blue square (defensive event, not a shot on goal)
+      mainEl = document.createElementNS("http://www.w3.org/2000/svg","rect");
+      const size = 11;
+      mainEl.setAttribute("x", ev.x - size/2);
+      mainEl.setAttribute("y", ev.y - size/2);
+      mainEl.setAttribute("width", size);
+      mainEl.setAttribute("height", size);
+      mainEl.setAttribute("fill", "#8aa0b8");
+      mainEl.setAttribute("stroke", "var(--bg)");
+      mainEl.setAttribute("stroke-width", "1.5");
+      mainEl.setAttribute("class", "marker"+(animate?" pulse":""));
+    } else {
+      const c = document.createElementNS("http://www.w3.org/2000/svg","circle");
+      c.setAttribute("cx",ev.x); c.setAttribute("cy",ev.y);
+      c.setAttribute("class","marker"+(animate?" pulse":""));
+      if(ev.result==="goal"){ c.setAttribute("r",10); c.setAttribute("fill","var(--accent-2)"); c.setAttribute("stroke","var(--bg)"); c.setAttribute("stroke-width","2"); }
+      else if(ev.result==="miss"){ c.setAttribute("r",6); c.setAttribute("fill","none"); c.setAttribute("stroke","var(--text-muted)"); c.setAttribute("stroke-width","2"); c.setAttribute("stroke-dasharray","2 3"); }
+      else {
+        // Save: orange = AGAINST our goalie (priority); teal = FOR (our offense)
+        // Saves: HOME team = orange, AWAY team = teal
+        // A shot's team identity = (we are HOME and FOR) OR (we are AWAY and AGAINST) → HOME team
+        const isFor = ev.forOrAgainst === "for";
+        const weAreHome = (ev.weAre || state.weAre) === "home";
+        const isHomeTeamShot = (weAreHome && isFor) || (!weAreHome && !isFor);
+        c.setAttribute("r", 7);
+        c.setAttribute("fill", isHomeTeamShot ? "var(--home)" : "var(--away)");
+        c.setAttribute("stroke","var(--bg)");
+        c.setAttribute("stroke-width","1.5");
+      }
+      mainEl = c;
     }
     // Style indicator: thin outer ring for rebound/wrap/tip
     if(ev.styles && ev.styles.length){
       const ring = document.createElementNS("http://www.w3.org/2000/svg","circle");
       ring.setAttribute("cx",ev.x); ring.setAttribute("cy",ev.y);
-      ring.setAttribute("r", (parseFloat(c.getAttribute("r"))+5));
+      const baseR = ev.result === "block" ? 9 : parseFloat(mainEl.getAttribute("r"));
+      ring.setAttribute("r", baseR + 4);
       ring.setAttribute("fill","none");
       ring.setAttribute("stroke", "var(--accent-2)");
       ring.setAttribute("stroke-width","1.5");
       ring.setAttribute("stroke-dasharray","3 2");
       markersG.appendChild(ring);
     }
-    markersG.appendChild(c);
+    markersG.appendChild(mainEl);
   }
 
   function redrawAll(){
@@ -1471,9 +1892,11 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     const usGoals = usEvents.filter(x=>x.result==="goal").length;
     const usShotsOnNet = usEvents.filter(x=>x.result==="shot").length + usGoals;
     const usMiss = usEvents.filter(x=>x.result==="miss").length;
+    const usBlocked = usEvents.filter(x=>x.result==="block").length; // our shots that got blocked
     const themGoals = themEvents.filter(x=>x.result==="goal").length;
     const themShotsOnNet = themEvents.filter(x=>x.result==="shot").length + themGoals;
     const themMiss = themEvents.filter(x=>x.result==="miss").length;
+    const themBlocked = themEvents.filter(x=>x.result==="block").length; // their shots that got blocked
 
     const setText = (id,val)=>{ const el = document.getElementById(id); if(el) el.textContent = val; };
 
@@ -1499,8 +1922,8 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     setText("sMiss", miss);
     const savePct = shots>0 ? Math.round((shots-goals)*100/shots) : 0;
     setText("sShootPct", shots>0?savePct+"% save":"--% save");
-    const periodCounts = [1,2,3].map(p=>e.filter(x=>x.period===p).length);
-    setText("sPeriod", "P1 "+periodCounts[0]+" · P2 "+periodCounts[1]+" · P3 "+periodCounts[2]);
+    const periodCounts = [1,2,3,4].map(p=>e.filter(x=>x.period===p).length);
+    setText("sPeriod", "P1 "+periodCounts[0]+" · P2 "+periodCounts[1]+" · P3 "+periodCounts[2]+(periodCounts[3]?" · OT "+periodCounts[3]:""));
 
     // Goal location list — split by team
     const list = document.getElementById("heatList");
@@ -1601,12 +2024,33 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 
     // === OUR TEAM sub-panel ===
     setText("oursTeamLabel", ourTeamName.toUpperCase());
+    setText("statsTabOurs", ourTeamName.toUpperCase());
+
+    // Mirror goalie content from the legacy GOALIE panel into the OUR TEAM panel
+    setText("oursGoalieName", goalieName + " #" + goalieNum);
+    setText("ourDefMiss", miss);
+    setText("ourPeriodSplit", "P1 "+periodCounts[0]+" · P2 "+periodCounts[1]+" · P3 "+periodCounts[2]+(periodCounts[3]?" · OT "+periodCounts[3]:""));
+    const ourHeat = document.getElementById("ourHeatList");
+    const legacyHeat = document.getElementById("heatList");
+    if(ourHeat && legacyHeat) ourHeat.innerHTML = legacyHeat.innerHTML;
+    const oursConsensus = document.getElementById("oursConsensusBox");
+    const legacyConsensus = document.getElementById("consensusBox");
+    if(oursConsensus && legacyConsensus) oursConsensus.innerHTML = legacyConsensus.innerHTML;
+    const ourGB = document.getElementById("ourGoalieBreakdown");
+    const ourGBCard = document.getElementById("ourGoalieBreakdownCard");
+    const legacyGB = document.getElementById("goalieBreakdown");
+    const legacyGBCard = document.getElementById("goalieBreakdownCard");
+    if(ourGB && ourGBCard && legacyGB && legacyGBCard){
+      ourGB.innerHTML = legacyGB.innerHTML;
+      ourGBCard.style.display = legacyGBCard.style.display === "block" ? "block" : "none";
+    }
 
     // Offense (our shots on their net)
     setText("ourOffSOG", usShotsOnNet);
     setText("ourOffG", usGoals);
     const ourSH = usShotsOnNet>0 ? Math.round(usGoals*100/usShotsOnNet*10)/10 : 0;
     setText("ourOffSH", usShotsOnNet>0 ? ourSH+"%" : "--");
+    setText("ourOffBlocked", usBlocked);
 
     // Build offense breakdown text
     const ourOffBreakEl = document.getElementById("ourOffBreakdown");
@@ -1683,12 +2127,14 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 
     // === OPPONENT sub-panel ===
     setText("oppTeamLabel", oppTeamName.toUpperCase());
+    setText("statsTabOpp", oppTeamName.toUpperCase());
 
     // Their offense (shots they took on us)
     setText("oppOffSOG", themShotsOnNet);
     setText("oppOffG", themGoals);
     const oppSH = themShotsOnNet>0 ? Math.round(themGoals*100/themShotsOnNet*10)/10 : 0;
     setText("oppOffSH", themShotsOnNet>0 ? oppSH+"%" : "--");
+    setText("oppOffBlocked", themBlocked);
 
     const oppOffBreakEl = document.getElementById("oppOffBreakdown");
     if(oppOffBreakEl){
@@ -1864,13 +2310,17 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(netRows), "Net Zones");
 
       // === Sheet 6: Raw Events ===
-      const rawRows = [["#","Period","Game State","For/Against","Result","Styles","X","Y","Goalie","Time"]];
+      const rawRows = [["#","Period","Game State","Shooting Team","Result","Styles","X","Y","Goalie","Time"]];
       state.events.forEach((ev,i)=>{
+        // Determine which team took the shot from forOrAgainst + weAre
+        const evWeAre = ev.weAre || state.weAre;
+        const isFor = ev.forOrAgainst === "for";
+        const shootingTeam = (isFor ? ourTeam : oppTeam);
         rawRows.push([
           i+1,
           ev.period || "-",
           ev.gameState || "5v5",
-          ev.forOrAgainst || "-",
+          shootingTeam,
           ev.result || "-",
           (ev.styles||[]).join(","),
           Math.round(ev.x||0),
@@ -1911,12 +2361,15 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     save();
     redrawAll();
     syncSegs();
+    if(typeof applyGameStateHighlight === "function") applyGameStateHighlight();
     updateGoalieBanner();
     showLoadGame();
   }
   document.getElementById("newGameBtn").addEventListener("click", startNewGame);
   const newGameTopBtn = document.getElementById("newGameBtnTop");
   if(newGameTopBtn) newGameTopBtn.addEventListener("click", startNewGame);
+  const reportNewGameBtn = document.getElementById("reportNewGameBtn");
+  if(reportNewGameBtn) reportNewGameBtn.addEventListener("click", startNewGame);
 
   // Jersey number (legacy footer)
   const numEdit = document.getElementById("numEdit");
@@ -2256,12 +2709,23 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     const e = state.events;
 
     function zoneFromRink(ev){
-      const distL = ev.x - 60, distR = 940 - ev.x;
-      const goalSide = distR < distL ? "right" : "left";
-      const dist = Math.min(distL, distR);
+      // NHL spec calibration:
+      //   Goal lines at SVG x=60 and x=940 (880 units apart, real = 178 ft)
+      //   Top board y=40, bottom y=560 (520 units, real = 85 ft)
+      //   Goal mouth = goal line x, centerline y=300
+      // Horizontal scale: 178/880 = 0.2023 ft/unit
+      // Vertical scale:    85/520 = 0.1635 ft/unit
+      const FT_PER_X = 178/880;
+      const FT_PER_Y = 85/520;
+      const distLft = (ev.x - 60) * FT_PER_X;
+      const distRft = (940 - ev.x) * FT_PER_X;
+      const goalSide = distRft < distLft ? "right" : "left";
+      const goalX = goalSide === "right" ? 940 : 60;
+      const dxFt = (ev.x - goalX) * FT_PER_X;
+      const dyFt = (ev.y - 300) * FT_PER_Y;
+      const distFt = Math.round(Math.sqrt(dxFt*dxFt + dyFt*dyFt));
       const lateral = ev.y - 300;
       const yLabel = Math.abs(lateral)<40 ? "slot" : (lateral<0 ? "left wing" : "right wing");
-      const distFt = Math.round(dist * (200/880));
       return { goalSide, yLabel, distFt };
     }
     const enriched = e.map(ev=>({...ev, ...zoneFromRink(ev)}));
@@ -2898,7 +3362,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   </div>
 
   <div style="font-size:9px;color:var(--text-muted);letter-spacing:.1em;text-align:center;margin-top:10px">
-    Generated ${new Date().toLocaleString()} ${"\u00b7"} v2.0
+    Generated ${new Date().toLocaleString()} ${"\u00b7"} v2.1.5
   </div>
 </div>`;
     out.innerHTML = html;
@@ -3156,7 +3620,7 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
   ${photos.map(p=>`<img src="${p.data}" alt="game photo"/>`).join('')}
 </div>` : ''}
 
-<footer>Generated by 44 Shots v2.0 ${"\u00b7"} ${stamp}</footer>
+<footer>Generated by 44 Shots v2.1.5 ${"\u00b7"} ${stamp}</footer>
 </body></html>`;
   }
   function downloadHtmlReport(){
@@ -3168,6 +3632,252 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
     a.download = "44shots-report-"+fstamp+".html";
     a.click();
   }
+
+  // ============ Settings modal wiring ============
+  const settingsBackdrop = document.getElementById("settingsBackdrop");
+  const settingsBtn = document.getElementById("settingsBtn");
+  const settingsCloseBtn = document.getElementById("settingsCloseBtn");
+  const reboundModeRow = document.getElementById("reboundModeRow");
+  const reboundWindowRow = document.getElementById("reboundWindowRow");
+  const reboundWindowGroup = document.getElementById("reboundWindowGroup");
+
+  function refreshSettingsUI(){
+    reboundModeRow.querySelectorAll(".opt").forEach(b=>{
+      b.classList.toggle("active", b.dataset.mode === settings.reboundMode);
+    });
+    reboundWindowRow.querySelectorAll(".opt").forEach(b=>{
+      b.classList.toggle("active", parseInt(b.dataset.window,10) === settings.reboundWindowSec);
+    });
+    // Hide window picker when neither time-based mode is active
+    const showWindow = (settings.reboundMode === "time" || settings.reboundMode === "both");
+    reboundWindowGroup.style.display = showWindow ? "" : "none";
+  }
+  function openSettings(){ settingsBackdrop.classList.add("active"); refreshSettingsUI(); }
+  function closeSettings(){ settingsBackdrop.classList.remove("active"); }
+  settingsBtn.addEventListener("click", openSettings);
+  settingsCloseBtn.addEventListener("click", closeSettings);
+  settingsBackdrop.addEventListener("click", (e)=>{
+    if(e.target === settingsBackdrop) closeSettings();
+  });
+  reboundModeRow.querySelectorAll(".opt").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      settings.reboundMode = b.dataset.mode;
+      saveSettings();
+      refreshSettingsUI();
+    });
+  });
+  reboundWindowRow.querySelectorAll(".opt").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      settings.reboundWindowSec = parseInt(b.dataset.window,10);
+      saveSettings();
+      refreshSettingsUI();
+    });
+  });
+
+  // ============ PP/PK persistent highlight ============
+  // Highlight is applied directly inside setGameState(). On load, ensure
+  // the body class matches whatever state was restored from localStorage.
+  if (typeof applyGameStateHighlight === "function") applyGameStateHighlight();
+
+  // ============ Game archive (localStorage) ============
+  const ARCHIVE_KEY = "felix-archive-v1";
+  const ARCHIVE_MAX = 50;
+  function loadArchive(){
+    try {
+      const raw = localStorage.getItem(ARCHIVE_KEY);
+      if(!raw) return [];
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : [];
+    } catch(e){ return []; }
+  }
+  function saveArchive(arr){
+    try {
+      // Trim oldest if exceeding max
+      const trimmed = arr.slice(-ARCHIVE_MAX);
+      localStorage.setItem(ARCHIVE_KEY, JSON.stringify(trimmed));
+    } catch(e){ console.warn("Archive save failed:", e); }
+  }
+  function archiveCurrentGame(notes){
+    const archive = loadArchive();
+    const snapshot = {
+      archivedAt: Date.now(),
+      version: "v2.1.5",
+      gameInfo: JSON.parse(JSON.stringify(state.gameInfo || {})),
+      weAre: state.weAre,
+      events: JSON.parse(JSON.stringify(state.events || [])),
+      netEvents: JSON.parse(JSON.stringify(state.netEvents || [])),
+      goalies: JSON.parse(JSON.stringify(state.goalies || [])),
+      activeGoalie: state.activeGoalie ? JSON.parse(JSON.stringify(state.activeGoalie)) : null,
+      notes: notes || "",
+      finalScore: (function(){
+        const ourGoals = (state.events||[]).filter(e => e.result === "goal" && e.forOrAgainst === "for").length;
+        const oppGoals = (state.events||[]).filter(e => e.result === "goal" && e.forOrAgainst === "against").length;
+        return { ours: ourGoals, theirs: oppGoals };
+      })()
+    };
+    archive.push(snapshot);
+    saveArchive(archive);
+    return snapshot;
+  }
+
+  // ============ End Game flow ============
+  const endGameBtn = document.getElementById("endGameBtn");
+  function endGame(){
+    const hasData = (state.events && state.events.length) || (state.netEvents && state.netEvents.length);
+    if(!hasData){
+      if(!confirm("No shots logged this game. End anyway?")) return;
+    } else if(!confirm("End the game?\n\nThe current game will be saved to your archive and a report will be generated.")) {
+      return;
+    }
+    const notes = prompt("Game notes (optional):\nObservations, things to work on, anything memorable.", "") || "";
+    archiveCurrentGame(notes);
+    // Pipe notes into the existing notesInput + localStorage so the report
+    // generator includes them automatically. Append rather than overwrite if
+    // the user already typed something in the report tab earlier.
+    state.gameInfo = state.gameInfo || {};
+    state.gameInfo.endGameNotes = notes;
+    if(notes){
+      const ni = document.getElementById("notesInput");
+      if(ni){
+        ni.value = ni.value && ni.value.trim() ? (ni.value.trim() + "\n\n" + notes) : notes;
+        try { localStorage.setItem("felix-notes", ni.value); } catch(e){}
+      }
+    }
+    save();
+    // Jump to the Report tab and trigger report generation
+    if(typeof switchTab === "function") switchTab("report");
+    setTimeout(()=>{
+      const genBtn = document.getElementById("genReportBtn");
+      if(genBtn) genBtn.click();
+      // Scroll the report output into view once it's rendered
+      setTimeout(()=>{
+        const out = document.getElementById("reportOut");
+        if(out && out.style.display !== "none"){
+          out.scrollIntoView({behavior:"smooth", block:"start"});
+        }
+      }, 250);
+    }, 350);
+    toast("Game saved · report ready");
+  }
+  if(endGameBtn) endGameBtn.addEventListener("click", endGame);
+
+  // ============ Mini-report on period change ============
+  // Tiny floating card with summary stats for the period that just ended.
+  // Auto-dismisses after 6s; tappable to dismiss early.
+  function showPeriodMiniReport(period){
+    const evs = (state.events || []).filter(e => e.period === period);
+    if(!evs.length) return;
+    const ourGoals = evs.filter(e => e.result === "goal" && e.forOrAgainst === "for").length;
+    const oppGoals = evs.filter(e => e.result === "goal" && e.forOrAgainst === "against").length;
+    const ourSOG = evs.filter(e => e.forOrAgainst === "for" && (e.result === "shot" || e.result === "goal")).length;
+    const oppSOG = evs.filter(e => e.forOrAgainst === "against" && (e.result === "shot" || e.result === "goal")).length;
+    const ourSavePct = oppSOG > 0 ? Math.round(((oppSOG - oppGoals) / oppSOG) * 100) : null;
+    const periodLabel = period === 4 ? "OT" : ("P" + period);
+    const ourTeam = (state.gameInfo && state.gameInfo.ourTeam) || "Us";
+    const oppTeam = (state.gameInfo && state.gameInfo.opponent) || "Them";
+
+    let card = document.getElementById("miniReportCard");
+    if(!card){
+      card = document.createElement("div");
+      card.id = "miniReportCard";
+      card.style.cssText = "position:fixed;top:24px;left:50%;transform:translateX(-50%);z-index:2400;background:var(--panel);border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:18px 24px;box-shadow:0 12px 36px rgba(0,0,0,.6);font-family:var(--sans);font-size:14px;color:var(--text);min-width:380px;max-width:92vw;cursor:pointer;transition:opacity .25s ease,transform .25s ease;opacity:0";
+      document.body.appendChild(card);
+    }
+    card.innerHTML =
+      "<div style=\"font-size:11px;letter-spacing:.22em;color:var(--accent);font-weight:700;margin-bottom:10px\">"+periodLabel+" SUMMARY</div>"+
+      "<div style=\"display:flex;justify-content:space-between;gap:24px;align-items:baseline\">"+
+        "<div><b style=\"font-size:18px\">"+ourTeam+"</b><br><span style=\"color:var(--text-muted);font-size:13px\">"+ourSOG+" SOG · "+ourGoals+" G</span></div>"+
+        "<div style=\"text-align:right\"><b style=\"font-size:18px\">"+oppTeam+"</b><br><span style=\"color:var(--text-muted);font-size:13px\">"+oppSOG+" SOG · "+oppGoals+" G</span></div>"+
+      "</div>"+
+      (ourSavePct !== null ? "<div style=\"font-size:13px;color:var(--text-muted);margin-top:10px;text-align:center;letter-spacing:.08em\">Goalie save %: <b style=\"color:var(--accent);font-size:15px\">"+ourSavePct+"%</b></div>" : "")+
+      "<div style=\"font-size:10px;color:var(--text-muted);margin-top:14px;text-align:center;letter-spacing:.18em\">TAP TO DISMISS</div>";
+    requestAnimationFrame(()=>{ card.style.opacity = "1"; card.style.transform = "translateX(-50%) translateY(0)"; });
+    const dismiss = ()=>{
+      card.style.opacity = "0";
+      card.style.transform = "translateX(-50%) translateY(-10px)";
+      setTimeout(()=>{ if(card.parentNode) card.parentNode.removeChild(card); }, 250);
+    };
+    card.onclick = dismiss;
+  }
+
+  // ============ Settings: Export / Import games ============
+  function exportArchiveJSON(){
+    const archive = loadArchive();
+    if(!archive.length){
+      toast("No saved games to export");
+      return;
+    }
+    const blob = new Blob([JSON.stringify(archive, null, 2)], {type:"application/json"});
+    const a = document.createElement("a");
+    const stamp = new Date().toISOString().slice(0,16).replace(/[-:T]/g,"");
+    a.href = URL.createObjectURL(blob);
+    a.download = "44shots-archive-"+stamp+".json";
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+    toast("Exported "+archive.length+" game(s)");
+  }
+  function importArchiveJSON(file){
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      try {
+        const data = JSON.parse(reader.result);
+        if(!Array.isArray(data)) throw new Error("Expected an array");
+        const existing = loadArchive();
+        // Dedupe by archivedAt timestamp
+        const seen = new Set(existing.map(g => g.archivedAt));
+        let added = 0;
+        for(const g of data){
+          if(!g || !g.archivedAt) continue;
+          if(seen.has(g.archivedAt)) continue;
+          existing.push(g);
+          seen.add(g.archivedAt);
+          added++;
+        }
+        existing.sort((a,b)=>(a.archivedAt||0)-(b.archivedAt||0));
+        saveArchive(existing);
+        toast("Imported "+added+" new game(s)");
+      } catch(e){
+        alert("Import failed: "+e.message);
+      }
+    };
+    reader.readAsText(file);
+  }
+  // Wire up Settings modal Export/Import buttons (added in HTML below)
+  const archiveExportBtn = document.getElementById("settingsExportBtn");
+  const archiveImportBtn = document.getElementById("settingsImportBtn");
+  const archiveImportFile = document.getElementById("settingsImportFile");
+  if(archiveExportBtn) archiveExportBtn.addEventListener("click", exportArchiveJSON);
+  if(archiveImportBtn && archiveImportFile){
+    archiveImportBtn.addEventListener("click", ()=>archiveImportFile.click());
+    archiveImportFile.addEventListener("change", (e)=>{
+      const f = e.target.files && e.target.files[0];
+      if(f) importArchiveJSON(f);
+      e.target.value = "";
+    });
+  }
+
+  // ============ What's New popup ============
+  const APP_VERSION = "v2.1.5";
+  const whatsNewBackdrop = document.getElementById("whatsNewBackdrop");
+  const whatsNewCloseBtn = document.getElementById("whatsNewCloseBtn");
+  function maybeShowWhatsNew(){
+    if(settings.seenWhatsNew === APP_VERSION) return;
+    // Defer slightly so it doesn't fight the help coachmarks on a fresh install
+    setTimeout(()=>{ whatsNewBackdrop.classList.add("active"); }, 600);
+  }
+  whatsNewCloseBtn.addEventListener("click", ()=>{
+    whatsNewBackdrop.classList.remove("active");
+    settings.seenWhatsNew = APP_VERSION;
+    saveSettings();
+  });
+  whatsNewBackdrop.addEventListener("click", (e)=>{
+    if(e.target === whatsNewBackdrop){
+      whatsNewBackdrop.classList.remove("active");
+      settings.seenWhatsNew = APP_VERSION;
+      saveSettings();
+    }
+  });
+  maybeShowWhatsNew();
 })();
 </script>
 
