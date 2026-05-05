@@ -254,16 +254,16 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     <h1 style="margin:0;line-height:1;font-family:'Bungee',Impact,sans-serif;font-size:30px;letter-spacing:.5px;font-weight:400;color:#fff;text-shadow:2px 2px 0 var(--accent)">44 <span style="font-family:var(--sans);font-size:18px;font-weight:300;letter-spacing:2px;color:var(--text);text-shadow:none;font-style:italic">Shots</span></h1>
     <span class="kicker" style="display:block;font-size:9px;letter-spacing:.22em;color:var(--text-muted);margin-top:4px">STAT TRACKER</span>
   </div>
-  <div id="headerStats" style="font-family:var(--sans);font-size:10px;text-align:right;color:var(--text-muted);line-height:1.4;flex:0 0 auto">
-    <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:3px;align-items:flex-end">
-      <span style="font-size:9px;letter-spacing:.18em;color:var(--text-muted);min-width:42px;text-align:right;padding-bottom:2px" id="homeRowLabel">HOME</span>
-      <div style="text-align:center;min-width:18px"><span style="font-size:8px;letter-spacing:.1em;display:block;line-height:1;margin-bottom:2px">G</span><b id="hHomeGoals" style="color:var(--accent-2);font-size:15px;display:block;line-height:1">0</b></div>
-      <div style="text-align:center;min-width:22px"><span style="font-size:8px;letter-spacing:.1em;display:block;line-height:1;margin-bottom:2px">SOG</span><b id="hHomeShots" style="color:var(--accent);font-size:15px;display:block;line-height:1">0</b></div>
+  <div id="headerStats" style="font-family:var(--sans);font-size:11px;text-align:right;color:var(--text-muted);line-height:1.4;flex:0 0 auto">
+    <div style="display:flex;justify-content:flex-end;gap:14px;margin-bottom:4px;align-items:flex-end">
+      <span style="font-size:10px;letter-spacing:.18em;color:var(--text-muted);min-width:46px;text-align:right;padding-bottom:3px;font-weight:700" id="homeRowLabel">HOME</span>
+      <div style="text-align:center;min-width:24px"><span style="font-size:9px;letter-spacing:.1em;display:block;line-height:1;margin-bottom:2px">G</span><b id="hHomeGoals" style="color:var(--accent-2);font-size:20px;display:block;line-height:1">0</b></div>
+      <div style="text-align:center;min-width:30px"><span style="font-size:9px;letter-spacing:.1em;display:block;line-height:1;margin-bottom:2px">SOG</span><b id="hHomeShots" style="color:var(--accent);font-size:20px;display:block;line-height:1">0</b></div>
     </div>
-    <div style="display:flex;justify-content:flex-end;gap:10px;align-items:flex-end">
-      <span style="font-size:9px;letter-spacing:.18em;color:var(--text-muted);min-width:42px;text-align:right;padding-bottom:2px" id="awayRowLabel">AWAY</span>
-      <div style="text-align:center;min-width:18px"><b id="hAwayGoals" style="color:var(--accent-3);font-size:15px;display:block;line-height:1">0</b></div>
-      <div style="text-align:center;min-width:22px"><b id="hAwayShots" style="color:var(--accent);font-size:15px;display:block;line-height:1">0</b></div>
+    <div style="display:flex;justify-content:flex-end;gap:14px;align-items:flex-end">
+      <span style="font-size:10px;letter-spacing:.18em;color:var(--text-muted);min-width:46px;text-align:right;padding-bottom:3px;font-weight:700" id="awayRowLabel">AWAY</span>
+      <div style="text-align:center;min-width:24px"><b id="hAwayGoals" style="color:var(--accent-3);font-size:20px;display:block;line-height:1">0</b></div>
+      <div style="text-align:center;min-width:30px"><b id="hAwayShots" style="color:var(--accent);font-size:20px;display:block;line-height:1">0</b></div>
     </div>
   </div>
   <button id="helpBtn" aria-label="Help" style="background:transparent;border:1px solid rgba(255,255,255,.2);color:var(--text-muted);width:32px;border-radius:8px;font-family:Georgia,serif;font-size:14px;font-weight:700;cursor:pointer;flex:0 0 auto;padding:6px 0 4px;line-height:1;display:flex;flex-direction:column;align-items:center;gap:2px;align-self:center"><span style="font-size:16px;line-height:1">?</span><span style="font-family:var(--sans);font-size:7px;letter-spacing:.15em;font-weight:600">HELP</span></button>
@@ -337,15 +337,15 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 </div>
 
 <!-- Last Shot bar (directly above rink, sticky) -->
-<div id="lastShotBar" style="position:sticky;top:0;z-index:20;background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 12px;font-family:var(--sans);display:flex;align-items:center;gap:8px;flex-wrap:wrap;box-shadow:0 4px 12px rgba(0,0,0,.25)">
-  <div style="font-size:12px;color:var(--text);flex:1;min-width:90px;font-weight:700" id="lastShotLabel">Last: —</div>
-  <button class="lsBtn" data-action="goal" style="background:var(--accent-2);color:var(--bg);border:0;padding:11px 14px;font-size:12px;letter-spacing:.1em;font-weight:700;border-radius:8px;opacity:.4;min-width:58px" disabled>GOAL</button>
-  <button class="lsBtn" data-action="miss" style="background:var(--text-muted);color:var(--bg);border:0;padding:11px 14px;font-size:12px;letter-spacing:.1em;font-weight:700;border-radius:8px;opacity:.4;min-width:58px" disabled>MISS</button>
-  <button class="lsBtn" data-action="block" style="background:#8aa0b8;color:var(--bg);border:0;padding:11px 12px;font-size:12px;letter-spacing:.1em;font-weight:700;border-radius:8px;opacity:.4;min-width:54px" disabled>BLK</button>
-  <span style="width:1px;height:24px;background:rgba(255,255,255,.15);margin:0 2px"></span>
-  <button class="lsBtn" data-action="rebound" style="background:var(--panel);color:var(--accent);border:1px solid var(--accent);padding:11px 12px;font-size:12px;letter-spacing:.1em;font-weight:700;border-radius:8px;min-width:54px">REB</button>
-  <button class="lsBtn" data-action="wraparound" style="background:var(--panel);color:var(--accent);border:1px solid var(--accent);padding:11px 12px;font-size:12px;letter-spacing:.1em;font-weight:700;border-radius:8px;opacity:.4;min-width:60px" disabled>WRAP</button>
-  <button class="lsBtn" data-action="tip" style="background:var(--panel);color:var(--accent);border:1px solid var(--accent);padding:11px 12px;font-size:12px;letter-spacing:.1em;font-weight:700;border-radius:8px;opacity:.4;min-width:54px" disabled>TIP</button>
+<div id="lastShotBar" style="position:sticky;top:0;z-index:20;background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 12px;font-family:var(--sans);display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;box-shadow:0 4px 12px rgba(0,0,0,.25)">
+  <div style="font-size:11px;color:var(--text-muted);font-weight:700;letter-spacing:.1em;flex:0 0 auto;min-width:70px" id="lastShotLabel">Last: —</div>
+  <button class="lsBtn" data-action="goal" style="background:var(--accent-2);color:var(--bg);border:0;padding:13px 18px;font-size:13px;letter-spacing:.12em;font-weight:700;border-radius:9px;opacity:.4;min-width:72px" disabled>GOAL</button>
+  <button class="lsBtn" data-action="miss" style="background:var(--text-muted);color:var(--bg);border:0;padding:13px 18px;font-size:13px;letter-spacing:.12em;font-weight:700;border-radius:9px;opacity:.4;min-width:72px" disabled>MISS</button>
+  <button class="lsBtn" data-action="block" style="background:#8aa0b8;color:var(--bg);border:0;padding:13px 16px;font-size:13px;letter-spacing:.12em;font-weight:700;border-radius:9px;opacity:.4;min-width:66px" disabled>BLK</button>
+  <span style="width:1px;height:28px;background:rgba(255,255,255,.15);margin:0 4px"></span>
+  <button class="lsBtn" data-action="rebound" style="background:var(--panel);color:var(--accent);border:1px solid var(--accent);padding:13px 16px;font-size:13px;letter-spacing:.12em;font-weight:700;border-radius:9px;min-width:66px">REB</button>
+  <button class="lsBtn" data-action="wraparound" style="background:var(--panel);color:var(--accent);border:1px solid var(--accent);padding:13px 16px;font-size:13px;letter-spacing:.12em;font-weight:700;border-radius:9px;opacity:.4;min-width:74px" disabled>WRAP</button>
+  <button class="lsBtn" data-action="tip" style="background:var(--panel);color:var(--accent);border:1px solid var(--accent);padding:13px 16px;font-size:13px;letter-spacing:.12em;font-weight:700;border-radius:9px;opacity:.4;min-width:66px" disabled>TIP</button>
 </div>
 
 <div class="surface rink-wrap">
