@@ -1,4 +1,4 @@
-\# Felix Tracker / 44 Shots — Claude Code Context
+\# 44 Shots — Claude Code Context
 
 
 
@@ -116,7 +116,7 @@ Forward-compat to V4.0 native iOS:
 
 \- Google SSO (configured in Supabase, real client ID verified 2026-05-06)
 
-\- Magic-link email (Email provider enabled in Supabase)
+\- Email OTP — 6-digit code via Supabase signInWithOtp + verifyOtp. Magic link flow dropped (PWA breaks: link opens in browser, session never propagates). OTP keeps verification in PWA context. Supabase Magic Link email template must be edited in dashboard to render \{\{ .Token \}\} only.
 
 \- Anonymous sign-in enabled
 

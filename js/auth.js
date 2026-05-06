@@ -1,7 +1,10 @@
-// js/auth.js — Felix Tracker auth wiring (Supabase)
+// js/auth.js — 44 Shots auth wiring (Supabase)
 // V3.0 spec: roles DERIVED from auth source. Two roles only: user, coach.
 //   anon / no roster match → user
 //   roster email match     → coach (TeamSnap, stubbed via ADMIN_EMAILS until sprint H+6)
+// Auth flow: anonymous sign-in OR email OTP (6-digit). Magic link dropped because
+// PWA-launched users can't complete it — link opens in browser, session never
+// propagates. OTP keeps verification in PWA context.
 // Mirrors session into FelixDB.auth_session for offline-first + V4.0 SwiftData parity.
 (function () {
   const SUPABASE_URL = 'https://qshgschhudiryjnslzof.supabase.co';
@@ -104,12 +107,24 @@
         options: { redirectTo: window.location.origin }
       });
     },
-    async signInWithMagicLink(email) {
+    async sendLoginCode(email) {
+      // Sends 6-digit OTP via email. Email template must render {{ .Token }} only.
+      // PWA-safe: no link redirect, code is typed back into the same app context.
       await init();
       if (!email) throw new Error('email required');
       return client.auth.signInWithOtp({
         email: email,
-        options: { emailRedirectTo: window.location.origin }
+        options: { shouldCreateUser: true }
+      });
+    },
+    async verifyLoginCode(email, code) {
+      // Establishes session in current context — no sandbox jump.
+      await init();
+      if (!email || !code) throw new Error('email and code required');
+      return client.auth.verifyOtp({
+        email: email,
+        token: code,
+        type: 'email'
       });
     },
     async signInAnonymously() {

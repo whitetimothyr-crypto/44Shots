@@ -1,4 +1,4 @@
-// js/media.js — Felix Tracker camera/mic capture (V3.0)
+// js/media.js — 44 Shots camera/mic capture (V3.0)
 // Photo (canvas snapshot) + Video (MediaRecorder, 15s max)
 // Capture flow is UI-driven; this module is just the engine.
 (function () {

@@ -1,4 +1,4 @@
-// js/db.js — Felix Tracker hybrid storage (IndexedDB layer)
+// js/db.js — 44 Shots hybrid storage (IndexedDB layer)
 // V3.0 offline-first. SwiftData-forward shapes. Unix ms timestamps.
 (function () {
   const DB_NAME = 'felix_db';
