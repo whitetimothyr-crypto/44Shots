@@ -116,7 +116,7 @@ Forward-compat to V4.0 native iOS:
 
 \- Google SSO (configured in Supabase, real client ID verified 2026-05-06)
 
-\- Email OTP — 6-digit code via Supabase signInWithOtp + verifyOtp. Magic link flow dropped (PWA breaks: link opens in browser, session never propagates). OTP keeps verification in PWA context. Supabase Magic Link email template must be edited in dashboard to render \{\{ .Token \}\} only.
+\- Magic-link email (Email provider enabled in Supabase)
 
 \- Anonymous sign-in enabled
 
