@@ -373,11 +373,12 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 </div>
 <div id="gameStateHint" style="font-family:var(--sans);font-size:10px;color:var(--text-muted);letter-spacing:.06em;padding:0 4px;min-height:14px"></div>
 
-<!-- Utility row: Settings | Help | Rotate View (above Last Shot bar) -->
-<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 4px">
+<!-- Utility row: Settings | Help | Rotate View | Account (above Last Shot bar) -->
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;padding:0 4px">
   <button id="settingsBtn" class="btn ghost" style="padding:8px 10px;font-size:10px;letter-spacing:.12em" aria-label="Settings">⚙ Settings</button>
   <button id="helpBtnUtil" class="btn ghost" style="padding:8px 10px;font-size:10px;letter-spacing:.12em" aria-label="Help">? Help</button>
   <button id="rotateRinkBtn" class="btn ghost" style="padding:8px 10px;font-size:10px;letter-spacing:.12em">↻ Rotate View</button>
+  <button id="topAccountBtn" class="btn ghost" style="padding:8px 10px;font-size:10px;letter-spacing:.12em" aria-label="Account">SIGN IN</button>
 </div>
 
 <!-- Last Shot bar (directly above rink, sticky) -->
@@ -2859,7 +2860,8 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   });
 
   // New Game button (works from both Report panel and Rink top bar)
-  function startNewGame(){
+  async function startNewGame(){
+    if(!await ensureCoach()) return;
     if(!confirm("Start a new game? This clears all current game data.\nMake sure you've exported the JSON or XLSX if you want to keep it.")) return;
     state.events = [];
     state.netEvents = [];
@@ -3584,7 +3586,8 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 
   let lastReportText = "";
 
-  document.getElementById("genReportBtn").addEventListener("click", ()=>{
+  document.getElementById("genReportBtn").addEventListener("click", async ()=>{
+    if(!await ensureCoach()) return;
     const btn = document.getElementById("genReportBtn");
     const out = document.getElementById("reportOut");
     const b = buildBrief();
@@ -4731,8 +4734,46 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
     }
   });
 
-  if (typeof FelixAuth !== "undefined") FelixAuth.onAuthChange(() => refreshAccountUI());
-  setTimeout(refreshAccountUI, 150);
+  // ============ Coach gates + sign-in affordance (V3.0) ============
+  const COACH_GATED_IDS = ['endGameBtn', 'newGameBtn', 'newGameBtnTop', 'reportNewGameBtn', 'genReportBtn'];
+  const topAccountBtn = document.getElementById("topAccountBtn");
+
+  async function ensureCoach() {
+    let role = 'user';
+    try { if (typeof FelixAuth !== 'undefined') role = await FelixAuth.getRole(); } catch (e) {}
+    if (role !== 'coach') { toast('Coach access required'); return false; }
+    return true;
+  }
+
+  async function applyRoleGates() {
+    let role = 'user';
+    try { if (typeof FelixAuth !== 'undefined') role = await FelixAuth.getRole(); } catch (e) {}
+    const isCoach = role === 'coach';
+    COACH_GATED_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = isCoach ? '' : 'none';
+    });
+  }
+
+  async function refreshAuthAffordance() {
+    if (!topAccountBtn) return;
+    if (typeof FelixAuth === 'undefined') { topAccountBtn.textContent = 'SIGN IN'; return; }
+    try {
+      const user = await FelixAuth.getUser();
+      const role = await FelixAuth.getRole();
+      if (user) {
+        topAccountBtn.textContent = user.is_anonymous ? 'GUEST' : ((ROLE_LABEL[role] || role).toUpperCase());
+      } else {
+        topAccountBtn.textContent = 'SIGN IN';
+      }
+    } catch (e) { topAccountBtn.textContent = 'SIGN IN'; }
+  }
+
+  if (topAccountBtn) topAccountBtn.addEventListener('click', openAccount);
+
+  function refreshAuthUI(){ refreshAccountUI(); applyRoleGates(); refreshAuthAffordance(); }
+  if (typeof FelixAuth !== "undefined") FelixAuth.onAuthChange(refreshAuthUI);
+  setTimeout(refreshAuthUI, 150);
 
   // ============ PP/PK persistent highlight ============
   // Highlight is applied directly inside setGameState(). On load, ensure
@@ -4798,7 +4839,8 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
 
   // ============ End Game flow ============
   const endGameBtn = document.getElementById("endGameBtn");
-  function endGame(){
+  async function endGame(){
+    if(!await ensureCoach()) return;
     const hasData = (state.events && state.events.length) || (state.netEvents && state.netEvents.length);
     if(!hasData){
       if(!confirm("No shots logged this game. End anyway?")) return;
