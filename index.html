@@ -723,8 +723,8 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 <div style="margin-bottom:14px">
   <div style="font-size:9px;letter-spacing:.16em;color:var(--text-muted);margin-bottom:4px">STARTING GOALIE</div>
   <div style="display:flex;gap:8px;margin-bottom:6px">
-    <input id="lgGoalieName" placeholder="Goalie name" style="flex:2;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:#fff;font-size:14px;box-sizing:border-box"/>
-    <input id="lgGoalieNum" placeholder="#" inputmode="numeric" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:#fff;font-size:14px;text-align:center;box-sizing:border-box"/>
+    <input id="lgGoalieName" placeholder="Goalie name" style="flex:2;min-width:0;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:#fff;font-size:14px;box-sizing:border-box"/>
+    <input id="lgGoalieNum" placeholder="#" inputmode="numeric" style="flex:0 0 56px;min-width:0;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:#fff;font-size:14px;text-align:center;box-sizing:border-box"/>
   </div>
   <div class="seg" id="lgHandSeg" style="display:grid;grid-template-columns:1fr 1fr;gap:0">
     <button class="on" data-hand="left" style="padding:8px;border:1px solid rgba(255,255,255,.12);border-right:0;background:var(--accent);color:var(--bg);font-weight:700;letter-spacing:.08em;font-size:10px;border-radius:8px 0 0 8px;cursor:pointer">REGULAR (catches left)</button>
@@ -737,9 +737,13 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 
 <div style="margin-bottom:14px">
   <div style="font-size:9px;letter-spacing:.16em;color:var(--text-muted);margin-bottom:4px">OPPOSING GOALIE <span style="font-weight:400;letter-spacing:.04em;font-size:9px;text-transform:none">(optional)</span></div>
-  <div style="display:flex;gap:8px">
-    <input id="lgOppGoalieName" placeholder="Opp. goalie name" style="flex:2;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:#fff;font-size:14px;box-sizing:border-box"/>
-    <input id="lgOppGoalieNum" placeholder="#" inputmode="numeric" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:#fff;font-size:14px;text-align:center;box-sizing:border-box"/>
+  <div style="display:flex;gap:8px;margin-bottom:6px">
+    <input id="lgOppGoalieName" placeholder="Opp. goalie name" style="flex:2;min-width:0;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:#fff;font-size:14px;box-sizing:border-box"/>
+    <input id="lgOppGoalieNum" placeholder="#" inputmode="numeric" style="flex:0 0 56px;min-width:0;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:#fff;font-size:14px;text-align:center;box-sizing:border-box"/>
+  </div>
+  <div class="seg" id="lgOppHandSeg" style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+    <button class="on" data-hand="left" style="padding:8px;border:1px solid rgba(255,255,255,.12);border-right:0;background:var(--accent);color:var(--bg);font-weight:700;letter-spacing:.08em;font-size:10px;border-radius:8px 0 0 8px;cursor:pointer">REGULAR (catches left)</button>
+    <button data-hand="right" style="padding:8px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:var(--text);font-weight:700;letter-spacing:.08em;font-size:10px;border-radius:0 8px 8px 0;cursor:pointer">FULL RIGHT</button>
   </div>
 </div>
 
@@ -2898,8 +2902,10 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   }
   let lgWeAre = state.weAre || "home";
   let lgHand = state.gameInfo.goalieHandedness || "left";
+  let lgOppHand = (state.gameInfo.oppGoalie && state.gameInfo.oppGoalie.hand) || "left";
   bindModalSeg("lgWeAreSeg", "we", v=>{ lgWeAre = v; });
   bindModalSeg("lgHandSeg", "hand", v=>{ lgHand = v; });
+  bindModalSeg("lgOppHandSeg", "hand", v=>{ lgOppHand = v; });
 
   document.getElementById("loadGameStartBtn").addEventListener("click", ()=>{
     const ourTeam = document.getElementById("lgOurTeam").value.trim() || "Phantoms";
@@ -2913,7 +2919,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     state.gameInfo = {
       ourTeam, opponent, date,
       goalieHandedness: lgHand,
-      oppGoalie: oppGoalieName ? { name: oppGoalieName, num: oppGoalieNum || "?" } : null,
+      oppGoalie: oppGoalieName ? { name: oppGoalieName, num: oppGoalieNum || "?", hand: lgOppHand } : null,
       configured: true
     };
     state.weAre = lgWeAre;
