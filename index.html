@@ -120,7 +120,7 @@ font-family:var(--sans);font-size:12px;letter-spacing:.18em;text-transform:upper
 50%     { box-shadow: 0 0 0 8px rgba(255,70,70,0); background: #ff6666; color:#fff; border-color:#ff6666 }
 }
 .armed .rink-wrap.surface { animation: armedRink 1.2s ease-in-out infinite }
-.armed .lsBtn[data-action=“rebound”] { animation: armedReb 1s ease-in-out infinite !important }
+.armed .lsBtn[data-action="rebound"] { animation: armedReb 1s ease-in-out infinite !important }
 
 .marker{pointer-events:none}
 .pulse{animation:pulse .6s ease-out}
@@ -354,7 +354,6 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       </div>
     </div>
 
-```
 <!-- Game state row (5v5 / PP / PK) + FACEOFF action — period selector lives in global row above -->
 <div class="controls" style="grid-template-columns:3fr 1fr">
   <div class="seg" id="gameStateSeg">
@@ -479,7 +478,6 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   <button class="btn ghost" id="undoBtn">Undo</button>
   <button class="btn danger" id="clearBtn" style="display:none">Reset Game</button>
 </div>
-```
 
   </section>
 
@@ -491,7 +489,6 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       <span id="goalCount">0 goals logged</span>
     </div>
 
-```
 <div class="surface net-wrap" style="background:var(--bg-2)">
   <svg class="net" viewBox="0 0 600 400" preserveAspectRatio="xMidYMid meet" id="netSvg">
     <!-- Goalie silhouette behind net (Felix, tone-on-tone) -->
@@ -522,7 +519,6 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 <p style="font-family:var(--sans);font-size:11px;color:var(--text-muted);margin:2px 4px;letter-spacing:.06em">
   Tip: Log a goal on the rink first, then tap here to mark where it went in. Net taps stand alone too.
 </p>
-```
 
   </section>
 
@@ -535,7 +531,6 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       <button class="statsTab" data-stab="opp" id="statsTabOpp" style="padding:8px;background:transparent;color:var(--text);border:0;border-radius:6px;font-weight:700;font-size:11px;letter-spacing:.12em;font-family:var(--sans);cursor:pointer">OPPONENT</button>
     </div>
 
-```
 <!-- GOALIE sub-panel (hidden — content moved to OUR TEAM tab; IDs kept as compat anchors) -->
 <div class="statsSubPanel" id="stats-goalie" style="display:none">
   <div class="stats-grid">
@@ -652,7 +647,6 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   <button class="btn ghost" id="exportXlsxBtn">Export XLSX</button>
   <button class="btn ghost" id="newGameBtn">New Game</button>
 </div>
-```
 
   </section>
 
@@ -668,7 +662,6 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       <textarea id="notesInput" placeholder="Notes from the game (optional): linemates, ice time, key moments..." style="margin-top:8px;width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:var(--bg);color:#fff;font-family:var(--sans);font-size:13px;min-height:60px;resize:vertical"></textarea>
     </div>
 
-```
 <div class="stat-card">
   <div class="lab">Game Photos</div>
   <input type="file" id="photoInput" accept="image/*" multiple style="display:none"/>
@@ -709,7 +702,6 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 <p style="font-family:var(--sans);font-size:10px;color:var(--text-muted);margin:6px 4px;letter-spacing:.06em;line-height:1.5">
   Report uses Claude to analyze shot patterns, scoring zones, and period trends. Needs internet. Your data stays local.
 </p>
-```
 
   </section>
 </main>
@@ -724,7 +716,6 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     </div>
     <div style="font-size:11px;letter-spacing:.18em;color:var(--text-muted);margin-bottom:14px">SET UP THIS GAME</div>
 
-```
 <label style="display:block;font-size:10px;letter-spacing:.16em;color:var(--text-muted);margin-bottom:4px">OUR TEAM NAME</label>
 <input id="lgOurTeam" placeholder="Phantoms" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:#fff;font-size:14px;margin-bottom:8px;box-sizing:border-box"/>
 
@@ -761,7 +752,6 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 </div>
 
 <button id="loadGameStartBtn" style="width:100%;padding:14px;background:var(--accent);color:var(--bg);border:0;border-radius:8px;font-weight:700;letter-spacing:.16em;font-size:13px;margin-top:8px;cursor:pointer">START GAME →</button>
-```
 
   </div>
 </div>
@@ -775,7 +765,6 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       <button id="gcCloseBtn" style="background:transparent;border:0;color:var(--text-muted);font-size:22px;cursor:pointer;padding:0 4px">×</button>
     </div>
 
-```
 <div style="background:var(--panel);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:11px;color:var(--text)">
   <div style="font-size:9px;letter-spacing:.18em;color:var(--text-muted);margin-bottom:4px">OUTGOING</div>
   <div id="gcOutgoing" style="font-weight:700;color:var(--text-muted)">—</div>
@@ -798,7 +787,6 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   <button id="gcCancelBtn" style="flex:1;padding:12px;background:var(--panel);color:var(--text);border:1px solid rgba(255,255,255,.12);border-radius:8px;font-weight:700;letter-spacing:.12em;font-size:12px;cursor:pointer">CANCEL</button>
   <button id="gcConfirmBtn" style="flex:2;padding:12px;background:var(--accent);color:var(--bg);border:0;border-radius:8px;font-weight:700;letter-spacing:.12em;font-size:12px;cursor:pointer">CONFIRM CHANGE</button>
 </div>
-```
 
   </div>
 </div>
@@ -982,6 +970,10 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
         const parsed = JSON.parse(backup);
         if((parsed.events&&parsed.events.length) || (parsed.netEvents&&parsed.netEvents.length)){
           setTimeout(()=>{
+            // Re-check that state is still empty — the user may have started tapping
+            // during the 500ms delay; accepting recovery would clobber their work.
+            const stillEmpty = (!state.events||state.events.length===0) && (!state.netEvents||state.netEvents.length===0);
+            if(!stillEmpty) return;
             if(confirm("Recover backup from "+new Date(stamp).toLocaleString()+"?\n"+(parsed.events?.length||0)+" events, "+(parsed.netEvents?.length||0)+" goal zones")){
               state = parsed;
               save(); redrawAll(); syncSegs();
@@ -1006,7 +998,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
           np.innerHTML = '<span style="color:var(--accent)">OUR GOAL</span> · tap where it went in';
         } else if(state.pendingNetGoalTeam === "against"){
           const gName = (state.activeGoalie && state.activeGoalie.name) || "GOALIE";
-          np.innerHTML = '<span style="color:var(--accent-2)">GOAL AGAINST '+gName.toUpperCase()+'</span> · tap where they beat him';
+          np.innerHTML = '<span style="color:var(--accent-2)">GOAL AGAINST '+gName.toUpperCase()+'</span> · tap where they scored';
         } else {
           np.textContent = "Tap where the puck went in";
         }
@@ -1757,8 +1749,8 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     exitFaceoffMode();
     const winLabel = winner === "neutral" ? "Neutral" :
       (winner === "home"
-        ? ((state.gameInfo && state.gameInfo.weAre === "home") ? ((state.gameInfo && state.gameInfo.ourTeam) || "Home") : ((state.gameInfo && state.gameInfo.opponent) || "Home"))
-        : ((state.gameInfo && state.gameInfo.weAre === "away") ? ((state.gameInfo && state.gameInfo.ourTeam) || "Away") : ((state.gameInfo && state.gameInfo.opponent) || "Away")));
+        ? ((state.weAre === "home") ? ((state.gameInfo && state.gameInfo.ourTeam) || "Home") : ((state.gameInfo && state.gameInfo.opponent) || "Home"))
+        : ((state.weAre === "away") ? ((state.gameInfo && state.gameInfo.ourTeam) || "Away") : ((state.gameInfo && state.gameInfo.opponent) || "Away")));
     toast("Faceoff: " + winLabel + " won");
   }
 
@@ -2235,7 +2227,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     const z = zoneOf(p.x,p.y); if(!z) return;
     // Tag this net event with the team the most recent goal belonged to
     const team = state.pendingNetGoalTeam || "against";
-    const ev = { x:p.x, y:p.y, zone:z, period:state.period, homeAway:state.homeAway, weAre:state.weAre, forOrAgainst:team, t:now };
+    const ev = { x:p.x, y:p.y, zone:z, period:state.period, weAre:state.weAre, forOrAgainst:team, t:now };
     state.netEvents.push(ev);
     drawNetMarker(ev,true); save();
     state.pendingNetGoalTeam = null; // clear after use
@@ -2705,7 +2697,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 
       // === Sheet 3: Our Offense ===
       const ourOffRows = [["Period","SOG","Goals","Missed","Slot","LW","RW","Rebounds","Tips","Wraps","PP SOG","PP Goals"]];
-      [1,2,3].forEach(p=>{
+      [1,2,3,4].forEach(p=>{
         const pE = usEvents.filter(x=>x.period===p);
         const pG = pE.filter(x=>x.result==="goal").length;
         const pSOG = pE.filter(x=>x.result==="shot").length + pG;
@@ -2730,7 +2722,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 
       // === Sheet 4: Opponent Offense (= shots faced by us) ===
       const oppOffRows = [["Period","SOG","Goals","Missed","Slot","LW","RW","Rebounds","Tips","Wraps","PK Shots","PK Goals (PPG vs us)"]];
-      [1,2,3].forEach(p=>{
+      [1,2,3,4].forEach(p=>{
         const pE = themEvents.filter(x=>x.period===p);
         const pG = pE.filter(x=>x.result==="goal").length;
         const pSOG = pE.filter(x=>x.result==="shot").length + pG;
@@ -3309,7 +3301,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       const left = events.filter(x=>x.yLabel==="left wing" && x.result!=="miss").length;
       const right = events.filter(x=>x.yLabel==="right wing" && x.result!=="miss").length;
       const avgDist = totalShots>0 ? Math.round(events.filter(x=>x.result!=="miss").reduce((a,b)=>a+b.distFt,0)/totalShots) : 0;
-      const periods = [1,2,3].map(p=>({
+      const periods = [1,2,3,4].map(p=>({
         period:p,
         shots: events.filter(x=>x.period===p && x.result==="shot").length,
         goals: events.filter(x=>x.period===p && x.result==="goal").length,
@@ -3486,21 +3478,38 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   }
 
   function fmtBriefText(b){
+    function teamSection(label, t){
+      if(!t) return "";
+      const sot = t.totals.shotsOnNet || 0;
+      const goals = t.totals.goals || 0;
+      const pct = sot > 0 ? Math.round((goals / sot) * 1000) / 10 : 0;
+      let s = label+":\n";
+      s += "  "+sot+" shots on net, "+goals+" goals, "+(t.totals.misses||0)+" missed, "+pct+"% shooting\n";
+      s += "  Avg shot distance: ~"+(t.zones.avgDistFt||0)+" ft\n";
+      s += "  Shot locations: slot "+t.zones.slot+", left wing "+t.zones.leftWing+", right wing "+t.zones.rightWing+"\n";
+      s += "  By period: ";
+      s += t.byPeriod.map(p=>"P"+p.period+" ("+p.shots+"S/"+p.goals+"G/"+p.miss+"M)").join("  ");
+      s += "\n";
+      if(t.goalDetails && t.goalDetails.length){
+        s += "  Goals:\n";
+        t.goalDetails.forEach((g,i)=>{ s += "    "+(i+1)+". P"+g.period+" from "+g.zone+", ~"+g.distFt+"ft ("+(g.gameState||"5v5")+")\n"; });
+      }
+      return s;
+    }
     let s = "GAME LOG\n";
     s += "Opponent: "+b.opponent+"\nScore: "+b.score+"\n";
+    s += "We are: "+(b.weAre==="home"?"HOME":"AWAY")+"\n";
     if(b.notes) s += "Notes: "+b.notes+"\n";
-    s += "\nTotals: "+b.totals.shotsOnNet+" shots on net, "+b.totals.goals+" goals, "+b.totals.misses+" missed shots, "+b.totals.shootingPct+"% shooting\n";
-    s += "Avg shot distance: ~"+b.shotLocations.avgDistFt+" ft\n";
-    s += "Shot locations: slot "+b.shotLocations.slot+", left wing "+b.shotLocations.leftWing+", right wing "+b.shotLocations.rightWing+"\n";
-    s += "By period: ";
-    s += b.byPeriod.map(p=>"P"+p.period+" ("+p.shots+"S/"+p.goals+"G/"+p.miss+"M)").join("  ");
-    s += "\n";
-    if(Object.keys(b.goalNetZones).length){
-      s += "Goal net zones: "+Object.entries(b.goalNetZones).map(([k,v])=>k+" "+v).join(", ")+"\n";
+    s += "\n"+teamSection("OUR TEAM", b.ourTeam);
+    s += "\n"+teamSection("OPPONENT", b.oppTeam);
+    if(b.goalNetZonesFor && Object.keys(b.goalNetZonesFor).length){
+      s += "\nWhere we scored: "+Object.entries(b.goalNetZonesFor).map(([k,v])=>k+" "+v).join(", ")+"\n";
     }
-    if(b.goalDetails.length){
-      s += "\nGoals:\n";
-      b.goalDetails.forEach((g,i)=>{ s += "  "+(i+1)+". P"+g.period+" from "+g.zone+", ~"+g.distFt+"ft\n"; });
+    if(b.goalNetZones && Object.keys(b.goalNetZones).length){
+      s += "Where they scored: "+Object.entries(b.goalNetZones).map(([k,v])=>k+" "+v).join(", ")+"\n";
+    }
+    if(b.faceoffs){
+      s += "\nFaceoffs: us "+b.faceoffs.usWon+", them "+b.faceoffs.themWon+", neutral "+b.faceoffs.neutral+"\n";
     }
     return s;
   }
@@ -3600,10 +3609,15 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     }
 
     r += "BY PERIOD\n---------\n";
-    [1,2,3].forEach(p=>{
+    const reportPeriods = [1,2,3].concat(
+      ((our.byPeriod.find(x=>x.period===4)?.shots||0)+(our.byPeriod.find(x=>x.period===4)?.goals||0)+
+       (opp.byPeriod.find(x=>x.period===4)?.shots||0)+(opp.byPeriod.find(x=>x.period===4)?.goals||0)) > 0 ? [4] : []
+    );
+    reportPeriods.forEach(p=>{
       const oP = our.byPeriod.find(x=>x.period===p);
       const aP = opp.byPeriod.find(x=>x.period===p);
-      r += "P"+p+": Us "+(oP.shots+oP.goals)+"S/"+oP.goals+"G  ·  Them "+(aP.shots+aP.goals)+"S/"+aP.goals+"G\n";
+      const label = p===4 ? "OT" : "P"+p;
+      r += label+": Us "+(oP.shots+oP.goals)+"S/"+oP.goals+"G  ·  Them "+(aP.shots+aP.goals)+"S/"+aP.goals+"G\n";
     });
     r += "\n";
 
@@ -3967,10 +3981,10 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       heroSub = "Pattern detected — drill this zone";
     } else if(heroLowGA > 0 && heroHighGA === 0){
       heroInsight = "ALL GOALS WENT LOW";
-      heroSub = heroLowGA+" of "+oppGoals+" beat him low";
+      heroSub = heroLowGA+" of "+oppGoals+" scored low";
     } else if(heroHighGA > 0 && heroLowGA === 0){
       heroInsight = "ALL GOALS WENT HIGH";
-      heroSub = heroHighGA+" of "+oppGoals+" beat him high";
+      heroSub = heroHighGA+" of "+oppGoals+" scored high";
     } else if(opp.styles.breakaways >= 2){
       // Multiple breakaways = significant context for depressed save %
       const bSv = opp.styles.breakaways - opp.styles.breakawayGoals;
@@ -3987,24 +4001,29 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       heroSub = goalieSaves+" saves on "+oppShots+" shots";
     }
 
-    // Period bar chart helper
-    const maxPeriodShots = Math.max(1, ...[1,2,3].map(p=>{
+    // Period bar chart helper — include OT (period 4) only if it had any activity
+    const barPeriods = [1,2,3].concat(
+      ((our.byPeriod.find(x=>x.period===4)?.shots||0)+(our.byPeriod.find(x=>x.period===4)?.goals||0)+
+       (opp.byPeriod.find(x=>x.period===4)?.shots||0)+(opp.byPeriod.find(x=>x.period===4)?.goals||0)) > 0 ? [4] : []
+    );
+    const maxPeriodShots = Math.max(1, ...barPeriods.map(p=>{
       const oP = our.byPeriod.find(x=>x.period===p);
       const aP = opp.byPeriod.find(x=>x.period===p);
       return Math.max(oP.shots+oP.goals, aP.shots+aP.goals);
     }));
 
-    const periodBars = [1,2,3].map(p=>{
+    const periodBars = barPeriods.map(p=>{
       const oP = our.byPeriod.find(x=>x.period===p);
       const aP = opp.byPeriod.find(x=>x.period===p);
       const usTotal = oP.shots+oP.goals;
       const themTotal = aP.shots+aP.goals;
       const usW = (usTotal/maxPeriodShots)*100;
       const themW = (themTotal/maxPeriodShots)*100;
+      const periodLabel = p===4 ? "OT" : "P"+p;
       return `
         <div style="margin-bottom:10px">
           <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);letter-spacing:.1em;margin-bottom:3px">
-            <span>P${p}</span>
+            <span>${periodLabel}</span>
             <span>${usTotal}-${themTotal}</span>
           </div>
           <div style="display:flex;gap:2px;height:18px;background:var(--bg);border-radius:4px;overflow:hidden">
@@ -4141,7 +4160,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     </div>
 
     ${oppGoals>0?`<div style="background:var(--panel);border-radius:8px;padding:14px;margin-bottom:10px">
-      <div style="font-size:10px;letter-spacing:.18em;color:var(--accent);margin-bottom:8px;font-weight:700">WHERE THEY BEAT HIM</div>
+      <div style="font-size:10px;letter-spacing:.18em;color:var(--accent);margin-bottom:8px;font-weight:700">WHERE THEY SCORED</div>
       ${heatGrid}
     </div>`:""}
 
@@ -4331,8 +4350,8 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   const _socialBtn = document.getElementById("socialBtn");
   if(_socialBtn) _socialBtn.addEventListener("click", async ()=>{
     const b = buildBrief();
-    const shots = b.totals.shotsOnNet;
-    const goals = b.totals.goals;
+    const shots = b.oppTeam.totals.shotsOnNet;
+    const goals = b.oppTeam.totals.goals;
     const saves = shots - goals;
     const sv = shots>0 ? Math.round(saves*100/shots) : 0;
     const oppText = b.opponent && b.opponent!=="Unknown" ? " vs "+b.opponent : "";
@@ -4580,6 +4599,11 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
     };
     archive.push(snapshot);
     saveArchive(archive);
+    // Clear backup so the next fresh-game launch doesn't offer to restore the just-archived game
+    try{
+      localStorage.removeItem("felix-backup-latest");
+      localStorage.removeItem("felix-backup-stamp");
+    }catch(e){}
     return snapshot;
   }
 
