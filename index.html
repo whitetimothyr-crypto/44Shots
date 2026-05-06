@@ -917,6 +917,9 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
+<!-- V3.0 hybrid storage: IndexedDB layer (felix_db) -->
+<script src="js/db.js"></script>
+
 <script>
 (function(){
   const STORAGE_KEY = "felix-shot-tracker-v1";
@@ -4606,6 +4609,17 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
     };
     archive.push(snapshot);
     saveArchive(archive);
+    // V3.0 dual-write: IndexedDB game_archive (forward-compat to SwiftData ArchivedGame)
+    if (typeof FelixDB !== "undefined" && FelixDB.archiveGame) {
+      FelixDB.archiveGame({
+        ...snapshot,
+        team_id: (state.gameInfo && state.gameInfo.ourTeam) || null,
+        ended_at: snapshot.archivedAt
+      }).catch((err) => {
+        console.warn("FelixDB.archiveGame failed:", err);
+        if (typeof toast === "function") toast("IndexedDB archive failed (localStorage OK)");
+      });
+    }
     // Clear backup so the next fresh-game launch doesn't offer to restore the just-archived game
     try{
       localStorage.removeItem("felix-backup-latest");
