@@ -1,14 +1,15 @@
 // js/auth.js — Felix Tracker auth wiring (Supabase)
-// V3.0 spec: roles DERIVED from auth source, no picker UI.
-//   anon            → parent_scorer
-//   Tim (admin)     → team_admin
-//   roster email    → coach (TeamSnap, stubbed until sprint H+6→H+7)
-//   anyone else     → parent_scorer
+// V3.0 spec: roles DERIVED from auth source. Two roles only: user, coach.
+//   anon / no roster match → user
+//   roster email match     → coach (TeamSnap, stubbed via ADMIN_EMAILS until sprint H+6)
 // Mirrors session into FelixDB.auth_session for offline-first + V4.0 SwiftData parity.
 (function () {
   const SUPABASE_URL = 'https://qshgschhudiryjnslzof.supabase.co';
   const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_hdrc9mYaGocDhJVesn0FRw_wELl6Tnv';
-  const ADMIN_EMAILS = ['white.timothy.r@gmail.com']; // V3.0: Tim only
+  // TODO(H+6): remove ADMIN_EMAILS once getCoachRosterEmails() pulls real
+  // TeamSnap roster. Tim is a coach on the real roster; this is a stopgap so
+  // his account gets the coach role before TeamSnap wires.
+  const ADMIN_EMAILS = ['white.timothy.r@gmail.com'];
 
   let client = null;
   let initPromise = null;
@@ -22,13 +23,13 @@
   async function getCoachRosterEmails() { return []; }
 
   async function deriveRole(user) {
-    if (!user) return 'parent_scorer';
+    if (!user) return 'user';
     const email = (user.email || '').toLowerCase();
-    if (!email || user.is_anonymous) return 'parent_scorer';
-    if (ADMIN_EMAILS.includes(email)) return 'team_admin';
+    if (!email || user.is_anonymous) return 'user';
+    if (ADMIN_EMAILS.includes(email)) return 'coach';
     const coaches = await getCoachRosterEmails();
     if (coaches.map((e) => e.toLowerCase()).includes(email)) return 'coach';
-    return 'parent_scorer';
+    return 'user';
   }
 
   async function mirrorToFelixDB(session, role) {

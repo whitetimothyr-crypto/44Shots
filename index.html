@@ -4638,7 +4638,7 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
   const accountAnonBtn = document.getElementById("accountAnonBtn");
   const accountSignOutBtn = document.getElementById("accountSignOutBtn");
 
-  const ROLE_LABEL = { team_admin: "Team Admin", coach: "Coach", parent_scorer: "Parent / Scorer" };
+  const ROLE_LABEL = { coach: "Coach", user: "User" };
 
   async function refreshAccountUI(){
     if (typeof FelixAuth === "undefined") {
