@@ -2,7 +2,7 @@
 // V3.0 offline-first. SwiftData-forward shapes. Unix ms timestamps.
 (function () {
   const DB_NAME = 'felix_db';
-  const DB_VERSION = 1;
+  const DB_VERSION = 2;
 
   let dbPromise = null;
   function open() {
@@ -23,6 +23,12 @@
         }
         if (!db.objectStoreNames.contains('auth_session')) {
           db.createObjectStore('auth_session', { keyPath: 'key' });
+        }
+        if (!db.objectStoreNames.contains('media')) {
+          const s = db.createObjectStore('media', { keyPath: 'id' });
+          s.createIndex('game_id', 'game_id');
+          s.createIndex('captured_at', 'captured_at');
+          s.createIndex('period', 'period');
         }
       };
       req.onsuccess = () => resolve(req.result);
@@ -119,6 +125,53 @@
     },
     clearSession() {
       return txP('auth_session', 'readwrite', (s) => { s.delete('current'); return true; });
+    },
+
+    // media (photo/video blobs)
+    addMedia(media) {
+      const row = {
+        id: media.id || uuid(),
+        game_id: media.game_id || null,
+        event_id: media.event_id || null, // reserved for future event linking
+        type: media.type, // 'photo' | 'video'
+        mime: media.mime,
+        size_bytes: media.blob ? media.blob.size : 0,
+        period: media.period || null,
+        game_state: media.game_state || null,
+        captured_at: media.captured_at || Date.now(),
+        duration_ms: media.duration_ms || null,
+        blob: media.blob
+      };
+      return txP('media', 'readwrite', (s) => { s.add(row); return row.id; });
+    },
+    getMediaForGame(game_id) {
+      return txP('media', 'readonly', (s) => reqP(s.index('game_id').getAll(game_id)));
+    },
+    getAllMedia() {
+      return txP('media', 'readonly', (s) => reqP(s.getAll()));
+    },
+    deleteMedia(id) {
+      return txP('media', 'readwrite', (s) => { s.delete(id); return true; });
+    },
+    deleteOldestMedia(n) {
+      return txP('media', 'readwrite', (s) => new Promise((res, rej) => {
+        const cur = s.index('captured_at').openCursor();
+        let deleted = 0;
+        cur.onsuccess = (e) => {
+          const c = e.target.result;
+          if (c && deleted < n) { c.delete(); deleted++; c.continue(); } else res(deleted);
+        };
+        cur.onerror = () => rej(cur.error);
+      }));
+    },
+    getStorageEstimate() {
+      if (!navigator.storage || !navigator.storage.estimate) return Promise.resolve({ supported: false });
+      return navigator.storage.estimate().then((est) => ({
+        supported: true,
+        used: est.usage || 0,
+        quota: est.quota || 0,
+        percent: est.quota ? (est.usage / est.quota) : 0
+      }));
     }
   };
 })();

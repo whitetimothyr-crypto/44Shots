@@ -166,7 +166,7 @@ Forward-compat to V4.0 native iOS:
 
 \- Game state toggle (5v5/PP/PK/EN): manual + non-intrusive pulse reminder
 
-\- Photo/video: camera-active = user auto-excused from data collection
+\- Photo/video capture: persistent Photo + Video buttons above the game-state row. 15s max video. IndexedDB blob storage (felix\_db.media); Supabase Storage sync deferred. Quota warn at 80%. Excused mode is event-based — opening camera enters excused state; state persists through capture, close, idle; exits ONLY when user commits the next event (shot/goal/save/etc). The committing event = re-engaged (not marked excused).
 
 \- NEW GAME / END GAME buttons: COACH ONLY
 
@@ -213,8 +213,6 @@ DEFERRED THIS SPRINT (still V3.0):
 \- Faceoff/penalty data collection wiring (UI exists lines 358-466)
 
 \- Game state bar mesh aggregation
-
-\- Photo/video capture buttons
 
 \- Coach-only report generation gating
 

@@ -355,6 +355,14 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       </div>
     </div>
 
+<!-- V3.0 Media capture row (above game-state row, persistent visibility) -->
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 4px;margin-bottom:6px;align-items:center">
+  <button id="capPhotoBtn" class="btn" style="padding:10px 12px;font-size:11px;letter-spacing:.12em;font-weight:700;border-radius:8px;background:var(--panel);color:var(--text);border:1px solid rgba(255,255,255,.15)">📷 Photo</button>
+  <button id="capVideoBtn" class="btn" style="padding:10px 12px;font-size:11px;letter-spacing:.12em;font-weight:700;border-radius:8px;background:var(--panel);color:var(--text);border:1px solid rgba(255,255,255,.15)">📹 Video 15s</button>
+  <button id="mediaGalleryBtn" class="btn ghost" style="padding:10px 12px;font-size:10px;letter-spacing:.10em">🗂 Gallery <span id="mediaCountBadge" style="opacity:.7">(0)</span></button>
+</div>
+<div id="excusedBadge" style="display:none;padding:6px 10px;margin:0 4px 6px;background:var(--accent-2);color:var(--bg);font-family:var(--sans);font-size:10px;letter-spacing:.16em;font-weight:800;border-radius:6px;text-align:center">EXCUSED · TAP NEXT EVENT TO RE-ENGAGE</div>
+
 <!-- Game state row (5v5 / PP / PK) + FACEOFF action — period selector lives in global row above -->
 <div class="controls" style="grid-template-columns:3fr 1fr">
   <div class="seg" id="gameStateSeg">
@@ -905,6 +913,53 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   </div>
 </div>
 
+<!-- V3.0 Capture modal (camera live preview + capture/save flow) -->
+<div class="modal-backdrop" id="captureBackdrop">
+  <div class="modal-card" style="max-width:560px;padding:14px">
+    <h2 id="captureTitle">Capture</h2>
+    <div style="position:relative;background:#000;border-radius:10px;overflow:hidden;aspect-ratio:16/9;margin-bottom:10px">
+      <video id="captureVideo" playsinline muted autoplay style="width:100%;height:100%;object-fit:cover;display:block"></video>
+      <div id="captureRecBadge" style="display:none;position:absolute;top:8px;left:8px;background:#c8262b;color:#fff;font-family:var(--sans);font-size:10px;letter-spacing:.14em;font-weight:800;padding:4px 8px;border-radius:4px">● REC <span id="captureRecTime">0.0s</span></div>
+      <div id="captureMsg" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--sans);font-size:12px;letter-spacing:.14em;background:rgba(0,0,0,.65);text-align:center;padding:12px">Camera permission required.</div>
+    </div>
+    <div id="capturePreview" style="display:none;background:#000;border-radius:10px;overflow:hidden;aspect-ratio:16/9;margin-bottom:10px">
+      <img id="capturePreviewImg" style="display:none;width:100%;height:100%;object-fit:cover"/>
+      <video id="capturePreviewVid" controls playsinline style="display:none;width:100%;height:100%"></video>
+    </div>
+    <div class="row" style="gap:8px">
+      <button class="opt" id="captureSnapBtn" style="flex:1">CAPTURE</button>
+      <button class="opt" id="captureRetakeBtn" style="flex:1;display:none">RETAKE</button>
+      <button class="opt" id="captureSaveBtn" style="flex:1;display:none;background:var(--accent);color:var(--bg)">SAVE</button>
+    </div>
+    <div class="close-row">
+      <button id="captureCloseBtn" style="background:rgba(255,255,255,.08);color:var(--text)">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- V3.0 Media gallery modal (current game's photos + videos) -->
+<div class="modal-backdrop" id="galleryBackdrop">
+  <div class="modal-card" style="max-width:640px">
+    <h2>Game Media</h2>
+    <div id="galleryGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-bottom:12px"></div>
+    <div id="galleryEmpty" style="padding:24px;text-align:center;color:var(--text-muted);font-size:11px;letter-spacing:.06em">No media captured this game.</div>
+    <div class="close-row">
+      <button id="galleryCloseBtn">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- V3.0 Lightbox (full-screen view of single media item) -->
+<div class="modal-backdrop" id="lightboxBackdrop" style="z-index:3500">
+  <div class="modal-card" style="max-width:90vw;background:#000;padding:8px">
+    <div id="lightboxContent" style="text-align:center;max-height:80vh;overflow:hidden"></div>
+    <div class="row" style="gap:8px;margin-top:8px">
+      <button class="opt" id="lightboxDeleteBtn" style="flex:1;background:#c8262b;color:#fff">DELETE</button>
+      <button class="opt" id="lightboxCloseBtn" style="flex:1">CLOSE</button>
+    </div>
+  </div>
+</div>
+
 <!-- Edit popover (long-press) -->
 <div class="edit-popover" id="editPopover">
   <div class="ep-meta" id="epMeta">Shot</div>
@@ -978,6 +1033,9 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 <!-- V3.0 auth: Supabase JS SDK + FelixAuth wrapper -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/auth.js"></script>
+
+<!-- V3.0 media: camera/mic capture engine -->
+<script src="js/media.js"></script>
 
 <script>
 (function(){
@@ -4774,6 +4832,316 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
   function refreshAuthUI(){ refreshAccountUI(); applyRoleGates(); refreshAuthAffordance(); }
   if (typeof FelixAuth !== "undefined") FelixAuth.onAuthChange(refreshAuthUI);
   setTimeout(refreshAuthUI, 150);
+
+  // ============ Photo / Video capture (V3.0) ============
+  if (!state.gameId) state.gameId = (typeof FelixDB !== 'undefined' && FelixDB.uuid ? FelixDB.uuid() : ('g_' + Date.now()));
+  if (typeof state.excused !== 'boolean') state.excused = false;
+  if (typeof state.excused_at !== 'number') state.excused_at = null;
+
+  const capPhotoBtn = document.getElementById("capPhotoBtn");
+  const capVideoBtn = document.getElementById("capVideoBtn");
+  const mediaGalleryBtn = document.getElementById("mediaGalleryBtn");
+  const mediaCountBadge = document.getElementById("mediaCountBadge");
+  const excusedBadge = document.getElementById("excusedBadge");
+  const captureBackdrop = document.getElementById("captureBackdrop");
+  const captureTitle = document.getElementById("captureTitle");
+  const captureVideo = document.getElementById("captureVideo");
+  const captureMsg = document.getElementById("captureMsg");
+  const captureRecBadge = document.getElementById("captureRecBadge");
+  const captureRecTime = document.getElementById("captureRecTime");
+  const capturePreview = document.getElementById("capturePreview");
+  const capturePreviewImg = document.getElementById("capturePreviewImg");
+  const capturePreviewVid = document.getElementById("capturePreviewVid");
+  const captureSnapBtn = document.getElementById("captureSnapBtn");
+  const captureRetakeBtn = document.getElementById("captureRetakeBtn");
+  const captureSaveBtn = document.getElementById("captureSaveBtn");
+  const captureCloseBtn = document.getElementById("captureCloseBtn");
+  const galleryBackdrop = document.getElementById("galleryBackdrop");
+  const galleryGrid = document.getElementById("galleryGrid");
+  const galleryEmpty = document.getElementById("galleryEmpty");
+  const galleryCloseBtn = document.getElementById("galleryCloseBtn");
+  const lightboxBackdrop = document.getElementById("lightboxBackdrop");
+  const lightboxContent = document.getElementById("lightboxContent");
+  const lightboxDeleteBtn = document.getElementById("lightboxDeleteBtn");
+  const lightboxCloseBtn = document.getElementById("lightboxCloseBtn");
+
+  let _captureMode = null; // 'photo' | 'video'
+  let _capturedBlob = null;
+  let _capturedMime = null;
+  let _capturedDurationMs = null;
+  let _previewUrl = null;
+  let _activeLightboxId = null;
+  let _activeLightboxUrl = null;
+
+  function showExcusedBadge() { if (excusedBadge) excusedBadge.style.display = state.excused ? 'block' : 'none'; }
+  function setExcused(on) {
+    state.excused = !!on;
+    if (on) state.excused_at = Date.now();
+    showExcusedBadge();
+    save();
+  }
+
+  // Hook event-commit detection into save(): if events array grew while excused, exit excused.
+  let _lastEventCount = (state.events || []).length;
+  const _origSave = save;
+  save = function () {
+    const cur = (state.events || []).length;
+    if (cur > _lastEventCount && state.excused) {
+      // Per spec: the committing event = re-engaged. Don't tag it; just exit state.
+      state.excused = false;
+      showExcusedBadge();
+    }
+    _lastEventCount = cur;
+    return _origSave.apply(this, arguments);
+  };
+  showExcusedBadge();
+
+  async function refreshMediaCount() {
+    if (typeof FelixDB === 'undefined' || !mediaCountBadge) return;
+    try {
+      const list = await FelixDB.getMediaForGame(state.gameId);
+      mediaCountBadge.textContent = '(' + list.length + ')';
+    } catch (e) {}
+  }
+  refreshMediaCount();
+
+  async function checkQuotaAndWarn() {
+    if (typeof FelixDB === 'undefined' || !FelixDB.getStorageEstimate) return;
+    try {
+      const est = await FelixDB.getStorageEstimate();
+      if (est.supported && est.percent >= 0.8) {
+        toast('Storage almost full. Oldest videos will be deleted to make room.');
+      }
+    } catch (e) {}
+  }
+
+  function openCapture(mode) {
+    if (typeof FelixMedia === 'undefined' || !FelixMedia.isSupported()) {
+      toast('Camera not supported on this device');
+      return;
+    }
+    _captureMode = mode;
+    _capturedBlob = null; _capturedMime = null; _capturedDurationMs = null;
+    captureTitle.textContent = mode === 'photo' ? 'Capture Photo' : 'Record Video (15s max)';
+    captureMsg.textContent = 'Requesting camera…';
+    captureMsg.style.display = '';
+    capturePreview.style.display = 'none';
+    capturePreviewImg.style.display = 'none';
+    capturePreviewVid.style.display = 'none';
+    captureRecBadge.style.display = 'none';
+    captureSnapBtn.style.display = '';
+    captureSnapBtn.textContent = mode === 'photo' ? 'CAPTURE' : 'START';
+    captureSnapBtn.disabled = true;
+    captureRetakeBtn.style.display = 'none';
+    captureSaveBtn.style.display = 'none';
+    captureBackdrop.classList.add('active');
+    setExcused(true);
+    FelixMedia.startStream(mode === 'video').then((stream) => {
+      captureVideo.srcObject = stream;
+      captureMsg.style.display = 'none';
+      captureSnapBtn.disabled = false;
+    }).catch((err) => {
+      console.error('Camera permission denied:', err);
+      captureMsg.textContent = (err && err.name === 'NotAllowedError')
+        ? 'Camera blocked. Enable in browser settings, then retry.'
+        : ('Camera unavailable: ' + (err && err.message || 'unknown'));
+      captureSnapBtn.disabled = true;
+    });
+  }
+
+  function closeCapture() {
+    captureBackdrop.classList.remove('active');
+    if (typeof FelixMedia !== 'undefined') FelixMedia.stopStream();
+    if (_previewUrl) { URL.revokeObjectURL(_previewUrl); _previewUrl = null; }
+    captureVideo.srcObject = null;
+  }
+
+  async function doSnapPhoto() {
+    try {
+      const r = await FelixMedia.snapPhoto(captureVideo);
+      _capturedBlob = r.blob; _capturedMime = r.mime;
+      _previewUrl = URL.createObjectURL(r.blob);
+      capturePreviewImg.src = _previewUrl;
+      capturePreviewImg.style.display = 'block';
+      capturePreview.style.display = 'block';
+      captureVideo.style.opacity = '0.3';
+      captureSnapBtn.style.display = 'none';
+      captureRetakeBtn.style.display = '';
+      captureSaveBtn.style.display = '';
+    } catch (e) {
+      console.error('snapPhoto:', e);
+      toast('Photo capture failed: ' + (e.message || 'unknown'));
+    }
+  }
+
+  let _videoRecording = false;
+  async function doStartVideo() {
+    if (_videoRecording) {
+      FelixMedia.stopRecording();
+      return;
+    }
+    _videoRecording = true;
+    captureSnapBtn.textContent = 'STOP';
+    captureRecBadge.style.display = '';
+    try {
+      const stream = captureVideo.srcObject;
+      const r = await FelixMedia.recordVideo(stream, {
+        onTick: (ms) => { captureRecTime.textContent = (ms / 1000).toFixed(1) + 's'; },
+        onAutoStop: () => { toast('Hit 15s max'); }
+      });
+      _capturedBlob = r.blob; _capturedMime = r.mime; _capturedDurationMs = r.duration_ms;
+      _previewUrl = URL.createObjectURL(r.blob);
+      capturePreviewVid.src = _previewUrl;
+      capturePreviewVid.style.display = 'block';
+      capturePreview.style.display = 'block';
+      captureVideo.style.opacity = '0.3';
+      captureRecBadge.style.display = 'none';
+      captureSnapBtn.style.display = 'none';
+      captureRetakeBtn.style.display = '';
+      captureSaveBtn.style.display = '';
+    } catch (e) {
+      console.error('recordVideo:', e);
+      toast('Recording failed: ' + (e.message || 'unknown'));
+      captureRecBadge.style.display = 'none';
+      captureSnapBtn.textContent = 'START';
+    } finally {
+      _videoRecording = false;
+    }
+  }
+
+  function doRetake() {
+    if (_previewUrl) { URL.revokeObjectURL(_previewUrl); _previewUrl = null; }
+    capturePreview.style.display = 'none';
+    capturePreviewImg.style.display = 'none';
+    capturePreviewVid.style.display = 'none';
+    capturePreviewImg.src = '';
+    capturePreviewVid.src = '';
+    captureVideo.style.opacity = '1';
+    _capturedBlob = null;
+    captureSnapBtn.style.display = '';
+    captureSnapBtn.textContent = _captureMode === 'photo' ? 'CAPTURE' : 'START';
+    captureRetakeBtn.style.display = 'none';
+    captureSaveBtn.style.display = 'none';
+  }
+
+  async function doSave() {
+    if (!_capturedBlob) return;
+    captureSaveBtn.disabled = true;
+    captureSaveBtn.textContent = 'SAVING…';
+    try {
+      await FelixDB.addMedia({
+        game_id: state.gameId,
+        type: _captureMode,
+        blob: _capturedBlob,
+        mime: _capturedMime,
+        period: state.period || null,
+        game_state: state.gameState || null,
+        captured_at: Date.now(),
+        duration_ms: _capturedDurationMs
+      });
+      toast(_captureMode === 'photo' ? 'Photo saved' : 'Video saved');
+      refreshMediaCount();
+      checkQuotaAndWarn();
+      closeCapture();
+    } catch (e) {
+      console.error('save media:', e);
+      toast('Save failed: ' + (e.message || 'unknown'));
+    } finally {
+      captureSaveBtn.disabled = false;
+      captureSaveBtn.textContent = 'SAVE';
+    }
+  }
+
+  if (capPhotoBtn) capPhotoBtn.addEventListener('click', () => openCapture('photo'));
+  if (capVideoBtn) capVideoBtn.addEventListener('click', () => openCapture('video'));
+  if (captureSnapBtn) captureSnapBtn.addEventListener('click', () => {
+    if (_captureMode === 'photo') doSnapPhoto();
+    else doStartVideo();
+  });
+  if (captureRetakeBtn) captureRetakeBtn.addEventListener('click', doRetake);
+  if (captureSaveBtn) captureSaveBtn.addEventListener('click', doSave);
+  if (captureCloseBtn) captureCloseBtn.addEventListener('click', closeCapture);
+  if (captureBackdrop) captureBackdrop.addEventListener('click', (e) => { if (e.target === captureBackdrop) closeCapture(); });
+
+  // Gallery
+  async function openGallery() {
+    galleryBackdrop.classList.add('active');
+    galleryGrid.innerHTML = '';
+    try {
+      const items = await FelixDB.getMediaForGame(state.gameId);
+      items.sort((a, b) => (b.captured_at || 0) - (a.captured_at || 0));
+      if (!items.length) {
+        galleryEmpty.style.display = '';
+        return;
+      }
+      galleryEmpty.style.display = 'none';
+      items.forEach((m) => {
+        const url = URL.createObjectURL(m.blob);
+        const tile = document.createElement('div');
+        tile.style.cssText = 'position:relative;aspect-ratio:1;background:#111;border-radius:8px;overflow:hidden;cursor:pointer';
+        tile.dataset.id = m.id;
+        if (m.type === 'photo') {
+          tile.innerHTML = '<img src="' + url + '" style="width:100%;height:100%;object-fit:cover"/>';
+        } else {
+          tile.innerHTML = '<video src="' + url + '" style="width:100%;height:100%;object-fit:cover" muted></video><div style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.7);color:#fff;font-family:var(--sans);font-size:9px;padding:2px 5px;border-radius:3px;font-weight:700">▶ ' + ((m.duration_ms || 0) / 1000).toFixed(1) + 's</div>';
+        }
+        tile.addEventListener('click', () => openLightbox(m, url));
+        galleryGrid.appendChild(tile);
+      });
+    } catch (e) {
+      console.error('openGallery:', e);
+    }
+  }
+  function closeGallery() {
+    galleryBackdrop.classList.remove('active');
+    [...galleryGrid.querySelectorAll('img,video')].forEach((el) => {
+      try { URL.revokeObjectURL(el.src); } catch (e) {}
+    });
+  }
+  if (mediaGalleryBtn) mediaGalleryBtn.addEventListener('click', openGallery);
+  if (galleryCloseBtn) galleryCloseBtn.addEventListener('click', closeGallery);
+  if (galleryBackdrop) galleryBackdrop.addEventListener('click', (e) => { if (e.target === galleryBackdrop) closeGallery(); });
+
+  function openLightbox(m, url) {
+    _activeLightboxId = m.id;
+    _activeLightboxUrl = url;
+    lightboxContent.innerHTML = '';
+    if (m.type === 'photo') {
+      const img = document.createElement('img');
+      img.src = url;
+      img.style.cssText = 'max-width:100%;max-height:80vh;border-radius:6px';
+      lightboxContent.appendChild(img);
+    } else {
+      const vid = document.createElement('video');
+      vid.src = url;
+      vid.controls = true;
+      vid.autoplay = true;
+      vid.style.cssText = 'max-width:100%;max-height:80vh;border-radius:6px';
+      lightboxContent.appendChild(vid);
+    }
+    lightboxBackdrop.classList.add('active');
+  }
+  function closeLightbox() {
+    lightboxBackdrop.classList.remove('active');
+    lightboxContent.innerHTML = '';
+    _activeLightboxId = null;
+    _activeLightboxUrl = null;
+  }
+  if (lightboxCloseBtn) lightboxCloseBtn.addEventListener('click', closeLightbox);
+  if (lightboxBackdrop) lightboxBackdrop.addEventListener('click', (e) => { if (e.target === lightboxBackdrop) closeLightbox(); });
+  if (lightboxDeleteBtn) lightboxDeleteBtn.addEventListener('click', async () => {
+    if (!_activeLightboxId) return;
+    if (!confirm('Delete this media? This cannot be undone.')) return;
+    try {
+      await FelixDB.deleteMedia(_activeLightboxId);
+      toast('Deleted');
+      closeLightbox();
+      refreshMediaCount();
+      openGallery(); // refresh grid
+    } catch (e) {
+      toast('Delete failed: ' + (e.message || 'unknown'));
+    }
+  });
 
   // ============ PP/PK persistent highlight ============
   // Highlight is applied directly inside setGameState(). On load, ensure
