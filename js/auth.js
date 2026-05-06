@@ -1,0 +1,128 @@
+// js/auth.js — Felix Tracker auth wiring (Supabase)
+// V3.0 spec: roles DERIVED from auth source, no picker UI.
+//   anon            → parent_scorer
+//   Tim (admin)     → team_admin
+//   roster email    → coach (TeamSnap, stubbed until sprint H+6→H+7)
+//   anyone else     → parent_scorer
+// Mirrors session into FelixDB.auth_session for offline-first + V4.0 SwiftData parity.
+(function () {
+  const SUPABASE_URL = 'https://qshgschhudiryjnslzof.supabase.co';
+  const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_hdrc9mYaGocDhJVesn0FRw_wELl6Tnv';
+  const ADMIN_EMAILS = ['white.timothy.r@gmail.com']; // V3.0: Tim only
+
+  let client = null;
+  let initPromise = null;
+  const listeners = [];
+
+  function emit(evt) {
+    listeners.forEach((fn) => { try { fn(evt); } catch (e) { console.error('FelixAuth listener:', e); } });
+  }
+
+  // TODO(sprint H+6→H+7): replace with TeamSnap roster lookup
+  async function getCoachRosterEmails() { return []; }
+
+  async function deriveRole(user) {
+    if (!user) return 'parent_scorer';
+    const email = (user.email || '').toLowerCase();
+    if (!email || user.is_anonymous) return 'parent_scorer';
+    if (ADMIN_EMAILS.includes(email)) return 'team_admin';
+    const coaches = await getCoachRosterEmails();
+    if (coaches.map((e) => e.toLowerCase()).includes(email)) return 'coach';
+    return 'parent_scorer';
+  }
+
+  async function mirrorToFelixDB(session, role) {
+    if (typeof FelixDB === 'undefined') return;
+    try {
+      if (!session || !session.user) {
+        await FelixDB.clearSession();
+        return;
+      }
+      await FelixDB.setSession({
+        user_id: session.user.id,
+        email: session.user.email || null,
+        is_anonymous: !!session.user.is_anonymous,
+        role: role,
+        access_token: session.access_token,
+        expires_at: session.expires_at ? session.expires_at * 1000 : null,
+        provider: (session.user.app_metadata && session.user.app_metadata.provider) || 'unknown'
+      });
+    } catch (e) {
+      console.warn('FelixDB session mirror failed:', e);
+    }
+  }
+
+  async function handleSessionChange(session) {
+    const role = await deriveRole(session && session.user);
+    await mirrorToFelixDB(session, role);
+    emit({ type: 'session', session: session || null, role: role });
+  }
+
+  function init() {
+    if (initPromise) return initPromise;
+    initPromise = (async () => {
+      if (typeof window.supabase === 'undefined' || !window.supabase.createClient) {
+        throw new Error('Supabase JS SDK not loaded — add <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> before js/auth.js');
+      }
+      client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+      });
+      client.auth.onAuthStateChange((_evt, session) => { handleSessionChange(session); });
+      const { data } = await client.auth.getSession();
+      if (data && data.session) await handleSessionChange(data.session);
+      return client;
+    })();
+    return initPromise;
+  }
+
+  window.FelixAuth = {
+    init,
+    onAuthChange(fn) {
+      listeners.push(fn);
+      return () => { const i = listeners.indexOf(fn); if (i >= 0) listeners.splice(i, 1); };
+    },
+
+    async getUser() {
+      await init();
+      const { data } = await client.auth.getUser();
+      return (data && data.user) || null;
+    },
+    async getRole() {
+      const user = await this.getUser();
+      return deriveRole(user);
+    },
+    async isAnon() {
+      const user = await this.getUser();
+      return !user || user.is_anonymous === true;
+    },
+
+    async signInWithGoogle() {
+      await init();
+      return client.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.origin }
+      });
+    },
+    async signInWithMagicLink(email) {
+      await init();
+      if (!email) throw new Error('email required');
+      return client.auth.signInWithOtp({
+        email: email,
+        options: { emailRedirectTo: window.location.origin }
+      });
+    },
+    async signInAnonymously() {
+      await init();
+      return client.auth.signInAnonymously();
+    },
+    async signOut() {
+      await init();
+      return client.auth.signOut();
+    }
+  };
+
+  // Auto-init: required for OAuth/magic-link callback URL detection (detectSessionInUrl)
+  // and for restoring existing sessions on page load. Caller methods all await init() too,
+  // so this just kicks off the same promise eagerly.
+  init().catch((e) => console.warn('FelixAuth auto-init:', e.message));
+})();

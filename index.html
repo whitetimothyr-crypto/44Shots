@@ -844,8 +844,62 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       <div class="desc">Each ended game is archived locally on this device. Export creates a downloadable backup. Import restores from a backup file. Drive sync coming next.</div>
     </div>
 
+    <div class="group">
+      <div class="label">Account</div>
+      <div class="row">
+        <button class="opt" id="settingsAccountBtn" style="flex:1">Manage Account</button>
+      </div>
+      <div class="desc" id="accountStatusDesc">Loading…</div>
+    </div>
+
     <div class="close-row">
       <button id="settingsCloseBtn">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- V3.0 Account modal (auth) -->
+<div class="modal-backdrop" id="accountBackdrop">
+  <div class="modal-card">
+    <h2>Account</h2>
+
+    <div id="accountSignedOut" style="display:none">
+      <div class="group">
+        <div class="label">Magic Link Sign-In</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <input type="email" id="accountEmailInput" placeholder="you@example.com" style="padding:10px;background:var(--bg);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--text);font-size:13px;font-family:var(--sans);box-sizing:border-box"/>
+          <button class="opt" id="accountMagicLinkBtn" style="padding:12px;font-weight:700">Send Magic Link</button>
+        </div>
+        <div class="desc">We'll email a one-tap sign-in link. Coach role unlocks automatically if the email matches a TeamSnap roster entry.</div>
+      </div>
+
+      <div class="group">
+        <div class="label">No account needed</div>
+        <div class="row">
+          <button class="opt" id="accountAnonBtn" style="flex:1">Continue as Guest</button>
+        </div>
+        <div class="desc">Use Game ID, QR code, or shared link. Data stays on this device.</div>
+      </div>
+    </div>
+
+    <div id="accountSignedIn" style="display:none">
+      <div class="group">
+        <div class="label">Signed in as</div>
+        <div id="accountUserEmail" style="color:var(--text);font-size:13px;font-family:var(--sans);font-weight:600">…</div>
+      </div>
+      <div class="group">
+        <div class="label">Role</div>
+        <div id="accountUserRole" style="color:var(--accent);font-size:13px;font-family:var(--sans);font-weight:700;letter-spacing:.04em">…</div>
+      </div>
+      <div class="group">
+        <div class="row">
+          <button class="opt" id="accountSignOutBtn" style="flex:1;background:var(--accent-2);color:var(--bg);font-weight:700">Sign Out</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="close-row">
+      <button id="accountCloseBtn">Done</button>
     </div>
   </div>
 </div>
@@ -919,6 +973,10 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 
 <!-- V3.0 hybrid storage: IndexedDB layer (felix_db) -->
 <script src="js/db.js"></script>
+
+<!-- V3.0 auth: Supabase JS SDK + FelixAuth wrapper -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/auth.js"></script>
 
 <script>
 (function(){
@@ -4565,6 +4623,116 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
       refreshSettingsUI();
     });
   });
+
+  // ============ Account modal wiring (V3.0 auth) ============
+  const accountBackdrop = document.getElementById("accountBackdrop");
+  const settingsAccountBtn = document.getElementById("settingsAccountBtn");
+  const accountCloseBtn = document.getElementById("accountCloseBtn");
+  const accountSignedOut = document.getElementById("accountSignedOut");
+  const accountSignedIn = document.getElementById("accountSignedIn");
+  const accountUserEmail = document.getElementById("accountUserEmail");
+  const accountUserRole = document.getElementById("accountUserRole");
+  const accountStatusDesc = document.getElementById("accountStatusDesc");
+  const accountEmailInput = document.getElementById("accountEmailInput");
+  const accountMagicLinkBtn = document.getElementById("accountMagicLinkBtn");
+  const accountAnonBtn = document.getElementById("accountAnonBtn");
+  const accountSignOutBtn = document.getElementById("accountSignOutBtn");
+
+  const ROLE_LABEL = { team_admin: "Team Admin", coach: "Coach", parent_scorer: "Parent / Scorer" };
+
+  async function refreshAccountUI(){
+    if (typeof FelixAuth === "undefined") {
+      accountSignedOut.style.display = "none";
+      accountSignedIn.style.display = "none";
+      if (accountStatusDesc) accountStatusDesc.textContent = "Auth unavailable (refresh to retry)";
+      return;
+    }
+    try {
+      const user = await FelixAuth.getUser();
+      const role = await FelixAuth.getRole();
+      if (user) {
+        accountSignedOut.style.display = "none";
+        accountSignedIn.style.display = "block";
+        accountUserEmail.textContent = user.is_anonymous ? "Guest (no account)" : (user.email || "(no email)");
+        accountUserRole.textContent = ROLE_LABEL[role] || role;
+        if (accountStatusDesc) {
+          accountStatusDesc.textContent = user.is_anonymous
+            ? "Guest · " + (ROLE_LABEL[role] || role)
+            : "Signed in as " + (user.email || "(no email)") + " · " + (ROLE_LABEL[role] || role);
+        }
+      } else {
+        accountSignedOut.style.display = "block";
+        accountSignedIn.style.display = "none";
+        if (accountStatusDesc) accountStatusDesc.textContent = "Not signed in";
+      }
+    } catch (e) {
+      console.warn("refreshAccountUI:", e);
+      accountSignedOut.style.display = "block";
+      accountSignedIn.style.display = "none";
+      if (accountStatusDesc) accountStatusDesc.textContent = "Auth check failed — try again";
+    }
+  }
+
+  function openAccount(){ accountBackdrop.classList.add("active"); refreshAccountUI(); }
+  function closeAccount(){ accountBackdrop.classList.remove("active"); }
+  if (settingsAccountBtn) settingsAccountBtn.addEventListener("click", () => { closeSettings(); openAccount(); });
+  if (accountCloseBtn) accountCloseBtn.addEventListener("click", closeAccount);
+  if (accountBackdrop) accountBackdrop.addEventListener("click", (e) => { if (e.target === accountBackdrop) closeAccount(); });
+
+  if (accountMagicLinkBtn) accountMagicLinkBtn.addEventListener("click", async () => {
+    const email = (accountEmailInput.value || "").trim();
+    if (!email || !email.includes("@")) { toast("Enter a valid email"); return; }
+    accountMagicLinkBtn.disabled = true;
+    const orig = accountMagicLinkBtn.textContent;
+    accountMagicLinkBtn.textContent = "Sending…";
+    try {
+      const { error } = await FelixAuth.signInWithMagicLink(email);
+      if (error) throw error;
+      toast("Check " + email + " for sign-in link");
+      accountEmailInput.value = "";
+    } catch (e) {
+      console.error("Magic link failed:", e);
+      toast("Sign-in failed: " + (e.message || "unknown"));
+    } finally {
+      accountMagicLinkBtn.disabled = false;
+      accountMagicLinkBtn.textContent = orig;
+    }
+  });
+
+  if (accountAnonBtn) accountAnonBtn.addEventListener("click", async () => {
+    accountAnonBtn.disabled = true;
+    try {
+      const cur = await FelixAuth.getUser();
+      if (cur && cur.is_anonymous) { toast("Already a guest"); closeAccount(); return; }
+      const { error } = await FelixAuth.signInAnonymously();
+      if (error) throw error;
+      toast("Continuing as guest");
+      closeAccount();
+    } catch (e) {
+      console.error("Anon sign-in failed:", e);
+      toast("Sign-in failed: " + (e.message || "unknown"));
+    } finally {
+      accountAnonBtn.disabled = false;
+    }
+  });
+
+  if (accountSignOutBtn) accountSignOutBtn.addEventListener("click", async () => {
+    if (!confirm("Sign out? Your local game data stays on this device.")) return;
+    accountSignOutBtn.disabled = true;
+    try {
+      await FelixAuth.signOut();
+      toast("Signed out");
+      refreshAccountUI();
+    } catch (e) {
+      console.error("Sign-out failed:", e);
+      toast("Sign-out failed: " + (e.message || "unknown"));
+    } finally {
+      accountSignOutBtn.disabled = false;
+    }
+  });
+
+  if (typeof FelixAuth !== "undefined") FelixAuth.onAuthChange(() => refreshAccountUI());
+  setTimeout(refreshAccountUI, 150);
 
   // ============ PP/PK persistent highlight ============
   // Highlight is applied directly inside setGameState(). On load, ensure
