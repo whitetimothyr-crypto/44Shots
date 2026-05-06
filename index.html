@@ -874,12 +874,18 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 
     <div id="accountSignedOut" style="display:none">
       <div class="group">
-        <div class="label">Magic Link Sign-In</div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <input type="email" id="accountEmailInput" placeholder="you@example.com" style="padding:10px;background:var(--bg);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--text);font-size:13px;font-family:var(--sans);box-sizing:border-box"/>
-          <button class="opt" id="accountMagicLinkBtn" style="padding:12px;font-weight:700">Send Magic Link</button>
+        <div class="label">Email Sign-In</div>
+        <div id="accountStep1" style="display:flex;flex-direction:column;gap:8px">
+          <input type="email" id="accountEmailInput" placeholder="you@example.com" autocomplete="email" style="padding:10px;background:var(--bg);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--text);font-size:13px;font-family:var(--sans);box-sizing:border-box"/>
+          <button class="opt" id="accountSendCodeBtn" style="padding:12px;font-weight:700">Send Code</button>
         </div>
-        <div class="desc">We'll email a one-tap sign-in link. Coach role unlocks automatically if the email matches a TeamSnap roster entry.</div>
+        <div id="accountStep2" style="display:none;flex-direction:column;gap:8px">
+          <div class="desc" style="color:var(--text);font-size:11px">Code sent to <span id="accountSentToEmail" style="color:var(--accent);font-weight:700"></span>. Check your inbox.</div>
+          <input type="text" id="accountCodeInput" placeholder="123456" maxlength="6" inputmode="numeric" autocomplete="one-time-code" style="padding:12px;background:var(--bg);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--text);font-size:22px;font-family:monospace;box-sizing:border-box;letter-spacing:8px;text-align:center;font-weight:700"/>
+          <button class="opt" id="accountVerifyCodeBtn" style="padding:12px;font-weight:700;background:var(--accent);color:var(--bg)">Verify</button>
+          <button class="opt" id="accountResendCodeBtn" style="padding:8px;font-size:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)">Resend code · change email</button>
+        </div>
+        <div class="desc">We'll email a 6-digit code. Coach role unlocks automatically if the email matches a TeamSnap roster entry.</div>
       </div>
 
       <div class="group">
@@ -4695,9 +4701,29 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
   const accountUserRole = document.getElementById("accountUserRole");
   const accountStatusDesc = document.getElementById("accountStatusDesc");
   const accountEmailInput = document.getElementById("accountEmailInput");
-  const accountMagicLinkBtn = document.getElementById("accountMagicLinkBtn");
+  const accountSendCodeBtn = document.getElementById("accountSendCodeBtn");
+  const accountStep1 = document.getElementById("accountStep1");
+  const accountStep2 = document.getElementById("accountStep2");
+  const accountSentToEmail = document.getElementById("accountSentToEmail");
+  const accountCodeInput = document.getElementById("accountCodeInput");
+  const accountVerifyCodeBtn = document.getElementById("accountVerifyCodeBtn");
+  const accountResendCodeBtn = document.getElementById("accountResendCodeBtn");
   const accountAnonBtn = document.getElementById("accountAnonBtn");
   const accountSignOutBtn = document.getElementById("accountSignOutBtn");
+
+  let _otpEmail = null;
+  function showOtpStep(n) {
+    if (!accountStep1 || !accountStep2) return;
+    accountStep1.style.display = n === 1 ? 'flex' : 'none';
+    accountStep2.style.display = n === 2 ? 'flex' : 'none';
+  }
+  function resetOtpUI() {
+    _otpEmail = null;
+    if (accountEmailInput) accountEmailInput.value = '';
+    if (accountCodeInput) accountCodeInput.value = '';
+    if (accountSentToEmail) accountSentToEmail.textContent = '';
+    showOtpStep(1);
+  }
 
   const ROLE_LABEL = { coach: "Coach", user: "User" };
 
@@ -4735,29 +4761,61 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
   }
 
   function openAccount(){ accountBackdrop.classList.add("active"); refreshAccountUI(); }
-  function closeAccount(){ accountBackdrop.classList.remove("active"); }
+  function closeAccount(){ accountBackdrop.classList.remove("active"); if (typeof resetOtpUI === 'function') resetOtpUI(); }
   if (settingsAccountBtn) settingsAccountBtn.addEventListener("click", () => { closeSettings(); openAccount(); });
   if (accountCloseBtn) accountCloseBtn.addEventListener("click", closeAccount);
   if (accountBackdrop) accountBackdrop.addEventListener("click", (e) => { if (e.target === accountBackdrop) closeAccount(); });
 
-  if (accountMagicLinkBtn) accountMagicLinkBtn.addEventListener("click", async () => {
+  async function sendLoginCode() {
     const email = (accountEmailInput.value || "").trim();
     if (!email || !email.includes("@")) { toast("Enter a valid email"); return; }
-    accountMagicLinkBtn.disabled = true;
-    const orig = accountMagicLinkBtn.textContent;
-    accountMagicLinkBtn.textContent = "Sending…";
+    accountSendCodeBtn.disabled = true;
+    const orig = accountSendCodeBtn.textContent;
+    accountSendCodeBtn.textContent = "Sending…";
     try {
-      const { error } = await FelixAuth.signInWithMagicLink(email);
+      const { error } = await FelixAuth.sendLoginCode(email);
       if (error) throw error;
-      toast("Check " + email + " for sign-in link");
-      accountEmailInput.value = "";
+      _otpEmail = email;
+      if (accountSentToEmail) accountSentToEmail.textContent = email;
+      showOtpStep(2);
+      setTimeout(() => { if (accountCodeInput) accountCodeInput.focus(); }, 100);
+      toast("Code sent to " + email);
     } catch (e) {
-      console.error("Magic link failed:", e);
-      toast("Sign-in failed: " + (e.message || "unknown"));
+      console.error("Send code failed:", e);
+      toast("Send failed: " + (e.message || "unknown"));
     } finally {
-      accountMagicLinkBtn.disabled = false;
-      accountMagicLinkBtn.textContent = orig;
+      accountSendCodeBtn.disabled = false;
+      accountSendCodeBtn.textContent = orig;
     }
+  }
+  if (accountSendCodeBtn) accountSendCodeBtn.addEventListener("click", sendLoginCode);
+
+  if (accountVerifyCodeBtn) accountVerifyCodeBtn.addEventListener("click", async () => {
+    const code = (accountCodeInput.value || "").trim();
+    if (!_otpEmail) { toast("Send code first"); showOtpStep(1); return; }
+    if (!code || code.length < 6) { toast("Enter the 6-digit code"); return; }
+    accountVerifyCodeBtn.disabled = true;
+    const orig = accountVerifyCodeBtn.textContent;
+    accountVerifyCodeBtn.textContent = "Verifying…";
+    try {
+      const { error } = await FelixAuth.verifyLoginCode(_otpEmail, code);
+      if (error) throw error;
+      toast("Signed in");
+      resetOtpUI();
+      closeAccount();
+    } catch (e) {
+      console.error("Verify code failed:", e);
+      toast("Verify failed: " + (e.message || "invalid code"));
+      if (accountCodeInput) { accountCodeInput.value = ""; accountCodeInput.focus(); }
+    } finally {
+      accountVerifyCodeBtn.disabled = false;
+      accountVerifyCodeBtn.textContent = orig;
+    }
+  });
+
+  if (accountResendCodeBtn) accountResendCodeBtn.addEventListener("click", () => {
+    resetOtpUI();
+    if (accountEmailInput) accountEmailInput.focus();
   });
 
   if (accountAnonBtn) accountAnonBtn.addEventListener("click", async () => {
