@@ -1145,7 +1145,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     const _isRink = (tab === "rink");
     const _periodLbl = document.getElementById("periodSegLabel");
     if (_periodLbl) _periodLbl.style.display = _isRink ? "" : "none";
-    if (periodSegGlobal) periodSegGlobal.style.display = _isRink ? "" : "none";
+    if (document.getElementById("periodSegGlobal")) document.getElementById("periodSegGlobal").style.display = _isRink ? "" : "none";
   }
   tabs.addEventListener("click", e=>{
     const b = e.target.closest("button"); if(!b) return;
