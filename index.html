@@ -307,7 +307,6 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     <button data-period="2">P2</button>
     <button data-period="3">P3</button>
     <button data-period="4">OT</button>
-    <button data-period="all" style="border-left:1px solid rgba(255,255,255,.2);margin-left:2px">ALL</button>
   </div>
   <button id="endGameBtn" class="btn" style="padding:8px 14px;font-size:10px;letter-spacing:.14em;flex:0 0 auto;background:var(--accent-2);color:var(--bg);border:0;border-radius:8px;font-weight:700">END GAME</button>
 </div>
@@ -1172,84 +1171,56 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     return newPeriod;
   });
 
-  // Wire the visible global period selector. It's the user-facing control;
-  // the legacy hidden #periodSeg is kept only so older bindings don't crash.
+  // Wire the visible global period selector. It's the user-facing control
+  // for the active LOGGING period only. Live tabs (Rink/Net/Stats/header) are
+  // always cumulative; per-tab view filters are owned by the individual tabs.
+  // The legacy hidden #periodSeg is kept only so older bindings don't crash.
   const periodSegGlobal = document.getElementById("periodSegGlobal");
-  // viewPeriod: which period's data is shown on Stats/Net/Report tabs.
-  // Defaults to whatever the active logging period is. "all" = whole-game view.
-  if(typeof state.viewPeriod === "undefined") state.viewPeriod = state.period || 1;
 
   function syncGlobalPeriodUI(){
-    const v = state.viewPeriod;
+    const v = state.period;
     [...periodSegGlobal.querySelectorAll("button")].forEach(b=>{
-      const dp = b.dataset.period;
-      const matches = (dp === "all" && v === "all") || (parseInt(dp,10) === v);
-      b.classList.toggle("on", matches);
+      b.classList.toggle("on", parseInt(b.dataset.period,10) === v);
     });
   }
   if(periodSegGlobal){
     periodSegGlobal.addEventListener("click", e=>{
       const b = e.target.closest("button"); if(!b) return;
-      const dp = b.dataset.period;
-
-      // Handle ALL button — view filter only, no period change for logging
-      if(dp === "all"){
-        state.viewPeriod = "all";
-        syncGlobalPeriodUI();
-        // Re-render any visible period-aware views
-        if(typeof redrawMarkersForView === "function") redrawMarkersForView();
-        if(typeof renderStats === "function") renderStats();
-        if(typeof redrawNetForView === "function") redrawNetForView();
-        save();
-        return;
-      }
-
-      const newPeriod = parseInt(dp, 10);
+      const newPeriod = parseInt(b.dataset.period, 10);
+      if(!newPeriod) return;
       const oldPeriod = state.period;
-      const wasViewAll = state.viewPeriod === "all";
+      if(newPeriod === oldPeriod) return;
 
-      // Update both the active logging period and the view filter
-      if(newPeriod !== oldPeriod || wasViewAll){
-        // Show mini-report for the period we're leaving (only on actual period transitions)
-        let hadMiniReport = false;
-        if(!wasViewAll && newPeriod !== oldPeriod && oldPeriod && state.events.some(ev => ev.period === oldPeriod)){
-          showPeriodMiniReport(oldPeriod, ()=>{
-            if(typeof triggerCenterFaceoff === "function"){
-              triggerCenterFaceoff("Period " + (newPeriod === 4 ? "OT" : newPeriod) + " · faceoff");
-            }
-          });
-          hadMiniReport = true;
-        }
-        state.period = newPeriod;
-        state.viewPeriod = newPeriod;
-        syncGlobalPeriodUI();
-        if(typeof redrawMarkersForView === "function") redrawMarkersForView();
-        else redrawMarkersForPeriod(newPeriod);
-        if(typeof redrawNetForView === "function") redrawNetForView();
-        if(typeof renderStats === "function") renderStats();
-        updateGoalieMarkers();
-        lastEventIndex = -1;
-        updateLastShotBar();
-        save();
-        if(!hadMiniReport && newPeriod !== oldPeriod && typeof triggerCenterFaceoff === "function"){
-          setTimeout(()=>{
+      let hadMiniReport = false;
+      if(oldPeriod && state.events.some(ev => ev.period === oldPeriod)){
+        showPeriodMiniReport(oldPeriod, ()=>{
+          if(typeof triggerCenterFaceoff === "function"){
             triggerCenterFaceoff("Period " + (newPeriod === 4 ? "OT" : newPeriod) + " · faceoff");
-          }, 600);
-        }
+          }
+        });
+        hadMiniReport = true;
+      }
+      state.period = newPeriod;
+      syncGlobalPeriodUI();
+      if(typeof redrawMarkersForView === "function") redrawMarkersForView();
+      else redrawMarkersForPeriod(newPeriod);
+      if(typeof redrawNetForView === "function") redrawNetForView();
+      if(typeof renderStats === "function") renderStats();
+      updateGoalieMarkers();
+      lastEventIndex = -1;
+      updateLastShotBar();
+      save();
+      if(!hadMiniReport && typeof triggerCenterFaceoff === "function"){
+        setTimeout(()=>{
+          triggerCenterFaceoff("Period " + (newPeriod === 4 ? "OT" : newPeriod) + " · faceoff");
+        }, 600);
       }
     });
     syncGlobalPeriodUI();
   }
 
-  // Helper: get events filtered by the current view period
-  function getViewedEvents(){
-    if(state.viewPeriod === "all") return state.events.slice();
-    return state.events.filter(ev => ev.period === state.viewPeriod);
-  }
-  function getViewedNetEvents(){
-    if(state.viewPeriod === "all") return state.netEvents.slice();
-    return state.netEvents.filter(ev => ev.period === state.viewPeriod);
-  }
+  function getViewedEvents(){ return state.events.slice(); }
+  function getViewedNetEvents(){ return state.netEvents.slice(); }
   function redrawMarkersForView(){
     const mg = document.getElementById("markers");
     if(!mg) return;
@@ -2166,17 +2137,10 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 
   function redrawAll(){
     markersG.innerHTML = "";
-    const isAllView = state.viewPeriod === "all" || typeof state.viewPeriod === "undefined";
-    const periodEvents = isAllView
-      ? state.events
-      : state.events.filter(ev => ev.period === state.viewPeriod);
-    // Draw rebound link lines BENEATH markers — only within the current view
     state.events.forEach((ev, idx) => {
-      if(!isAllView && ev.period !== state.viewPeriod) return;
       if(ev.linkedTo == null) return;
       const origin = state.events[ev.linkedTo];
       if(!origin) return;
-      if(!isAllView && origin.period !== state.viewPeriod) return;
       const line = document.createElementNS("http://www.w3.org/2000/svg","line");
       line.setAttribute("x1", origin.x); line.setAttribute("y1", origin.y);
       line.setAttribute("x2", ev.x); line.setAttribute("y2", ev.y);
@@ -2185,14 +2149,10 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       line.setAttribute("stroke-dasharray", "4 3");
       markersG.appendChild(line);
     });
-    periodEvents.forEach(ev=>drawMarker(ev,false));
+    state.events.forEach(ev=>drawMarker(ev,false));
     netG.innerHTML = "";
-    // Show only the team-relevant subset, also filtered by view period
     const team = state.pendingNetGoalTeam || (state.netEvents.length ? state.netEvents[state.netEvents.length-1].forOrAgainst : "against");
-    const netFiltered = isAllView
-      ? state.netEvents
-      : state.netEvents.filter(ev => ev.period === state.viewPeriod);
-    netFiltered.filter(ev => ev.forOrAgainst === team).forEach(ev=>drawNetMarker(ev,false));
+    state.netEvents.filter(ev => ev.forOrAgainst === team).forEach(ev=>drawNetMarker(ev,false));
   }
 
   document.getElementById("undoBtn").addEventListener("click",()=>{
@@ -2396,10 +2356,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 
   // Stats
   function renderStats(){
-    // Stats render is filtered by the current view period (or "all" for whole game)
-    const e = (state.viewPeriod === "all" || typeof state.viewPeriod === "undefined")
-      ? state.events
-      : state.events.filter(ev => ev.period === state.viewPeriod);
+    const e = state.events;
     const ourTeamName = (state.gameInfo && state.gameInfo.ourTeam) || "Our Team";
     const oppTeamName = (state.gameInfo && state.gameInfo.opponent) || "Opponent";
     const goalieName = (state.activeGoalie && state.activeGoalie.name) || "Goalie";
@@ -2572,12 +2529,9 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     setText("ourOffSH", usShotsOnNet>0 ? ourSH+"%" : "--");
     setText("ourOffBlocked", usBlocked);
 
-    // ---- Faceoff stats (both teams) — filtered by view period ----
+    // ---- Faceoff stats (both teams) ----
     // Map "home/away" winner to "us/them" based on weAre.
-    const faceoffsAll = state.faceoffs || [];
-    const faceoffs = (state.viewPeriod === "all" || typeof state.viewPeriod === "undefined")
-      ? faceoffsAll
-      : faceoffsAll.filter(f => f.period === state.viewPeriod);
+    const faceoffs = state.faceoffs || [];
     const weAre = state.weAre || "home";
     const usWonFO = faceoffs.filter(f => f.winner === weAre).length;
     const themWonFO = faceoffs.filter(f => f.winner !== "neutral" && f.winner !== weAre).length;
