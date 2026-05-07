@@ -1,0 +1,20 @@
+{
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        { "type": "host", "value": "felix-tracker-nu.vercel.app" }
+      ],
+      "destination": "https://44shots.com/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        { "type": "host", "value": "www.44shots.com" }
+      ],
+      "destination": "https://44shots.com/:path*",
+      "permanent": true
+    }
+  ]
+}
