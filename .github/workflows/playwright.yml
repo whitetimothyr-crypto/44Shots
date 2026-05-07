@@ -1,0 +1,57 @@
+name: Playwright Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # Allow manual triggering from the Actions tab in GitHub.
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Smoke test against production
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        # --with-deps installs system libs (needed on ubuntu-latest)
+        # chromium-only — we don't need cross-browser at this stage
+        run: npx playwright install --with-deps chromium
+
+      - name: Wait for Vercel deploy to settle
+        # When this workflow is triggered by push to main, Vercel is also
+        # deploying in parallel. We give it 60s to propagate before testing
+        # production. Without this, the test can race against the rolling
+        # deploy and hit a stale build.
+        if: github.event_name == 'push'
+        run: sleep 60
+
+      - name: Run Playwright tests
+        run: npx playwright test
+        env:
+          # Smoke target. Override via repo secret if needed.
+          BASE_URL: ${{ secrets.BASE_URL || 'https://44shots.com' }}
+          CI: 'true'
+
+      - name: Upload Playwright report
+        # Run even on failure so we can debug.
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30

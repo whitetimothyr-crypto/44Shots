@@ -1,0 +1,21 @@
+# Node / npm
+node_modules/
+
+# Playwright artifacts (these are recreated on every run)
+test-results/
+playwright-report/
+playwright/.cache/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Environment
+.env
+.env.local
+.env.*.local
