@@ -301,7 +301,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 
 <!-- Global game-control row: Period selector + End Game (visible across all tabs) -->
 <div id="globalGameRow" style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg-2);border-bottom:1px solid rgba(255,255,255,.06)">
-  <span style="font-family:var(--sans);font-size:9px;letter-spacing:.18em;color:var(--text-muted);flex:0 0 auto">PERIOD</span>
+  <span id="periodSegLabel" style="font-family:var(--sans);font-size:9px;letter-spacing:.18em;color:var(--text-muted);flex:0 0 auto">PERIOD</span>
   <div class="seg" id="periodSegGlobal" style="flex:1">
     <button class="on" data-period="1">P1</button>
     <button data-period="2">P2</button>
@@ -1141,11 +1141,20 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       // Make sure rink markers reflect current view period
       if(typeof redrawMarkersForView === "function") redrawMarkersForView();
     }
+    // V3.0 Step 8: hide period selector on non-RINK tabs. END GAME stays visible.
+    const _isRink = (tab === "rink");
+    const _periodLbl = document.getElementById("periodSegLabel");
+    if (_periodLbl) _periodLbl.style.display = _isRink ? "" : "none";
+    if (periodSegGlobal) periodSegGlobal.style.display = _isRink ? "" : "none";
   }
   tabs.addEventListener("click", e=>{
     const b = e.target.closest("button"); if(!b) return;
     switchTab(b.dataset.tab);
   });
+  // V3.0 Step 8 init pass: ensure period selector visibility matches initial tab
+  // on first paint, even if the active tab on load isn't RINK.
+  const _initActiveTab = (document.querySelector("#tabs button.active") || {}).dataset;
+  if (_initActiveTab && _initActiveTab.tab) switchTab(_initActiveTab.tab);
 
   // Segmented controls
   function bindSeg(id, key, cast){
