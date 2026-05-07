@@ -4793,7 +4793,7 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
   if (accountVerifyCodeBtn) accountVerifyCodeBtn.addEventListener("click", async () => {
     const code = (accountCodeInput.value || "").trim();
     if (!_otpEmail) { toast("Send code first"); showOtpStep(1); return; }
-    if (!code || code.length < 6) { toast("Enter the 6-digit code"); return; }
+    if (!code || code.length < 6 || code.length > 8) { toast("Enter the sign-in code"); return; }
     accountVerifyCodeBtn.disabled = true;
     const orig = accountVerifyCodeBtn.textContent;
     accountVerifyCodeBtn.textContent = "Verifying…";
