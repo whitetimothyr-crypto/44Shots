@@ -108,7 +108,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          EXISTING=$(gh issue list --label "audit-finding" --label "source:a11y" --state open --json number --jq 'if length > 0 then .[0].number | tostring else "" end' --repo ${{ github.repository }})
+          EXISTING=$(gh issue list --label "audit-finding" --label "source:a11y" --label "kind:gate" --state open --json number --jq 'if length > 0 then .[0].number | tostring else "" end' --repo ${{ github.repository }})
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           if [ -z "$EXISTING" ]; then
             gh issue create \
@@ -118,7 +118,7 @@ jobs:
           **Workflow run:** $RUN_URL
           **Artifact:** a11y-report
           **Triage:** open the HTML report, identify violating rules and DOM nodes, fix the actual elements." \
-              --label "audit-finding,severity:serious,source:a11y" \
+              --label "audit-finding,severity:serious,source:a11y,kind:gate" \
               --repo ${{ github.repository }}
           else
             gh issue comment "$EXISTING" --repo ${{ github.repository }} --body "Re-failed on ${{ github.sha }} — $RUN_URL"
@@ -130,7 +130,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          EXISTING=$(gh issue list --label "audit-finding" --label "source:security" --state open --json number --jq 'if length > 0 then .[0].number | tostring else "" end' --repo ${{ github.repository }})
+          EXISTING=$(gh issue list --label "audit-finding" --label "source:security" --label "kind:gate" --state open --json number --jq 'if length > 0 then .[0].number | tostring else "" end' --repo ${{ github.repository }})
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           if [ -z "$EXISTING" ]; then
             gh issue create \
@@ -140,7 +140,7 @@ jobs:
           **Workflow run:** $RUN_URL
           **Artifact:** security-report
           **Triage:** review specific test failures (exposed secret, missing header, mixed content, Sentry config). Fix the root cause." \
-              --label "audit-finding,severity:critical,source:security" \
+              --label "audit-finding,severity:critical,source:security,kind:gate" \
               --repo ${{ github.repository }}
           else
             gh issue comment "$EXISTING" --repo ${{ github.repository }} --body "Re-failed on ${{ github.sha }} — $RUN_URL"
@@ -152,7 +152,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          EXISTING=$(gh issue list --label "audit-finding" --label "source:lighthouse" --state open --json number --jq 'if length > 0 then .[0].number | tostring else "" end' --repo ${{ github.repository }})
+          EXISTING=$(gh issue list --label "audit-finding" --label "source:lighthouse" --label "kind:gate" --state open --json number --jq 'if length > 0 then .[0].number | tostring else "" end' --repo ${{ github.repository }})
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           if [ -z "$EXISTING" ]; then
             gh issue create \
@@ -162,7 +162,7 @@ jobs:
           **Workflow run:** $RUN_URL
           **Artifact:** lighthouse-report
           **Triage:** open the Lighthouse HTML report from the artifact, identify which category failed which threshold, fix the underlying issue." \
-              --label "audit-finding,severity:serious,source:lighthouse" \
+              --label "audit-finding,severity:serious,source:lighthouse,kind:gate" \
               --repo ${{ github.repository }}
           else
             gh issue comment "$EXISTING" --repo ${{ github.repository }} --body "Re-failed on ${{ github.sha }} — $RUN_URL"

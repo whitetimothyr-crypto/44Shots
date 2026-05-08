@@ -1,0 +1,55 @@
+name: Audit Cleanup — Structural Separation
+
+# One-shot manual workflow that introduces kind:gate vs kind:specific labels
+# and applies them to the existing audit-finding issues, then closes #6 as
+# superseded by #8 + #9. Safe to delete this file after a single successful run.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    name: Apply kind labels and close #6
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - name: Create kind:* labels (idempotent)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh label create "kind:gate" \
+            --color "c5def5" \
+            --description "Generic audit-failure umbrella issue, dedup target for auto-firing" \
+            --repo "$REPO" || true
+
+          gh label create "kind:specific" \
+            --color "0e8a16" \
+            --description "Specific root cause from audit, has fix path" \
+            --repo "$REPO" || true
+
+      - name: Tag #5 and #7 as kind:gate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh issue edit 5 --add-label "kind:gate" --repo "$REPO"
+          gh issue edit 7 --add-label "kind:gate" --repo "$REPO"
+
+      - name: Tag #8 and #9 as kind:specific
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh issue edit 8 --add-label "kind:specific" --repo "$REPO"
+          gh issue edit 9 --add-label "kind:specific" --repo "$REPO"
+
+      - name: Close #6 as superseded
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh issue comment 6 --repo "$REPO" --body "Superseded by #8 (missing security headers) and #9 (AWS regex false positive). Both are specific root causes with fix paths. The auto-fire mechanism that created this generic gate has been corrected to dedup on kind:gate label going forward."
+          gh issue close 6 --repo "$REPO" --reason "not planned"
