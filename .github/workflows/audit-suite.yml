@@ -1,0 +1,93 @@
+name: Audit Suite
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 13 * * 1'
+  workflow_dispatch:
+
+jobs:
+  a11y:
+    name: Accessibility (axe-core, WCAG 2.1 AA)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx playwright install chromium --with-deps
+      - run: npm run audit:a11y
+        env:
+          AUDIT_BASE_URL: https://44shots.com
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: a11y-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 30
+
+  security:
+    name: Security (headers, secrets, mixed content)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx playwright install chromium --with-deps
+      - run: npm run audit:security
+        env:
+          AUDIT_BASE_URL: https://44shots.com
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 30
+
+  lighthouse:
+    name: Lighthouse (perf, a11y, BP, SEO)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run audit:lighthouse
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-report
+          path: .lighthouseci/
+          retention-days: 30
+
+  summary:
+    name: Audit Summary
+    runs-on: ubuntu-latest
+    needs: [a11y, security, lighthouse]
+    if: always()
+    steps:
+      - name: Report status
+        run: |
+          echo "## Audit Suite Results" >> $GITHUB_STEP_SUMMARY
+          echo "| Audit | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Accessibility | ${{ needs.a11y.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security | ${{ needs.security.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Lighthouse | ${{ needs.lighthouse.result }} |" >> $GITHUB_STEP_SUMMARY

@@ -4,15 +4,22 @@
   "private": true,
   "description": "44 Shots — youth hockey shot tracker. Multi-observer consensus, trust-weighted reconciliation. Production at 44shots.com.",
   "scripts": {
-    "test": "playwright test",
-    "test:headed": "playwright test --headed",
-    "test:debug": "playwright test --debug",
-    "test:ui": "playwright test --ui",
-    "test:report": "playwright show-report"
+    "test": "playwright test --project=smoke",
+    "test:headed": "playwright test --project=smoke --headed",
+    "test:debug": "playwright test --project=smoke --debug",
+    "test:ui": "playwright test --project=smoke --ui",
+    "test:report": "playwright show-report",
+    "audit:security": "playwright test audit-tests/security.spec.ts --project=audit",
+    "audit:a11y": "playwright test audit-tests/a11y.spec.ts --project=audit",
+    "audit:lighthouse": "lhci autorun --config=lighthouse/lighthouserc.js",
+    "audit:all": "npm run audit:security && npm run audit:a11y && npm run audit:lighthouse"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.0",
+    "@lhci/cli": "^0.14.0",
     "@playwright/test": "^1.50.0",
     "@types/node": "^20.0.0",
+    "dotenv": "^16.4.5",
     "typescript": "^5.4.0"
   }
 }

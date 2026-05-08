@@ -13,7 +13,6 @@ import { defineConfig, devices } from '@playwright/test';
  * Debug:          npx playwright test --debug
  */
 export default defineConfig({
-  testDir: './tests',
   // Each test gets 30 seconds. Auth roundtrip should take ~3-5s.
   timeout: 30_000,
   // Each individual expect() gets 5 seconds.
@@ -40,7 +39,13 @@ export default defineConfig({
   },
   projects: [
     {
-      name: 'chromium',
+      name: 'smoke',
+      testDir: './tests',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'audit',
+      testDir: './audit-tests',
       use: { ...devices['Desktop Chrome'] },
     },
   ],
