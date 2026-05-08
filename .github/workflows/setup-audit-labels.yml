@@ -1,0 +1,49 @@
+name: Setup Audit Labels
+
+# One-shot bootstrap for GitHub labels used by the Audit Suite create-issues job.
+# Run manually via Actions tab → "Setup Audit Labels" → Run workflow.
+# Idempotent: if a label exists, the create call errors and is swallowed by `|| true`.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  create-labels:
+    name: Create audit labels
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Create labels
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create "audit-finding" \
+            --color "d93f0b" \
+            --description "Auto-filed audit finding" \
+            --repo ${{ github.repository }} || true
+
+          gh label create "severity:critical" \
+            --color "b60205" \
+            --description "Critical severity (blocks merge / launch)" \
+            --repo ${{ github.repository }} || true
+
+          gh label create "severity:serious" \
+            --color "d93f0b" \
+            --description "Serious severity (fix before next release)" \
+            --repo ${{ github.repository }} || true
+
+          gh label create "source:a11y" \
+            --color "1d76db" \
+            --description "Source: accessibility audit" \
+            --repo ${{ github.repository }} || true
+
+          gh label create "source:security" \
+            --color "b60205" \
+            --description "Source: security audit" \
+            --repo ${{ github.repository }} || true
+
+          gh label create "source:lighthouse" \
+            --color "5319e7" \
+            --description "Source: Lighthouse audit" \
+            --repo ${{ github.repository }} || true

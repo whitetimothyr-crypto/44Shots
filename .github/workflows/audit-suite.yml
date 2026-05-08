@@ -91,3 +91,77 @@ jobs:
           echo "| Accessibility | ${{ needs.a11y.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Security | ${{ needs.security.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Lighthouse | ${{ needs.lighthouse.result }} |" >> $GITHUB_STEP_SUMMARY
+
+  create-issues:
+    name: Create GitHub Issues for findings
+    runs-on: ubuntu-latest
+    needs: [a11y, security, lighthouse]
+    if: failure() && github.event_name != 'pull_request'
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: File or comment — a11y
+        if: needs.a11y.result == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          EXISTING=$(gh issue list --label "audit-finding" --label "source:a11y" --state open --limit 1 --json number -q '.[0].number')
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          if [ -z "$EXISTING" ]; then
+            gh issue create \
+              --title "[Audit Finding] Accessibility failed on ${{ github.sha }}" \
+              --body "Accessibility audit (axe-core, WCAG 2.1 AA) failed on commit ${{ github.sha }}.
+
+          **Workflow run:** $RUN_URL
+          **Artifact:** a11y-report
+          **Triage:** open the HTML report, identify violating rules and DOM nodes, fix the actual elements." \
+              --label "audit-finding,severity:serious,source:a11y" \
+              --repo ${{ github.repository }}
+          else
+            gh issue comment "$EXISTING" --repo ${{ github.repository }} --body "Re-failed on ${{ github.sha }} — $RUN_URL"
+          fi
+
+      - name: File or comment — security
+        if: needs.security.result == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          EXISTING=$(gh issue list --label "audit-finding" --label "source:security" --state open --limit 1 --json number -q '.[0].number')
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          if [ -z "$EXISTING" ]; then
+            gh issue create \
+              --title "[Audit Finding] Security failed on ${{ github.sha }}" \
+              --body "Security audit (headers, secrets, mixed content) failed on commit ${{ github.sha }}.
+
+          **Workflow run:** $RUN_URL
+          **Artifact:** security-report
+          **Triage:** review specific test failures (exposed secret, missing header, mixed content, Sentry config). Fix the root cause." \
+              --label "audit-finding,severity:critical,source:security" \
+              --repo ${{ github.repository }}
+          else
+            gh issue comment "$EXISTING" --repo ${{ github.repository }} --body "Re-failed on ${{ github.sha }} — $RUN_URL"
+          fi
+
+      - name: File or comment — lighthouse
+        if: needs.lighthouse.result == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          EXISTING=$(gh issue list --label "audit-finding" --label "source:lighthouse" --state open --limit 1 --json number -q '.[0].number')
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          if [ -z "$EXISTING" ]; then
+            gh issue create \
+              --title "[Audit Finding] Lighthouse failed on ${{ github.sha }}" \
+              --body "Lighthouse audit (perf, a11y, BP, SEO) failed on commit ${{ github.sha }}.
+
+          **Workflow run:** $RUN_URL
+          **Artifact:** lighthouse-report
+          **Triage:** open the Lighthouse HTML report from the artifact, identify which category failed which threshold, fix the underlying issue." \
+              --label "audit-finding,severity:serious,source:lighthouse" \
+              --repo ${{ github.repository }}
+          else
+            gh issue comment "$EXISTING" --repo ${{ github.repository }} --body "Re-failed on ${{ github.sha }} — $RUN_URL"
+          fi
