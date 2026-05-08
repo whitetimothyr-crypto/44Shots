@@ -1,0 +1,248 @@
+{
+  "rubric": "nielsen",
+  "commit": "04525a35789c486c9c51c27fb2c8b387b4734a7d",
+  "timestamp": "2026-05-08T16:55:26.426Z",
+  "classification": {
+    "panel_verdict": "inconclusive",
+    "agreement": "insufficient_responses",
+    "valid_count": 1
+  },
+  "aggregation": {
+    "all_findings": [
+      {
+        "heuristic": 1,
+        "heuristic_name": "Visibility of system status",
+        "severity": "critical",
+        "rule": "modal-blocks-game-state-on-load",
+        "evidence": "Screenshot shows 'WHAT'S NEW IN V3.0' modal covering the entire rink UI on what appears to be an active game screen. Period, score, shot count, and sync status are all obscured.",
+        "fix_hint": "Show the changelog only on first launch after update, not on every page load during an active game. Never block live game state with a modal.",
+        "vendor": "anthropic"
+      },
+      {
+        "heuristic": 1,
+        "heuristic_name": "Visibility of system status",
+        "severity": "serious",
+        "rule": "no-sync-status-indicator",
+        "evidence": "No sync status, network indicator, or save confirmation is visible anywhere in the screenshot or HTML header area. Footer shows '44 SHOTS V2.2 · GOALIE #7' only.",
+        "fix_hint": "Add a persistent sync/save indicator (e.g., checkmark or spinner) in the header bar so parents know data is being saved during live play.",
+        "vendor": "anthropic"
+      },
+      {
+        "heuristic": 1,
+        "heuristic_name": "Visibility of system status",
+        "severity": "serious",
+        "rule": "no-current-period-visible",
+        "evidence": "Screenshot header area shows no active period indicator visible to the user during live play. Period selector mentioned in changelog ('P1/P2/P3/OT') but not visible in current screenshot state.",
+        "fix_hint": "Display the active period prominently and persistently in the header or near the rink, never hidden behind a modal.",
+        "vendor": "anthropic"
+      },
+      {
+        "heuristic": 3,
+        "heuristic_name": "User control and freedom",
+        "severity": "serious",
+        "rule": "changelog-modal-no-escape-key",
+        "evidence": "Modal 'WHAT'S NEW IN V3.0' has only a 'Got it' button to dismiss. No X button, no tap-outside-to-close visible in screenshot. HTML viewport has user-scalable=no blocking standard escape gestures.",
+        "fix_hint": "Add a visible close/X button and allow tapping outside the modal to dismiss. In a live game context any extra tap to escape is a shot opportunity lost.",
+        "vendor": "anthropic"
+      },
+      {
+        "heuristic": 5,
+        "heuristic_name": "Error prevention",
+        "severity": "critical",
+        "rule": "changelog-modal-interrupts-live-logging",
+        "evidence": "Modal fires on page load covering the rink tap area entirely. A parent mid-game who reloads or navigates away loses the ability to log shots until they dismiss the modal. 'Got it' button is only dismissal path.",
+        "fix_hint": "Gate the changelog display behind a first-launch-after-update flag stored in localStorage. Never auto-show release notes during an active game session.",
+        "vendor": "anthropic"
+      },
+      {
+        "heuristic": 5,
+        "heuristic_name": "Error prevention",
+        "severity": "serious",
+        "rule": "no-end-game-confirmation-guard-visible",
+        "evidence": "Changelog describes 'End Game button' in persistent row, but no confirmation dialog or guard is visible or described. Accidental tap of End Game would save and archive an incomplete game with no undo path described.",
+        "fix_hint": "Require a 2-step confirmation ('End Game?' → 'Yes, end') before triggering the End Game flow to prevent accidental game termination.",
+        "vendor": "anthropic"
+      },
+      {
+        "heuristic": 6,
+        "heuristic_name": "Recognition rather than recall",
+        "severity": "serious",
+        "rule": "shot-type-legend-bottom-edge-low-contrast",
+        "evidence": "Legend row '● GOAL ● HOME SHOT ● AWAY SHOT ○ MISS' is at the very bottom of the screen in small text. In a rink environment (low light, cold hands) this is easily missed and requires recall of color meanings during live play.",
+        "fix_hint": "Increase legend font size and contrast. Consider placing shot-type labels adjacent to the tap targets or use a persistent color key near the rink, not at the screen edge.",
+        "vendor": "anthropic"
+      },
+      {
+        "heuristic": 8,
+        "heuristic_name": "Aesthetic and minimalist design",
+        "severity": "serious",
+        "rule": "changelog-consumes-entire-viewport",
+        "evidence": "The 'WHAT'S NEW IN V3.0' modal occupies roughly 70% of the visible viewport with dense paragraph text about 8+ new features, completely replacing the rink UI for an active-game user.",
+        "fix_hint": "Move release notes to a dedicated Settings or About screen. If shown at all post-update, use a compact toast or badge notification, not a full-screen modal.",
+        "vendor": "anthropic"
+      },
+      {
+        "heuristic": 9,
+        "heuristic_name": "Help users recognize, diagnose, and recover from errors",
+        "severity": "serious",
+        "rule": "no-offline-or-storage-error-ui-visible",
+        "evidence": "No offline indicator, storage-full warning, or sync failure message is visible anywhere in the screenshot or derivable from the visible HTML. Footer shows only version and goalie number.",
+        "fix_hint": "Add inline error states for network loss and storage capacity. Display specific, actionable messages (e.g., 'Offline — shots saved locally, will sync when connected').",
+        "vendor": "anthropic"
+      },
+      {
+        "heuristic": 10,
+        "heuristic_name": "Help and documentation",
+        "severity": "minor",
+        "rule": "help-only-via-release-notes-modal",
+        "evidence": "The only in-app documentation visible is the V3.0 changelog modal. No persistent help icon, tooltip, or contextual guidance is visible in the rink view or header.",
+        "fix_hint": "Add a persistent '?' or help icon in the header that surfaces contextual guidance for shot logging without blocking the rink area.",
+        "vendor": "anthropic"
+      },
+      {
+        "heuristic": 4,
+        "heuristic_name": "Consistency and standards",
+        "severity": "minor",
+        "rule": "footer-version-label-inconsistency",
+        "evidence": "Footer reads '44 SHOTS V2.2 · GOALIE #7' but modal title reads 'WHAT'S NEW IN V3.0'. Version numbers are inconsistent between footer and modal, likely confusing users about which version they are running.",
+        "fix_hint": "Ensure the footer version label and changelog version label are sourced from the same version constant to prevent mismatch.",
+        "vendor": "anthropic"
+      },
+      {
+        "heuristic": 7,
+        "heuristic_name": "Flexibility and efficiency of use",
+        "severity": "minor",
+        "rule": "no-visible-keyboard-or-swipe-shortcuts",
+        "evidence": "HTML meta tag sets user-scalable=no and maximum-scale=1.0, disabling pinch-zoom. No keyboard shortcut hints or swipe gesture indicators are visible. Changelog mentions long-press to edit but no onboarding shortcut reference is surfaced.",
+        "fix_hint": "Surface gesture affordances (e.g., 'Long-press marker to edit') as a brief overlay on first use rather than buried in a changelog modal.",
+        "vendor": "anthropic"
+      }
+    ],
+    "severity_counts": {
+      "critical": 2,
+      "serious": 7,
+      "minor": 3
+    }
+  },
+  "judgments": [
+    {
+      "vendor": "anthropic",
+      "model": "claude-sonnet-4-6",
+      "latency_ms": 39367,
+      "judgment": {
+        "verdict": "fail",
+        "score": 47,
+        "confidence": 0.88,
+        "findings": [
+          {
+            "heuristic": 1,
+            "heuristic_name": "Visibility of system status",
+            "severity": "critical",
+            "rule": "modal-blocks-game-state-on-load",
+            "evidence": "Screenshot shows 'WHAT'S NEW IN V3.0' modal covering the entire rink UI on what appears to be an active game screen. Period, score, shot count, and sync status are all obscured.",
+            "fix_hint": "Show the changelog only on first launch after update, not on every page load during an active game. Never block live game state with a modal."
+          },
+          {
+            "heuristic": 1,
+            "heuristic_name": "Visibility of system status",
+            "severity": "serious",
+            "rule": "no-sync-status-indicator",
+            "evidence": "No sync status, network indicator, or save confirmation is visible anywhere in the screenshot or HTML header area. Footer shows '44 SHOTS V2.2 · GOALIE #7' only.",
+            "fix_hint": "Add a persistent sync/save indicator (e.g., checkmark or spinner) in the header bar so parents know data is being saved during live play."
+          },
+          {
+            "heuristic": 1,
+            "heuristic_name": "Visibility of system status",
+            "severity": "serious",
+            "rule": "no-current-period-visible",
+            "evidence": "Screenshot header area shows no active period indicator visible to the user during live play. Period selector mentioned in changelog ('P1/P2/P3/OT') but not visible in current screenshot state.",
+            "fix_hint": "Display the active period prominently and persistently in the header or near the rink, never hidden behind a modal."
+          },
+          {
+            "heuristic": 3,
+            "heuristic_name": "User control and freedom",
+            "severity": "serious",
+            "rule": "changelog-modal-no-escape-key",
+            "evidence": "Modal 'WHAT'S NEW IN V3.0' has only a 'Got it' button to dismiss. No X button, no tap-outside-to-close visible in screenshot. HTML viewport has user-scalable=no blocking standard escape gestures.",
+            "fix_hint": "Add a visible close/X button and allow tapping outside the modal to dismiss. In a live game context any extra tap to escape is a shot opportunity lost."
+          },
+          {
+            "heuristic": 5,
+            "heuristic_name": "Error prevention",
+            "severity": "critical",
+            "rule": "changelog-modal-interrupts-live-logging",
+            "evidence": "Modal fires on page load covering the rink tap area entirely. A parent mid-game who reloads or navigates away loses the ability to log shots until they dismiss the modal. 'Got it' button is only dismissal path.",
+            "fix_hint": "Gate the changelog display behind a first-launch-after-update flag stored in localStorage. Never auto-show release notes during an active game session."
+          },
+          {
+            "heuristic": 5,
+            "heuristic_name": "Error prevention",
+            "severity": "serious",
+            "rule": "no-end-game-confirmation-guard-visible",
+            "evidence": "Changelog describes 'End Game button' in persistent row, but no confirmation dialog or guard is visible or described. Accidental tap of End Game would save and archive an incomplete game with no undo path described.",
+            "fix_hint": "Require a 2-step confirmation ('End Game?' → 'Yes, end') before triggering the End Game flow to prevent accidental game termination."
+          },
+          {
+            "heuristic": 6,
+            "heuristic_name": "Recognition rather than recall",
+            "severity": "serious",
+            "rule": "shot-type-legend-bottom-edge-low-contrast",
+            "evidence": "Legend row '● GOAL ● HOME SHOT ● AWAY SHOT ○ MISS' is at the very bottom of the screen in small text. In a rink environment (low light, cold hands) this is easily missed and requires recall of color meanings during live play.",
+            "fix_hint": "Increase legend font size and contrast. Consider placing shot-type labels adjacent to the tap targets or use a persistent color key near the rink, not at the screen edge."
+          },
+          {
+            "heuristic": 8,
+            "heuristic_name": "Aesthetic and minimalist design",
+            "severity": "serious",
+            "rule": "changelog-consumes-entire-viewport",
+            "evidence": "The 'WHAT'S NEW IN V3.0' modal occupies roughly 70% of the visible viewport with dense paragraph text about 8+ new features, completely replacing the rink UI for an active-game user.",
+            "fix_hint": "Move release notes to a dedicated Settings or About screen. If shown at all post-update, use a compact toast or badge notification, not a full-screen modal."
+          },
+          {
+            "heuristic": 9,
+            "heuristic_name": "Help users recognize, diagnose, and recover from errors",
+            "severity": "serious",
+            "rule": "no-offline-or-storage-error-ui-visible",
+            "evidence": "No offline indicator, storage-full warning, or sync failure message is visible anywhere in the screenshot or derivable from the visible HTML. Footer shows only version and goalie number.",
+            "fix_hint": "Add inline error states for network loss and storage capacity. Display specific, actionable messages (e.g., 'Offline — shots saved locally, will sync when connected')."
+          },
+          {
+            "heuristic": 10,
+            "heuristic_name": "Help and documentation",
+            "severity": "minor",
+            "rule": "help-only-via-release-notes-modal",
+            "evidence": "The only in-app documentation visible is the V3.0 changelog modal. No persistent help icon, tooltip, or contextual guidance is visible in the rink view or header.",
+            "fix_hint": "Add a persistent '?' or help icon in the header that surfaces contextual guidance for shot logging without blocking the rink area."
+          },
+          {
+            "heuristic": 4,
+            "heuristic_name": "Consistency and standards",
+            "severity": "minor",
+            "rule": "footer-version-label-inconsistency",
+            "evidence": "Footer reads '44 SHOTS V2.2 · GOALIE #7' but modal title reads 'WHAT'S NEW IN V3.0'. Version numbers are inconsistent between footer and modal, likely confusing users about which version they are running.",
+            "fix_hint": "Ensure the footer version label and changelog version label are sourced from the same version constant to prevent mismatch."
+          },
+          {
+            "heuristic": 7,
+            "heuristic_name": "Flexibility and efficiency of use",
+            "severity": "minor",
+            "rule": "no-visible-keyboard-or-swipe-shortcuts",
+            "evidence": "HTML meta tag sets user-scalable=no and maximum-scale=1.0, disabling pinch-zoom. No keyboard shortcut hints or swipe gesture indicators are visible. Changelog mentions long-press to edit but no onboarding shortcut reference is surfaced.",
+            "fix_hint": "Surface gesture affordances (e.g., 'Long-press marker to edit') as a brief overlay on first use rather than buried in a changelog modal."
+          }
+        ],
+        "notes": "Two critical findings: (1) the V3.0 changelog modal fires on page load and completely blocks the rink tap surface — a parent at a live game who reloads loses shot-logging ability until they find and tap 'Got it'; (2) the End Game button lacks a visible confirmation guard. The version mismatch (V2.2 in footer vs V3.0 in modal) suggests a deployment or render-time bug. The core rink tap-to-log interaction appears intact beneath the modal but is entirely inaccessible while the modal is shown. Confidence slightly below 0.9 on heuristics 7 and 9 because the underlying game screen is obscured by the modal in the screenshot."
+      }
+    },
+    {
+      "vendor": "google",
+      "error": "{\"error\":{\"code\":429,\"message\":\"Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. \",\"status\":\"RESOURCE_EXHAUSTED\"}}",
+      "judgment": null
+    },
+    {
+      "vendor": "openai",
+      "error": "429 You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.",
+      "judgment": null
+    }
+  ]
+}
