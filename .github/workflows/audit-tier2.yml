@@ -1,0 +1,158 @@
+name: Audit Tier 2 (Multi-Judge Panel)
+
+# Multi-judge AI panel runs against the rubric specified in the inputs.
+# Triggers: manual button (workflow_dispatch) + on push of any release tag (v*).
+# Costs ~$0.08 per run. Don't trigger on every push.
+
+on:
+  workflow_dispatch:
+    inputs:
+      rubric:
+        description: 'Rubric name (matches audit-tier2/rubrics/<name>.md)'
+        required: true
+        default: 'nielsen'
+        type: choice
+        options:
+          - nielsen
+      target_url:
+        description: 'Target URL to audit'
+        required: true
+        default: 'https://44shots.com'
+        type: string
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  panel:
+    name: Run multi-judge panel
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Set rubric and target (workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "RUBRIC=${{ inputs.rubric }}" >> $GITHUB_ENV
+          echo "TARGET_URL=${{ inputs.target_url }}" >> $GITHUB_ENV
+
+      - name: Set rubric and target (tag push)
+        if: github.event_name == 'push'
+        run: |
+          echo "RUBRIC=nielsen" >> $GITHUB_ENV
+          echo "TARGET_URL=https://44shots.com" >> $GITHUB_ENV
+
+      - name: Run orchestrator
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AUDIT_TARGET_URL: ${{ env.TARGET_URL }}
+        run: node audit-tier2/lib/orchestrator.js --rubric ${{ env.RUBRIC }} --target ${{ env.TARGET_URL }}
+
+      - name: Find latest raw response file
+        id: raw
+        run: |
+          LATEST=$(ls -t audit-tier2/raw-responses/${{ env.RUBRIC }}-*.json | head -1)
+          echo "path=$LATEST" >> $GITHUB_OUTPUT
+
+      - name: Run synthesizer
+        run: node audit-tier2/lib/synthesizer.js --raw ${{ steps.raw.outputs.path }} --commit ${{ github.sha }}
+
+      - name: Find latest result file
+        id: result
+        run: |
+          LATEST=$(ls -t audit-tier2/results/${{ env.RUBRIC }}-*.json | head -1)
+          echo "path=$LATEST" >> $GITHUB_OUTPUT
+          echo "filename=$(basename $LATEST)" >> $GITHUB_OUTPUT
+
+      - name: Read panel verdict
+        id: verdict
+        run: |
+          VERDICT=$(jq -r '.classification.panel_verdict' ${{ steps.result.outputs.path }})
+          AGREEMENT=$(jq -r '.classification.agreement' ${{ steps.result.outputs.path }})
+          CRITICAL=$(jq -r '.aggregation.severity_counts.critical' ${{ steps.result.outputs.path }})
+          SERIOUS=$(jq -r '.aggregation.severity_counts.serious' ${{ steps.result.outputs.path }})
+          echo "verdict=$VERDICT" >> $GITHUB_OUTPUT
+          echo "agreement=$AGREEMENT" >> $GITHUB_OUTPUT
+          echo "critical=$CRITICAL" >> $GITHUB_OUTPUT
+          echo "serious=$SERIOUS" >> $GITHUB_OUTPUT
+
+      - name: Upload result + raw response as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tier2-${{ env.RUBRIC }}-${{ github.sha }}
+          path: |
+            audit-tier2/results/${{ env.RUBRIC }}-*.json
+            audit-tier2/raw-responses/${{ env.RUBRIC }}-*.json
+          retention-days: 90
+
+      - name: Commit result to repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add audit-tier2/results/
+          if git diff --cached --quiet; then
+            echo "No new result file to commit."
+          else
+            git commit -m "audit(tier2): ${{ env.RUBRIC }} verdict=${{ steps.verdict.outputs.verdict }} (${{ steps.verdict.outputs.agreement }}) on ${{ github.sha }}"
+            git push origin HEAD:main || git push origin HEAD:${{ github.ref_name }} || echo "Push failed (likely protected branch — artifact still uploaded)"
+          fi
+
+      - name: File audit-finding issue if panel verdict = fail
+        if: steps.verdict.outputs.verdict == 'fail' || steps.verdict.outputs.verdict == 'no_consensus'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          EXISTING=$(gh issue list --label "audit-finding" --label "source:tier2-${{ env.RUBRIC }}" --label "kind:gate" --state open --json number --jq 'if length > 0 then .[0].number | tostring else "" end' --repo ${{ github.repository }})
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          BODY="Tier 2 multi-judge panel returned **${{ steps.verdict.outputs.verdict }}** (agreement: ${{ steps.verdict.outputs.agreement }}) on commit ${{ github.sha }}.
+
+          **Findings:** ${{ steps.verdict.outputs.critical }} critical, ${{ steps.verdict.outputs.serious }} serious
+
+          **Result file:** ${{ steps.result.outputs.filename }}
+          **Workflow run:** $RUN_URL
+          **Artifacts:** download from workflow run page (90-day retention).
+
+          **Triage:** open the result JSON. Each judgment includes findings with vendor attribution, severity, evidence, and fix_hint. Cross-vendor agreement increases confidence in a finding."
+          if [ -z "$EXISTING" ]; then
+            gh issue create \
+              --title "[Audit Finding] Tier 2 ${{ env.RUBRIC }}: ${{ steps.verdict.outputs.verdict }} on ${{ github.sha }}" \
+              --body "$BODY" \
+              --label "audit-finding,severity:serious,source:tier2-${{ env.RUBRIC }},kind:gate" \
+              --repo ${{ github.repository }}
+          else
+            gh issue comment "$EXISTING" --repo ${{ github.repository }} --body "Re-failed on ${{ github.sha }} with verdict ${{ steps.verdict.outputs.verdict }} — $RUN_URL"
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Tier 2 Audit Result"
+            echo ""
+            echo "| Field | Value |"
+            echo "|-------|-------|"
+            echo "| Rubric | ${{ env.RUBRIC }} |"
+            echo "| Target | ${{ env.TARGET_URL }} |"
+            echo "| Panel Verdict | ${{ steps.verdict.outputs.verdict }} |"
+            echo "| Agreement | ${{ steps.verdict.outputs.agreement }} |"
+            echo "| Critical Findings | ${{ steps.verdict.outputs.critical }} |"
+            echo "| Serious Findings | ${{ steps.verdict.outputs.serious }} |"
+            echo ""
+            echo "**Result file:** ${{ steps.result.outputs.filename }}"
+          } >> $GITHUB_STEP_SUMMARY

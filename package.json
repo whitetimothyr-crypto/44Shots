@@ -2,6 +2,7 @@
   "name": "44shots",
   "version": "3.0.0",
   "private": true,
+  "type": "module",
   "description": "44 Shots — youth hockey shot tracker. Multi-observer consensus, trust-weighted reconciliation. Production at 44shots.com.",
   "scripts": {
     "test": "playwright test --project=smoke",
@@ -11,15 +12,21 @@
     "test:report": "playwright show-report",
     "audit:security": "playwright test audit-tests/security.spec.ts --project=audit",
     "audit:a11y": "playwright test audit-tests/a11y.spec.ts --project=audit",
-    "audit:lighthouse": "lhci autorun --config=lighthouse/lighthouserc.js",
-    "audit:all": "npm run audit:security && npm run audit:a11y && npm run audit:lighthouse"
+    "audit:lighthouse": "lhci autorun --config=lighthouse/lighthouserc.cjs",
+    "audit:all": "npm run audit:security && npm run audit:a11y && npm run audit:lighthouse",
+    "audit:tier2": "node audit-tier2/lib/orchestrator.js",
+    "audit:tier2:nielsen": "node audit-tier2/lib/orchestrator.js --rubric nielsen --target https://44shots.com",
+    "audit:tier2:synthesize": "node audit-tier2/lib/synthesizer.js"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "^0.95.1",
     "@axe-core/playwright": "^4.10.0",
+    "@google/genai": "^2.0.0",
     "@lhci/cli": "^0.14.0",
     "@playwright/test": "^1.50.0",
     "@types/node": "^20.0.0",
     "dotenv": "^16.4.5",
+    "openai": "^6.37.0",
     "typescript": "^5.4.0"
   }
 }

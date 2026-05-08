@@ -6,6 +6,9 @@ test-results/
 playwright-report/
 playwright/.cache/
 
+# Lighthouse CI runtime artifacts
+.lighthouseci/
+
 # OS junk
 .DS_Store
 Thumbs.db
@@ -21,3 +24,8 @@ Thumbs.db
 .env.local
 .env.*.local
 .env.audit
+
+# Tier 2 audit ephemera (recreatable from URL + commit)
+audit-tier2/inputs/*
+!audit-tier2/inputs/README.md
+audit-tier2/raw-responses/
