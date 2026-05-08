@@ -1,0 +1,76 @@
+name: Backfill Tier 2 Findings
+
+# One-shot manual workflow to seed Tier 2 audit findings from the Nielsen
+# panel run on commit 04525a3. Idempotent: checks existing open issues by
+# exact title before creating. Safe to delete this file after a single run.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  backfill:
+    name: Backfill Tier 2 Nielsen findings
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Backfill — V3.0 modal blocks live game UI
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          TITLE="[Audit Finding] V3.0 modal blocks live game UI on every load"
+          EXISTING=$(gh issue list \
+            --label "audit-finding" \
+            --state open \
+            --limit 100 \
+            --json number,title \
+            --repo "$REPO" | jq -r --arg t "$TITLE" '.[] | select(.title==$t) | .number' | head -1)
+          if [ -n "$EXISTING" ]; then
+            echo "Skipping — issue #$EXISTING already open with this title."
+            exit 0
+          fi
+          gh issue create \
+            --title "$TITLE" \
+            --label "audit-finding,severity:critical,source:tier2-nielsen,kind:specific" \
+            --repo "$REPO" \
+            --body-file - <<'EOF'
+          Tier 2 Nielsen audit (commit 04525a3, Anthropic judge, confidence 0.88) flagged this as 2 critical findings against H1 (Visibility of system status) and H5 (Error prevention). Modal also drives 2 of 7 serious findings (H3 no escape key, H8 viewport occupation). Net: 4 of 12 findings collapse here.
+
+          **Evidence:** WHAT'S NEW IN V3.0 modal renders on every page load with no dismiss-on-outside-click, no Escape key handler, occupies entire viewport.
+
+          **Fix path:** dismiss-on-outside-click + Escape key + show-once-per-version flag in localStorage.
+
+          **Source:** audit-tier2/results/nielsen-04525a3-1778259326427.json
+          EOF
+
+      - name: Backfill — Footer version mismatch V2.2 vs V3.0
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          TITLE="[Audit Finding] Footer version mismatch: V2.2 vs modal V3.0"
+          EXISTING=$(gh issue list \
+            --label "audit-finding" \
+            --state open \
+            --limit 100 \
+            --json number,title \
+            --repo "$REPO" | jq -r --arg t "$TITLE" '.[] | select(.title==$t) | .number' | head -1)
+          if [ -n "$EXISTING" ]; then
+            echo "Skipping — issue #$EXISTING already open with this title."
+            exit 0
+          fi
+          gh issue create \
+            --title "$TITLE" \
+            --label "audit-finding,severity:critical,source:tier2-nielsen,kind:specific" \
+            --repo "$REPO" \
+            --body-file - <<'EOF'
+          Tier 2 Nielsen audit (commit 04525a3, Anthropic judge) flagged H4 (Consistency and standards). Footer text claims V2.2 while changelog modal claims V3.0. Lies to users about which version they are running. Severity upgraded from "minor" (Anthropic call) to "critical" because we are mid-V3.0 launch and version trust is foundational.
+
+          **Fix:** grep for "V2.2" in index.html, update to V3.0.
+
+          **Source:** audit-tier2/results/nielsen-04525a3-1778259326427.json
+          EOF
