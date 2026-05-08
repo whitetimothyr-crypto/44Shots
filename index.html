@@ -1231,6 +1231,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       if(!newPeriod) return;
       const oldPeriod = state.period;
       if(newPeriod === oldPeriod) return;
+      if(typeof exitFaceoffMode === "function") exitFaceoffMode();
 
       let hadMiniReport = false;
       if(oldPeriod && state.events.some(ev => ev.period === oldPeriod)){
@@ -1857,8 +1858,8 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       const cancelHandler = (e)=>{
         if(!faceoffMode) return;
         if(e.target.closest(".fo-picker")) return;
-        // Re-show the dots so user can pick a different one
-        renderFaceoffDots();
+        // Tap outside picker = abandon faceoff entry (not re-show dots)
+        exitFaceoffMode();
         document.removeEventListener("click", cancelHandler, true);
       };
       document.addEventListener("click", cancelHandler, true);
@@ -1899,6 +1900,11 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   }
 
   if(faceoffBtn) faceoffBtn.addEventListener("click", enterFaceoffMode);
+  document.addEventListener("keydown", (e)=>{
+    if(e.key === "Escape" && faceoffMode){
+      exitFaceoffMode();
+    }
+  });
 
   function updateArmedUI(){
     document.body.classList.toggle("armed", !!state.armedForRebound);
