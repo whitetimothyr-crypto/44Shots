@@ -1,0 +1,83 @@
+name: Release Gate
+
+# Fires when a release tag is pushed (e.g. v1.0.0, v3.0.1).
+# Checks for open audit findings labeled critical or serious.
+# If any are open, fails the workflow — this BLOCKS the release.
+# To ship past a known finding, close or downgrade the issue first
+# (with a logged rationale in the issue body).
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  check-audit-findings:
+    name: Block release if critical/serious findings open
+    runs-on: ubuntu-latest
+    permissions:
+      issues: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Query open critical/serious audit findings
+        id: query
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CRITICAL=$(gh issue list \
+            --label "audit-finding" \
+            --label "severity:critical" \
+            --state open \
+            --json number,title \
+            --repo ${{ github.repository }})
+
+          SERIOUS=$(gh issue list \
+            --label "audit-finding" \
+            --label "severity:serious" \
+            --state open \
+            --json number,title \
+            --repo ${{ github.repository }})
+
+          CRITICAL_COUNT=$(echo "$CRITICAL" | jq 'length')
+          SERIOUS_COUNT=$(echo "$SERIOUS" | jq 'length')
+          TOTAL=$((CRITICAL_COUNT + SERIOUS_COUNT))
+
+          echo "critical_count=$CRITICAL_COUNT" >> $GITHUB_OUTPUT
+          echo "serious_count=$SERIOUS_COUNT" >> $GITHUB_OUTPUT
+          echo "total=$TOTAL" >> $GITHUB_OUTPUT
+
+          {
+            echo "## Release Gate Check"
+            echo ""
+            echo "**Tag:** ${{ github.ref_name }}"
+            echo "**Commit:** ${{ github.sha }}"
+            echo ""
+            echo "| Severity | Open Count |"
+            echo "|----------|-----------|"
+            echo "| Critical | $CRITICAL_COUNT |"
+            echo "| Serious  | $SERIOUS_COUNT |"
+            echo ""
+            if [ "$TOTAL" -gt 0 ]; then
+              echo "### Blocking findings"
+              echo ""
+              echo "$CRITICAL" | jq -r '.[] | "- #\(.number): \(.title) [CRITICAL]"'
+              echo "$SERIOUS"  | jq -r '.[] | "- #\(.number): \(.title) [SERIOUS]"'
+              echo ""
+              echo "**This release is BLOCKED.** Close or downgrade these issues before tagging."
+            else
+              echo "No blocking findings. Release approved."
+            fi
+          } >> $GITHUB_STEP_SUMMARY
+
+      - name: Fail if blocking findings exist
+        if: steps.query.outputs.total != '0'
+        run: |
+          echo "::error::Release blocked: ${{ steps.query.outputs.critical_count }} critical + ${{ steps.query.outputs.serious_count }} serious audit findings open."
+          echo "::error::Close or downgrade the labeled issues before tagging this release."
+          exit 1
+
+      - name: Approve release
+        if: steps.query.outputs.total == '0'
+        run: echo "✅ Release ${{ github.ref_name }} approved — no blocking audit findings."
