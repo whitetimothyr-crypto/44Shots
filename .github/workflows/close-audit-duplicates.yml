@@ -1,0 +1,40 @@
+name: Close Audit Duplicate Issues
+
+# One-shot manual workflow to close duplicate audit-finding issues #10, #11, #12
+# created by the buggy dedup logic on commit ab95efa. Adds an explanation comment
+# before closing. Safe to delete this file after use.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  close-duplicates:
+    name: Comment + close duplicates
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - name: Close #10 (a11y duplicate of #5)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh issue comment 10 --repo "$REPO" --body "Closing as duplicate. Created by buggy dedup logic in create-issues job (commit ab95efa). Tracking issue: see related #5/#6/#7 (or backfill issues #8/#9 for the security findings). Dedup logic fixed in next commit."
+          gh issue close 10 --repo "$REPO" --reason "not planned"
+
+      - name: Close #11 (security duplicate of #6)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh issue comment 11 --repo "$REPO" --body "Closing as duplicate. Created by buggy dedup logic in create-issues job (commit ab95efa). Tracking issue: see related #5/#6/#7 (or backfill issues #8/#9 for the security findings). Dedup logic fixed in next commit."
+          gh issue close 11 --repo "$REPO" --reason "not planned"
+
+      - name: Close #12 (lighthouse duplicate of #7)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh issue comment 12 --repo "$REPO" --body "Closing as duplicate. Created by buggy dedup logic in create-issues job (commit ab95efa). Tracking issue: see related #5/#6/#7 (or backfill issues #8/#9 for the security findings). Dedup logic fixed in next commit."
+          gh issue close 12 --repo "$REPO" --reason "not planned"
