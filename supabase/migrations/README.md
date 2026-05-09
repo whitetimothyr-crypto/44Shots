@@ -10,7 +10,7 @@ Until 2026-05-07 the schema lived only in the Supabase dashboard. If the project
 
 Files follow Supabase CLI convention: `<UTC timestamp>_<snake_case_name>.sql`. Files are applied in lexicographic order, which matches chronological order because the timestamp prefix sorts cleanly.
 
-## Current migrations (13 files)
+## Current migrations (14 files)
 
 | # | Filename | Purpose |
 |---|----------|---------|
@@ -27,6 +27,7 @@ Files follow Supabase CLI convention: `<UTC timestamp>_<snake_case_name>.sql`. F
 | 09 | `20260507221121_09_idempotency_keys.sql` | Idempotency guards: adds `client_game_id` to `games`, partial unique indexes on `(created_by, client_game_id)` and `(observation_id, client_event_id)`. Prevents duplicate writes on retry without affecting existing rows. Verified behaviorally before commit (insert + duplicate-attempt + cleanup). |
 | 10 | `20260509015849_10_nomos_rls.sql` | RLS for V3.0 mesh tables: SELECT/INSERT/UPDATE on `nomos_game` for authenticated; SELECT for authenticated and INSERT/UPDATE restricted to `submitter_id = auth.uid()` on `nomos_submission`. Coach-only enforcement deferred to app layer. |
 | 11 | `20260509114857_11_nomos_client_game_id.sql` | Adds `client_game_id text` to `nomos_game` (parity with `games.client_game_id` from migration 09). Backfills existing rows by extracting the bare team-prefixed code from `match_probe` (e.g. `PLYM-0001_20260509` → `PLYM-0001`). |
+| 12 | `20260509115303_12_nomos_game_created_by.sql` | Adds `created_by uuid` to `nomos_game`, FK to `public.profiles(id) ON DELETE SET NULL` (parity with `games.created_by`). No backfill — existing rows pre-date the column and creator is unknowable. New inserts populate from auth session. Enables future ownership gates (e.g. `currentUser.id === game.created_by`). |
 
 ## Restoring from these files
 

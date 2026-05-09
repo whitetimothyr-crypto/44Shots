@@ -93,6 +93,7 @@
         .insert({
           match_probe,
           client_game_id: code,
+          created_by: user.id,
           game_date: today,
           home_team_name: gameInfo.home_team_name || 'Plymouth Phantoms',
           away_team_name: gameInfo.away_team_name || null,
