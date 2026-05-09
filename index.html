@@ -5474,7 +5474,9 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
       saveSettings();
     }, 3000);
   }
-  maybeShowWhatsNew();
+  // What's New auto-popup suppressed: V3.0 has shipped, modal blocked the UI on load.
+  // Still reachable via the 📋 What's New button (helpBtn) for users who want to read it.
+  if(settings.seenWhatsNew !== APP_VERSION){ settings.seenWhatsNew = APP_VERSION; saveSettings(); }
 })();
 </script>
 
