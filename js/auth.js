@@ -121,11 +121,29 @@
       // Establishes session in current context — no sandbox jump.
       await init();
       if (!email || !code) throw new Error('email and code required');
-      return client.auth.verifyOtp({
+      const result = await client.auth.verifyOtp({
         email: email,
         token: code,
         type: 'email'
       });
+      // Mirror auth user into public.profiles. The handle_new_user trigger
+      // creates the row on auth.users INSERT (writes email + display_name
+      // as SECURITY DEFINER); this UPDATE is idempotent — backfills email
+      // on every login and bumps updated_at. Does NOT touch display_name,
+      // role, trust_score, sessions_logged. UPDATE-only (not upsert)
+      // because RLS lacks an INSERT policy on profiles by design — row
+      // creation is the trigger's responsibility.
+      if (result && result.data && result.data.user) {
+        try {
+          const u = result.data.user;
+          await client.from('profiles')
+            .update({ email: u.email, updated_at: new Date().toISOString() })
+            .eq('id', u.id);
+        } catch (e) {
+          console.warn('FelixAuth: profile email update failed:', e.message);
+        }
+      }
+      return result;
     },
     async signInAnonymously() {
       await init();
