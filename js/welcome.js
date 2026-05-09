@@ -309,10 +309,20 @@
 
     wireEvents();
 
-    // Listen for game join events (triggered by FelixGame.detectGameFromURL)
-    // game_started fires when coach hits Begin Game — flip every open session
-    // (including scheduled-screen viewers) to the walkthrough/welcome flow.
+    // Listen for game events.
+    // - Any event with a game payload (joined/started/created/resumed) syncs
+    //   the header score-row labels to the team names from nomos_game.
+    //   Without this, homeRowLabel/awayRowLabel stay at the hard-coded
+    //   "HOME"/"AWAY" markup defaults even when a real game is loaded.
+    // - game_joined and game_started additionally show the welcome flow,
+    //   flipping scheduled-screen viewers into the walkthrough on Begin Game.
     FelixGame.onGameChange((evt) => {
+      if (evt && evt.game) {
+        const hl = document.getElementById('homeRowLabel');
+        const al = document.getElementById('awayRowLabel');
+        if (hl) hl.textContent = evt.game.home_team_name || 'HOME';
+        if (al) al.textContent = evt.game.away_team_name || 'AWAY';
+      }
       if (evt.type === 'game_joined' || evt.type === 'game_started') {
         FelixWelcome.showJoinWelcome(evt.game);
       }
