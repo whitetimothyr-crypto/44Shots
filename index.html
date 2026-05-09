@@ -3703,10 +3703,64 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 
   let lastReportText = "";
 
+  // Mid-game coach on a fresh device: local state is empty but mesh tables
+  // have events from prior taps (their own or another scorer's). Pull those
+  // back into local state so buildBrief — which reads state.events /
+  // state.netEvents / state.faceoffs unchanged — produces a real report.
+  // No-op when local state already has data, when no active mesh game,
+  // when offline, or when mesh has no events. Best-effort dedup by
+  // payload.client_event_id (mirrored at sync time) so re-running the
+  // report on the same device doesn't double-up events.
+  async function hydrateFromMeshIfEmpty(){
+    try{
+      const localEmpty =
+        (!state.events    || state.events.length    === 0) &&
+        (!state.netEvents || state.netEvents.length === 0) &&
+        (!state.faceoffs  || state.faceoffs.length  === 0);
+      if(!localEmpty) return;
+      if(typeof FelixGame === "undefined") return;
+      const game = FelixGame.getActiveGame();
+      if(!game || !game.id) return;
+      if(!window.supabase || !window.supabase.createClient) return;
+
+      const SB_URL = "https://qshgschhudiryjnslzof.supabase.co";
+      const SB_KEY = "sb_publishable_hdrc9mYaGocDhJVesn0FRw_wELl6Tnv";
+      const c = window.supabase.createClient(SB_URL, SB_KEY, { auth:{ persistSession:true, autoRefreshToken:true } });
+
+      const { data: subs } = await c
+        .from("nomos_submission")
+        .select("id")
+        .eq("game_id", game.id);
+      if(!subs || !subs.length) return;
+
+      const { data: rows } = await c
+        .from("nomos_event")
+        .select("payload, timestamp_seconds")
+        .in("submission_id", subs.map((s) => s.id))
+        .order("timestamp_seconds", { ascending: true });
+      if(!rows || !rows.length) return;
+
+      state.events   = state.events   || [];
+      state.netEvents = state.netEvents || [];
+      state.faceoffs = state.faceoffs || [];
+      const seen = new Set();
+      for(const r of rows){
+        const p = r.payload || {};
+        const key = p.client_event_id || (p.t + "|" + (p.x || 0) + "|" + (p.y || 0) + "|" + (p.zone || ""));
+        if(seen.has(key)) continue;
+        seen.add(key);
+        if(p.zone) state.netEvents.push(p);
+        else if(p.kind === "faceoff" || p.face_winner !== undefined) state.faceoffs.push(p);
+        else state.events.push(p);
+      }
+    } catch(_){ /* graceful fallthrough — existing empty-state branch handles it */ }
+  }
+
   document.getElementById("genReportBtn").addEventListener("click", async ()=>{
     if(!await ensureCoach()) return;
     const btn = document.getElementById("genReportBtn");
     const out = document.getElementById("reportOut");
+    await hydrateFromMeshIfEmpty();
     const b = buildBrief();
 
     if(b.ourTeam.totals.shotsOnNet===0 && b.oppTeam.totals.shotsOnNet===0 && b.ourTeam.totals.misses===0 && b.oppTeam.totals.misses===0){
