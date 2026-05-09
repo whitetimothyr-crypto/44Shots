@@ -13,6 +13,26 @@
     <div id="nomosWelcomeBackdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9000;align-items:center;justify-content:center;">
       <div id="nomosWelcomeModal" style="background:#1a1a2e;color:#fff;border-radius:16px;padding:28px 24px;max-width:360px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.6);font-family:system-ui,sans-serif;">
 
+        <!-- START: appears on load when no active game -->
+        <div id="nomosScreenStart" style="display:none;">
+          <div style="text-align:center;margin-bottom:20px;">
+            <div style="font-size:2rem;">🏒</div>
+            <h2 style="margin:8px 0 4px;font-size:1.2rem;font-weight:700;">Start Tracking</h2>
+            <p style="margin:0;font-size:0.85rem;color:#aaa;">Join a game or create one</p>
+          </div>
+          <input id="nomosJoinCodeInput" type="text" placeholder="Game ID (e.g. PLYM-0001)" autocapitalize="characters" autocomplete="off" style="width:100%;padding:12px;background:#0d1117;color:#fff;border:1px solid #333;border-radius:8px;font-size:1rem;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;box-sizing:border-box;">
+          <button id="nomosJoinBtn" style="width:100%;padding:14px;background:#4fc3f7;color:#000;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;">Join Game</button>
+          <div style="display:flex;align-items:center;gap:8px;margin:14px 0;">
+            <div style="flex:1;height:1px;background:#333;"></div>
+            <span style="font-size:0.75rem;color:#666;">OR</span>
+            <div style="flex:1;height:1px;background:#333;"></div>
+          </div>
+          <button id="nomosScanQRBtn" style="width:100%;padding:14px;background:#263238;color:#fff;border:1px solid #333;border-radius:10px;font-size:0.95rem;cursor:pointer;margin-bottom:10px;">📷 Scan QR Code</button>
+          <input type="file" id="nomosQRFileInput" accept="image/*" capture="environment" style="display:none;">
+          <button id="nomosStartCreateBtn" style="width:100%;padding:12px;background:transparent;color:#4fc3f7;border:1px solid #4fc3f7;border-radius:10px;font-size:0.95rem;cursor:pointer;">Create New Game</button>
+          <p id="nomosStartError" style="display:none;color:#ef5350;font-size:0.85rem;text-align:center;margin:10px 0 0;"></p>
+        </div>
+
         <!-- SCHEDULED: pre-start view for games not yet kicked off -->
         <div id="nomosScreenScheduled" style="display:none;">
           <div style="text-align:center;margin-bottom:16px;">
@@ -136,7 +156,7 @@
   function hide(el) { if (el) el.style.display = 'none'; }
 
   function showScreen(id) {
-    ['nomosScreenScheduled','nomosScreen1','nomosScreen2','nomosScreen3','nomosScreen4'].forEach((s) => {
+    ['nomosScreenStart','nomosScreenScheduled','nomosScreen1','nomosScreen2','nomosScreen3','nomosScreen4'].forEach((s) => {
       const el = document.getElementById(s);
       if (el) el.style.display = s === id ? 'block' : 'none';
     });
@@ -248,6 +268,75 @@
 
     // Scheduled-screen Explore button: just dismisses the modal
     document.getElementById('nomosScheduledExploreBtn').addEventListener('click', closeWelcome);
+
+    // ----- Start screen: Join by code -----
+    const joinHandler = async () => {
+      const input = document.getElementById('nomosJoinCodeInput');
+      const errEl = document.getElementById('nomosStartError');
+      const btn = document.getElementById('nomosJoinBtn');
+      const code = (input.value || '').trim().toUpperCase();
+      if (!code) {
+        errEl.textContent = 'Enter a Game ID';
+        errEl.style.display = 'block';
+        return;
+      }
+      errEl.style.display = 'none';
+      btn.disabled = true;
+      btn.textContent = 'Joining...';
+      try {
+        await FelixGame.joinGame(code);
+        closeWelcome();
+      } catch (e) {
+        errEl.textContent = 'Could not join: ' + e.message;
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Join Game';
+      }
+    };
+    document.getElementById('nomosJoinBtn').addEventListener('click', joinHandler);
+    document.getElementById('nomosJoinCodeInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') joinHandler();
+    });
+
+    // ----- Start screen: Scan QR (file picker -> BarcodeDetector) -----
+    document.getElementById('nomosScanQRBtn').addEventListener('click', () => {
+      document.getElementById('nomosQRFileInput').click();
+    });
+    document.getElementById('nomosQRFileInput').addEventListener('change', async (e) => {
+      const file = e.target.files && e.target.files[0];
+      e.target.value = '';
+      if (!file) return;
+      const errEl = document.getElementById('nomosStartError');
+      if (!('BarcodeDetector' in window)) {
+        errEl.textContent = 'QR scanning not supported on this device. Enter Game ID manually.';
+        errEl.style.display = 'block';
+        return;
+      }
+      try {
+        const detector = new BarcodeDetector({ formats: ['qr_code'] });
+        const bitmap = await createImageBitmap(file);
+        const codes = await detector.detect(bitmap);
+        if (!codes.length) {
+          errEl.textContent = 'No QR code detected. Try again.';
+          errEl.style.display = 'block';
+          return;
+        }
+        const raw = codes[0].rawValue || '';
+        const match = raw.match(/[?&]game=([^&]+)/);
+        const code = (match ? decodeURIComponent(match[1]) : raw).trim().toUpperCase();
+        document.getElementById('nomosJoinCodeInput').value = code;
+        joinHandler();
+      } catch (err) {
+        errEl.textContent = 'QR scan failed: ' + err.message;
+        errEl.style.display = 'block';
+      }
+    });
+
+    // ----- Start screen: Create new game (jumps to coach create panel) -----
+    document.getElementById('nomosStartCreateBtn').addEventListener('click', () => {
+      closeWelcome();
+      FelixWelcome.showCreateGame();
+    });
   }
 
   // ============================================================
@@ -283,6 +372,25 @@
       show(backdrop);
     },
 
+    // Show the start modal (Game ID input + QR scan + create).
+    // Called on load when no ?game= URL param and no cached active_game_id.
+    showGameStart() {
+      const backdrop = document.getElementById('nomosWelcomeBackdrop');
+      if (!backdrop) return;
+      const input = document.getElementById('nomosJoinCodeInput');
+      if (input) input.value = '';
+      const errEl = document.getElementById('nomosStartError');
+      if (errEl) errEl.style.display = 'none';
+      const joinBtn = document.getElementById('nomosJoinBtn');
+      if (joinBtn) { joinBtn.disabled = false; joinBtn.textContent = 'Join Game'; }
+      // Hide QR button if BarcodeDetector unsupported (file fallback still works
+      // but most users won't have a saved QR image — skip the dead path).
+      const qrBtn = document.getElementById('nomosScanQRBtn');
+      if (qrBtn) qrBtn.style.display = ('BarcodeDetector' in window) ? 'block' : 'none';
+      showScreen('nomosScreenStart');
+      show(backdrop);
+    },
+
     // Show create game panel (coach only)
     showCreateGame() {
       const panel = document.getElementById('nomosCreateGamePanel');
@@ -301,7 +409,7 @@
   // Init: inject HTML, wire events, listen for game joins
   // ============================================================
 
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
     // Inject modal HTML
     const container = document.createElement('div');
     container.innerHTML = MODAL_HTML;
@@ -309,18 +417,7 @@
 
     wireEvents();
 
-    // Listen for game events.
-    // Any event with a game payload (joined/started/created/resumed) syncs
-    // the header score-row labels to the team names from nomos_game.
-    //
-    // Joining an existing game goes directly to the scoring view — no
-    // welcome modal, no walkthrough. The coach-create flow
-    // (FelixWelcome.showCreateGame -> #nomosCreateGamePanel) is the only
-    // modal in the mesh path; it's invoked from coach-only UI when
-    // creating a new game, not from this listener.
-    //
-    // showJoinWelcome remains exported on FelixWelcome for any future
-    // caller that explicitly opts into the welcome/walkthrough flow.
+    // Sync header team labels whenever the active game changes.
     FelixGame.onGameChange((evt) => {
       if (evt && evt.game) {
         const hl = document.getElementById('homeRowLabel');
@@ -329,6 +426,18 @@
         if (al) al.textContent = evt.game.away_team_name || 'AWAY';
       }
     });
+
+    // Resolve active game on load:
+    //   1. ?game=PLYM-0001 in URL  -> joinGame
+    //   2. active_game_id in IndexedDB -> resumeFromCache
+    //   3. neither -> show the start modal (Game ID / QR / Create)
+    try {
+      const game = await FelixGame.init();
+      if (!game) FelixWelcome.showGameStart();
+    } catch (e) {
+      console.warn('FelixGame.init failed:', e.message);
+      FelixWelcome.showGameStart();
+    }
   });
 
 })();

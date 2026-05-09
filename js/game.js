@@ -170,6 +170,15 @@
       }
     },
 
+    // On-load resolver: try URL ?game= first, then IndexedDB cache.
+    // Returns the active game or null if neither yielded one.
+    // welcome.js calls this and shows the start modal on null.
+    async init() {
+      const fromURL = await this.detectGameFromURL();
+      if (fromURL) return fromURL;
+      return await this.resumeFromCache();
+    },
+
     // Resume active game from IndexedDB on page load
     async resumeFromCache() {
       try {
@@ -245,9 +254,7 @@
     }
   };
 
-  // Auto-detect game from URL on load
-  document.addEventListener('DOMContentLoaded', () => {
-    FelixGame.detectGameFromURL().catch((e) => console.warn('FelixGame init:', e.message));
-  });
+  // Page-load orchestration lives in welcome.js (calls FelixGame.init()
+  // then shows the start modal on null). game.js stays passive on load.
 
 })();
