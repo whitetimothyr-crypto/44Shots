@@ -72,15 +72,42 @@ background:linear-gradient(180deg,var(--surface),var(--bg));
 .stats{font-family:var(--sans);font-size:11px;text-align:right;color:var(--text-muted);line-height:1.5}
 .stats b{color:#fff;font-size:14px;display:block}
 
-nav.tabs{display:flex;background:var(--bg-2);border-bottom:1px solid rgba(255,255,255,.08)}
-nav.tabs button{
-flex:1;background:transparent;border:0;color:var(--text-muted);padding:14px 8px;
-font-family:var(--sans);font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;
-border-bottom:2px solid transparent;transition:all .2s;cursor:pointer;
+/* Bottom nav (Rink/Net/Stats/Report). Always visible; sits above iOS safe-area inset. */
+nav.bottom-nav{
+position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--bg-2);
+border-top:1px solid rgba(255,255,255,.08);padding-bottom:env(safe-area-inset-bottom);z-index:50;
 }
-nav.tabs button.active{color:#fff;border-bottom-color:var(--accent)}
+nav.bottom-nav button{
+flex:1;background:transparent;border:0;color:var(--text-muted);padding:8px 4px 10px;
+font-family:var(--sans);font-size:9px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;
+display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;transition:color .15s;
+}
+nav.bottom-nav button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+nav.bottom-nav button.active{color:var(--accent)}
 
-main{flex:1;display:flex;flex-direction:column;padding:12px;gap:10px;min-height:0}
+/* Period dot selector: hollow circle, fills on select. Always visible across tabs.
+   Note: class is .pdot (not .dot) to avoid collision with the legend .dot rule at line 180. */
+.dots{display:inline-flex;align-items:flex-start;gap:14px}
+.dots .pdot{
+background:transparent;border:0;cursor:pointer;padding:2px;text-align:center;min-width:18px;line-height:1;
+font-family:var(--sans);font-size:9px;letter-spacing:.14em;color:var(--text-muted);
+}
+.dots .pdot > i{
+display:block;margin:0 auto 3px;width:14px;height:14px;border-radius:50%;
+border:1.5px solid var(--text-muted);background:transparent;transition:all .15s ease;
+}
+.dots .pdot.on{color:#fff}
+.dots .pdot.on > i{background:var(--accent);border-color:var(--accent)}
+
+/* Floating End Game above bottom nav. Coach-gated at runtime by applyRoleGates(). */
+.fab-end-game{
+position:fixed;right:14px;bottom:calc(64px + env(safe-area-inset-bottom) + 14px);
+background:var(--accent-2);color:var(--bg);border:0;border-radius:24px;padding:11px 18px;
+font-family:var(--sans);font-size:10px;letter-spacing:.18em;font-weight:800;text-transform:uppercase;
+box-shadow:0 4px 16px rgba(0,0,0,.4);cursor:pointer;z-index:40;
+}
+
+main{flex:1;display:flex;flex-direction:column;padding:12px 12px calc(64px + env(safe-area-inset-bottom));gap:10px;min-height:0}
 .panel{display:none;flex:1;flex-direction:column;gap:10px;min-height:0}
 .panel.active{display:flex}
 
@@ -315,23 +342,15 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   <button id="helpBtn" aria-label="Show What's New" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px 8px;">📋</button>
 </header>
 
-<nav class="tabs" id="tabs">
-  <button class="active" data-tab="rink">Rink</button>
-  <button data-tab="net">Net</button>
-  <button data-tab="stats">Stats</button>
-  <button data-tab="report">Report</button>
-</nav>
-
-<!-- Global game-control row: Period selector + End Game (visible across all tabs) -->
-<div id="globalGameRow" style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg-2);border-bottom:1px solid rgba(255,255,255,.06)">
-  <span id="periodSegLabel" style="font-family:var(--sans);font-size:9px;letter-spacing:.18em;color:var(--text-muted);flex:0 0 auto">PERIOD</span>
-  <div class="seg" id="periodSegGlobal" style="flex:1">
-    <button class="on" data-period="1">P1</button>
-    <button data-period="2">P2</button>
-    <button data-period="3">P3</button>
-    <button data-period="4">OT</button>
+<!-- Period dot selector. Always visible. End Game lives separately as a floating button (see body end). -->
+<div id="globalGameRow" style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-2);border-bottom:1px solid rgba(255,255,255,.06)">
+  <span id="periodSegLabel" style="font-family:var(--sans);font-size:10px;letter-spacing:.18em;color:var(--text-muted);text-transform:uppercase">Period:</span>
+  <div class="dots" id="periodSegGlobal">
+    <button class="pdot on" data-period="1"><i></i>1</button>
+    <button class="pdot" data-period="2"><i></i>2</button>
+    <button class="pdot" data-period="3"><i></i>3</button>
+    <button class="pdot" data-period="4"><i></i>OT</button>
   </div>
-  <button id="endGameBtn" class="btn" style="padding:8px 14px;font-size:10px;letter-spacing:.14em;flex:0 0 auto;background:var(--accent-2);color:var(--bg);border:0;border-radius:8px;font-weight:700">END GAME</button>
 </div>
 
 <!-- Score block lives in the header; this row removed to avoid duplicate IDs -->
@@ -739,6 +758,29 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 
   </section>
 </main>
+
+<!-- Bottom tab nav. id/data-tab kept identical to old top nav so existing JS handler still binds. -->
+<nav class="bottom-nav" id="tabs" aria-label="Primary views">
+  <button class="active" data-tab="rink" aria-label="Rink">
+    <svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="6"/><line x1="12" y1="6" x2="12" y2="18"/><circle cx="12" cy="12" r="2"/></svg>
+    Rink
+  </button>
+  <button data-tab="net" aria-label="Net">
+    <svg viewBox="0 0 24 24"><path d="M4 7 L20 7 L18 18 L6 18 Z"/><line x1="8" y1="7" x2="8" y2="18"/><line x1="12" y1="7" x2="12" y2="18"/><line x1="16" y1="7" x2="16" y2="18"/><line x1="4" y1="11" x2="20" y2="11"/><line x1="5" y1="15" x2="19" y2="15"/></svg>
+    Net
+  </button>
+  <button data-tab="stats" aria-label="Stats">
+    <svg viewBox="0 0 24 24"><line x1="6" y1="20" x2="6" y2="12"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="18" y1="20" x2="18" y2="14"/><line x1="3" y1="20" x2="21" y2="20"/></svg>
+    Stats
+  </button>
+  <button data-tab="report" aria-label="Report">
+    <svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="17" rx="1.5"/><rect x="9" y="2.5" width="6" height="3" rx="0.8"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="13.5" x2="15" y2="13.5"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+    Report
+  </button>
+</nav>
+
+<!-- Floating End Game button. Sits above bottom nav. Coach-gated at runtime via applyRoleGates(). -->
+<button id="endGameBtn" class="fab-end-game" type="button">End Game</button>
 
 <!-- LOAD GAME MODAL -->
 
@@ -1170,12 +1212,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       // Make sure rink markers reflect current view period
       if(typeof redrawMarkersForView === "function") redrawMarkersForView();
     }
-    // V3.0 Step 8: hide period selector on non-RINK tabs. END GAME stays visible.
-    const _isRink = (tab === "rink");
-    const _periodLbl = document.getElementById("periodSegLabel");
-    if (_periodLbl) _periodLbl.style.display = _isRink ? "" : "none";
-    const _periodSegGlobalEl = document.getElementById("periodSegGlobal");
-    if (_periodSegGlobalEl) _periodSegGlobalEl.style.display = _isRink ? "" : "none";
+    // Period selector now persists across all tabs (refactor).
   }
   tabs.addEventListener("click", e=>{
     const b = e.target.closest("button"); if(!b) return;
@@ -1748,7 +1785,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     _lastAutoFaceoffT = now;
     // Make sure the rink tab is active so the picker is visible
     if(typeof switchTab === "function"){
-      const activeTab = document.querySelector(".tabs button.active");
+      const activeTab = document.querySelector(".bottom-nav button.active");
       if(!activeTab || activeTab.dataset.tab !== "rink"){
         switchTab("rink");
       }
@@ -5466,7 +5503,7 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
       { sel: "#netSvg", title: "Where the Goal Went In", body: "9-zone grid — tap where the puck beat the goalie. Glove/Center/Blocker × High/Mid/Low." }
     ],
     stats: [
-      { sel: "nav.tabs", title: "Stats Tabs", body: "Goalie, Our Team, Opponent. All live and split by period." }
+      { sel: "nav.bottom-nav", title: "Stats Tabs", body: "Goalie, Our Team, Opponent. All live and split by period." }
     ],
     report: [
       { sel: "#oppInput", title: "Auto-Filled", body: "Opponent + score auto-populate from your game data. Edit if needed." },
@@ -5522,7 +5559,7 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
 
   function openHelp(){
     // Determine current tab
-    const activeTab = document.querySelector("nav.tabs button.active");
+    const activeTab = document.querySelector("nav.bottom-nav button.active");
     const tab = activeTab ? activeTab.dataset.tab : "rink";
     currentSteps = STEPS[tab] || STEPS.rink;
     stepIdx = 0;
