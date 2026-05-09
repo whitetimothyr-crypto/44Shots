@@ -97,7 +97,7 @@
           away_team_name: gameInfo.away_team_name || null,
           rink_name: gameInfo.rink_name || null,
           age_bracket: gameInfo.age_bracket || null,
-          status: 'in_progress'
+          status: 'scheduled'
         })
         .select()
         .single();

@@ -310,8 +310,10 @@
     wireEvents();
 
     // Listen for game join events (triggered by FelixGame.detectGameFromURL)
+    // game_started fires when coach hits Begin Game — flip every open session
+    // (including scheduled-screen viewers) to the walkthrough/welcome flow.
     FelixGame.onGameChange((evt) => {
-      if (evt.type === 'game_joined') {
+      if (evt.type === 'game_joined' || evt.type === 'game_started') {
         FelixWelcome.showJoinWelcome(evt.game);
       }
     });
