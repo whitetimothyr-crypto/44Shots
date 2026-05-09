@@ -88,6 +88,28 @@
       const match_probe = buildMatchProbe(code, today);
 
       const client = getClient();
+
+      // Dedup: route to join if a row with this client_game_id already exists.
+      // generateGameCode picks max(client_game_id)+1, but two coaches racing
+      // in the same window can both pick the same number. This check catches
+      // the common case where row 1 has already landed when coach 2 tries to
+      // create. It is NOT 100% race-proof (DB has no UNIQUE constraint on
+      // client_game_id — adding one would require deduping existing rows,
+      // which is out of scope here). Works for both authenticated and
+      // anonymous callers because the SELECT only requires the existing
+      // nomos_game RLS policy (TO authenticated USING true).
+      const { data: existing } = await client
+        .from('nomos_game')
+        .select('id, status')
+        .eq('client_game_id', code)
+        .in('status', ['scheduled', 'in_progress'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (existing && existing.id) {
+        return this.joinGame(code);
+      }
+
       const { data, error } = await client
         .from('nomos_game')
         .insert({
