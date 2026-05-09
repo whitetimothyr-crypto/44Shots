@@ -3295,8 +3295,15 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     toast("Goalie change · "+newName+" in net");
   });
 
-  // Show load game on first launch (no game configured)
-  if(!state.gameInfo.configured){
+  // Show load game on first launch (no game configured), UNLESS the URL
+  // carries a mesh join code (?game=PLYM-XXXX). In that case FelixGame
+  // detectGameFromURL handles it and the user goes directly to scoring —
+  // no NEW GAME setup form should interrupt the join flow.
+  const _hasMeshJoinParam = (() => {
+    try { return new URLSearchParams(window.location.search).has("game"); }
+    catch(e) { return false; }
+  })();
+  if(!state.gameInfo.configured && !_hasMeshJoinParam){
     setTimeout(showLoadGame, 200);
   }
   updateGoalieBanner(); if(typeof renderNetZoneLabels === "function") renderNetZoneLabels();
