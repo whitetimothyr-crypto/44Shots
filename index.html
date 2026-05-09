@@ -1261,13 +1261,13 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     syncGlobalPeriodUI();
   }
 
-  function getViewedEvents(){ return state.events.slice(); }
+  function getRinkViewEvents(){ return state.events.filter(ev => ev.period === state.period); }
   function getViewedNetEvents(){ return state.netEvents.slice(); }
   function redrawMarkersForView(){
     const mg = document.getElementById("markers");
     if(!mg) return;
     mg.innerHTML = "";
-    getViewedEvents().forEach(ev => drawMarker(ev, false));
+    getRinkViewEvents().forEach(ev => drawMarker(ev, false));
   }
   function redrawNetForView(){
     const ng = document.getElementById("netMarkers");
