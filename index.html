@@ -5724,7 +5724,13 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
 <script>
 (function () {
   const dot = document.getElementById("syncIndicator");
+  // Stale-cache safety: a returning PWA user can have a fresh index.html
+  // paired with an older js/sync.js cached by the service worker. In that
+  // pairing NomosSync exists but predates getStatus/onStatusChange, so the
+  // typeof check below is the difference between a working dot and an
+  // uncaught TypeError in paint().
   if (!dot || typeof NomosSync === "undefined") return;
+  if (typeof NomosSync.getStatus !== "function") return;
   const COLORS = {
     online_clean:   "#3AAEAC", // synced (accent teal — matches "good")
     online_pending: "#C9A84C", // pending events (warning gold)
@@ -5741,7 +5747,7 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
     dot.setAttribute("aria-label", label);
   }
   paint();
-  NomosSync.onStatusChange(paint);
+  if (typeof NomosSync.onStatusChange === "function") NomosSync.onStatusChange(paint);
   window.addEventListener("online", paint);
   window.addEventListener("offline", paint);
 })();
