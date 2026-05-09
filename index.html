@@ -738,13 +738,11 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 <div class="stat-card" id="reportOut" style="display:none;font-size:13px;color:var(--text);padding:14px">
 </div>
 
+<!-- Single native-share affordance. Replaces COPY REPORT / SHARE / EXPORT HTML / EXPORT PDF.
+     navigator.share opens the OS share sheet (Messages / Mail / AirDrop on iOS, etc.).
+     Falls back to clipboard when navigator.share is unavailable. -->
 <div class="row" style="margin-top:4px">
-  <button class="btn ghost" id="copyReportBtn">Copy Report</button>
-  <button class="btn ghost" id="shareReportBtn">Share</button>
-</div>
-<div class="row" style="margin-top:4px">
-  <button class="btn primary" id="exportHtmlBtn">Export HTML</button>
-  <button class="btn primary" id="exportPdfBtn">Export PDF</button>
+  <button id="shareReportBtn" type="button" style="background:var(--surface);border:1px solid var(--border);color:var(--accent);font-family:var(--sans);min-height:44px;padding:0 18px;border-radius:10px;font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;cursor:pointer;width:100%;touch-action:manipulation">Share</button>
 </div>
 <div class="row" style="margin-top:4px">
   <button class="btn ghost" id="emailBtn">Email Report</button>
@@ -4517,20 +4515,43 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     btn.disabled = false;
   });
 
-  document.getElementById("copyReportBtn").addEventListener("click", async ()=>{
-    const txt = lastReportText || document.getElementById("reportOut").textContent;
-    if(!txt) return toast("No report yet");
-    try{ await navigator.clipboard.writeText(txt); toast("Copied"); }catch(e){ alert(txt); }
-  });
-
+  // Single share affordance. Replaces copy / share / export-html / export-pdf
+  // handlers with one path: native share when available, clipboard fallback
+  // otherwise. Per spec: navigator.share gets text + URL; clipboard fallback
+  // copies URL only and shows "Link copied".
   document.getElementById("shareReportBtn").addEventListener("click", async ()=>{
     const txt = lastReportText || document.getElementById("reportOut").textContent;
-    if(!txt) return toast("No report yet");
-    const title = "44 Shots Game Report";
-    if(navigator.share){
-      try{ await navigator.share({title, text:txt}); }catch(e){}
-    }else{
-      try{ await navigator.clipboard.writeText(txt); toast("Copied (no share API)"); }catch(e){ alert(txt); }
+    if(!txt || !txt.trim()){ toast("No report yet"); return; }
+    const title = "44 Shots — Game Report";
+    // Prefer the active mesh game's share URL so recipients can open the game.
+    // Falls back to the app origin if no mesh game (legacy local-only flow).
+    let url = window.location.origin || window.location.href;
+    try {
+      if (typeof FelixGame !== "undefined" && FelixGame.getShareURL) {
+        const u = FelixGame.getShareURL();
+        if (u) url = u;
+      }
+    } catch(_){}
+
+    if (navigator.share) {
+      try { await navigator.share({ title, text: txt, url }); }
+      catch(_) { /* user canceled the share sheet — silent */ }
+      return;
+    }
+
+    // navigator.share unavailable — clipboard fallback (URL only).
+    try {
+      await navigator.clipboard.writeText(url);
+      toast("Link copied");
+    } catch(_) {
+      // Older Safari / sandboxed contexts: temp textarea + execCommand.
+      const ta = document.createElement("textarea");
+      ta.value = url;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); toast("Link copied"); }
+      catch(__) { alert(url); }
+      document.body.removeChild(ta);
     }
   });
 
@@ -4552,28 +4573,9 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     a.href = URL.createObjectURL(blob); a.download = "44shots-report-"+stamp+".json"; a.click();
   });
 
-  document.getElementById("exportHtmlBtn").addEventListener("click",()=>{
-    downloadHtmlReport();
-    toast("Report exported");
-  });
-
-  document.getElementById("exportPdfBtn").addEventListener("click",()=>{
-    // Open the HTML report in a new window which the user can then "Print to PDF" from
-    const html = buildHtmlReport();
-    const w = window.open();
-    if(w){
-      w.document.write(html);
-      w.document.close();
-      setTimeout(()=>{
-        try{ w.print(); }catch(e){}
-      }, 500);
-      toast("Tap Share > Save as PDF");
-    } else {
-      // Fallback: just download the HTML
-      downloadHtmlReport();
-      toast("Open file then Share > PDF");
-    }
-  });
+  // exportHtmlBtn / exportPdfBtn handlers removed alongside their buttons —
+  // single-share UX. buildHtmlReport / downloadHtmlReport remain defined in
+  // case Email Report or other paths reference them.
 
   document.getElementById("emailBtn").addEventListener("click",()=>{
     const b = buildBrief();
