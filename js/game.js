@@ -113,10 +113,25 @@
       return _activeGame;
     },
 
-    // Join an existing game by short code (e.g. "PLYM-0001")
+    // Join an existing game by short code (e.g. "PLYM-0001").
+    // Scorers do not need to log in. If no session exists we silently sign
+    // the user in anonymously: that gives them an auth.uid() (required by
+    // the nomos_game SELECT and nomos_submission INSERT RLS policies)
+    // without a login flow. Anonymous users persist in localStorage via
+    // persistSession, so each browser/device produces one auth row, not
+    // one per visit. Coach features stay gated by FelixAuth.getRole()
+    // (anon resolves to role 'user').
     async joinGame(code) {
-      const user = await FelixAuth.getUser();
-      if (!user) throw new Error('Must be logged in to join a game');
+      let user = await FelixAuth.getUser();
+      if (!user) {
+        try {
+          await FelixAuth.signInAnonymously();
+          user = await FelixAuth.getUser();
+        } catch (e) {
+          throw new Error('Could not establish a session to join: ' + e.message);
+        }
+      }
+      if (!user) throw new Error('Could not establish a session to join the game');
 
       const normalized = code.trim().toUpperCase();
       const client = getClient();
