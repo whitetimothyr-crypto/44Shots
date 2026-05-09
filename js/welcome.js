@@ -310,21 +310,23 @@
     wireEvents();
 
     // Listen for game events.
-    // - Any event with a game payload (joined/started/created/resumed) syncs
-    //   the header score-row labels to the team names from nomos_game.
-    //   Without this, homeRowLabel/awayRowLabel stay at the hard-coded
-    //   "HOME"/"AWAY" markup defaults even when a real game is loaded.
-    // - game_joined and game_started additionally show the welcome flow,
-    //   flipping scheduled-screen viewers into the walkthrough on Begin Game.
+    // Any event with a game payload (joined/started/created/resumed) syncs
+    // the header score-row labels to the team names from nomos_game.
+    //
+    // Joining an existing game goes directly to the scoring view — no
+    // welcome modal, no walkthrough. The coach-create flow
+    // (FelixWelcome.showCreateGame -> #nomosCreateGamePanel) is the only
+    // modal in the mesh path; it's invoked from coach-only UI when
+    // creating a new game, not from this listener.
+    //
+    // showJoinWelcome remains exported on FelixWelcome for any future
+    // caller that explicitly opts into the welcome/walkthrough flow.
     FelixGame.onGameChange((evt) => {
       if (evt && evt.game) {
         const hl = document.getElementById('homeRowLabel');
         const al = document.getElementById('awayRowLabel');
         if (hl) hl.textContent = evt.game.home_team_name || 'HOME';
         if (al) al.textContent = evt.game.away_team_name || 'AWAY';
-      }
-      if (evt.type === 'game_joined' || evt.type === 'game_started') {
-        FelixWelcome.showJoinWelcome(evt.game);
       }
     });
   });
