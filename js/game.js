@@ -126,7 +126,17 @@
         .select()
         .single();
 
-      if (error) throw new Error('createGame failed: ' + error.message);
+      if (error) {
+        // Race-loss path: another coach inserted the same client_game_id
+        // between our app-layer dedup SELECT and this INSERT. Postgres
+        // unique violation 23505 (from the migration-14 partial unique
+        // index) routes us to joinGame so the second coach lands on the
+        // first coach's game instead of seeing an error.
+        if (error.code === '23505' || /duplicate key|unique/i.test(error.message || '')) {
+          return this.joinGame(code);
+        }
+        throw new Error('createGame failed: ' + error.message);
+      }
 
       _activeGame = { ...data, code };
       // Persist to IndexedDB for offline resume

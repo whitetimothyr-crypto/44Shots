@@ -271,6 +271,17 @@ body.gs-pp #gameStateSeg button[data-gs="pp"], body.gs-pk #gameStateSeg button[d
 #whatsNewBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:2700;display:none;align-items:center;justify-content:center;padding:20px;font-family:var(--sans)}
 #whatsNewBackdrop.active{display:flex}
 
+/* Apple Pencil input mode: bump every interactive surface to >=60x60 hit
+   area for stylus reliability with gloves. Default Finger mode is
+   untouched — these rules only apply when body has .input-mode-pen. */
+body.input-mode-pen button,
+body.input-mode-pen [role="button"],
+body.input-mode-pen .lsBtn,
+body.input-mode-pen .seg-period button,
+body.input-mode-pen .seg button {
+  min-height:60px;min-width:60px;
+}
+
 /* Help / coachmark overlay */
 @keyframes coachPulse {
 0%,100% { box-shadow: 0 0 0 0 rgba(58,174,172,.7), 0 0 0 0 rgba(58,174,172,.4) }
@@ -322,7 +333,8 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   <!-- Sponsor placeholder — invisible empty space, populated per-team in v3 -->
   <div id="sponsorSlot" style="flex:1;min-width:0"></div>
   <!-- Status indicator (sync dot). periodMirror dropped: period selector now persists across tabs. -->
-  <div id="headerStatusBar" style="display:flex;align-items:center;font-size:11px;color:var(--muted);flex:0 0 auto;">
+  <div id="headerStatusBar" style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);flex:0 0 auto;">
+    <span id="penIndicator" aria-label="Apple Pencil input mode active" title="Apple Pencil input mode" style="display:none;font-size:13px;line-height:1;color:var(--accent);">✎</span>
     <span id="syncIndicator" aria-label="Sync status" style="font-size:12px;line-height:1;">●</span>
     <span id="periodMirror" aria-label="Current period" style="display:none"></span>
   </div>
@@ -433,6 +445,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   <button id="settingsBtn" class="btn" type="button" aria-label="Settings">⚙ Settings</button>
   <button id="helpBtnUtil" class="btn" type="button" aria-label="Help">? Help</button>
   <button id="rotateRinkBtn" class="btn" type="button">↻ Rotate View</button>
+  <button id="inputModeBtn" class="btn" type="button" aria-label="Toggle input mode">✎ Input: Finger</button>
   <button id="helpBtn" class="btn" type="button" aria-label="Show What's New">📋 What's New</button>
   <button id="topAccountBtn" class="btn" type="button" aria-label="Account">SIGN IN</button>
 </div>
@@ -5518,6 +5531,18 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
   const whatsNewBackdrop = document.getElementById("whatsNewBackdrop");
   const whatsNewCloseBtn = document.getElementById("whatsNewCloseBtn");
   function maybeShowWhatsNew(){
+    // Suppress on the join path (?game=PLYM-XXXX): a parent tapping a coach's
+    // join link wants to score, not read changelog. Mark seen so the popup
+    // also doesn't fire on later visits unless seenWhatsNew is reset. Cold
+    // app opens (no ?game= param) still get the popup once per APP_VERSION.
+    let _hasGameParam = false;
+    try { _hasGameParam = new URLSearchParams(window.location.search).has("game"); }
+    catch(_) {}
+    if(_hasGameParam){
+      settings.seenWhatsNew = APP_VERSION;
+      try { saveSettings(); } catch(_) {}
+      return;
+    }
     if(settings.seenWhatsNew === APP_VERSION) return;
     // Defer slightly so it doesn't fight the help coachmarks on a fresh install
     setTimeout(()=>{ whatsNewBackdrop.classList.add("active"); }, 600);
@@ -5714,6 +5739,73 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
   NomosSync.onStatusChange(paint);
   window.addEventListener("online", paint);
   window.addEventListener("offline", paint);
+})();
+</script>
+
+<!-- Apple Pencil input mode.
+     - Default: Finger (no class, no indicator, normal sizes).
+     - Pen mode: body.input-mode-pen (CSS bumps tap targets to 60x60),
+       header pencil indicator visible, overflow menu label updated.
+     - Persisted to localStorage under "felix.inputMode".
+     - Pointer safety net: if Apple Pencil with palm rejection drops the
+       click after pointerup, we dispatch a synthetic click within 250ms.
+       A capturing click listener cancels the fallback when the natural
+       click does land, avoiding double-fire. -->
+<script>
+(function () {
+  const KEY = "felix.inputMode";
+  const FINGER = "finger";
+  const PEN = "pen";
+
+  function getMode() { try { return localStorage.getItem(KEY) || FINGER; } catch (_) { return FINGER; } }
+  function setMode(v) { try { localStorage.setItem(KEY, v); } catch (_) {} }
+
+  function apply(mode) {
+    const indicator = document.getElementById("penIndicator");
+    const btn = document.getElementById("inputModeBtn");
+    if (mode === PEN) {
+      document.body.classList.add("input-mode-pen");
+      if (indicator) indicator.style.display = "inline";
+      if (btn) btn.textContent = "✎ Input: Apple Pencil";
+    } else {
+      document.body.classList.remove("input-mode-pen");
+      if (indicator) indicator.style.display = "none";
+      if (btn) btn.textContent = "✎ Input: Finger";
+    }
+  }
+
+  function toggle() {
+    const next = getMode() === PEN ? FINGER : PEN;
+    setMode(next);
+    apply(next);
+  }
+
+  apply(getMode());
+  const btn = document.getElementById("inputModeBtn");
+  if (btn) btn.addEventListener("click", toggle);
+
+  // Pointer safety net for Apple Pencil only. Body-level capture so it
+  // catches taps on any button-like surface without per-button wiring.
+  let pending = null;
+  document.addEventListener("pointerup", (e) => {
+    if (getMode() !== PEN) return;
+    if (e.pointerType !== "pen") return;
+    const target = e.target.closest("button, [role='button'], .lsBtn, a");
+    if (!target || target.disabled) return;
+    pending = { target, fired: false };
+    const captured = pending;
+    setTimeout(() => {
+      if (!captured.fired) {
+        captured.fired = true;
+        try { captured.target.click(); } catch (_) {}
+      }
+      if (pending === captured) pending = null;
+    }, 250);
+  }, true);
+  document.addEventListener("click", () => {
+    // Natural click landed — cancel the pending synthetic.
+    if (pending) pending.fired = true;
+  }, true);
 })();
 </script>
 
