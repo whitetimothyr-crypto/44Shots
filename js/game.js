@@ -174,6 +174,34 @@
       }
     },
 
+    // Transition active scheduled game to in_progress.
+    // Coach-only. Clears local shot state so live tracking starts fresh.
+    async beginGame() {
+      if (!_activeGame) throw new Error('No active game to begin');
+      const user = await FelixAuth.getUser();
+      if (!user) throw new Error('Must be logged in to begin a game');
+      const role = await FelixAuth.getRole();
+      if (role !== 'coach') throw new Error('Only coaches can begin a game');
+
+      const client = getClient();
+      const { data, error } = await client
+        .from('nomos_game')
+        .update({ status: 'in_progress' })
+        .eq('id', _activeGame.id)
+        .select()
+        .single();
+      if (error) throw new Error('beginGame failed: ' + error.message);
+
+      // Clear local game state. Preserves settings, archive, jersey-num, walkthrough.
+      ['felix-shot-tracker-v1','felix-backup-latest','felix-backup-stamp',
+       'felix-opp','felix-score','felix-notes','felix-opp-auto','felix-score-auto']
+        .forEach((k) => { try { localStorage.removeItem(k); } catch(e){} });
+
+      _activeGame = { ..._activeGame, ...data };
+      emit({ type: 'game_started', game: _activeGame });
+      return _activeGame;
+    },
+
     // Mark active game completed
     async endGame() {
       if (!_activeGame) return;

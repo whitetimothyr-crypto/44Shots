@@ -13,6 +13,25 @@
     <div id="nomosWelcomeBackdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9000;align-items:center;justify-content:center;">
       <div id="nomosWelcomeModal" style="background:#1a1a2e;color:#fff;border-radius:16px;padding:28px 24px;max-width:360px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.6);font-family:system-ui,sans-serif;">
 
+        <!-- SCHEDULED: pre-start view for games not yet kicked off -->
+        <div id="nomosScreenScheduled" style="display:none;">
+          <div style="text-align:center;margin-bottom:16px;">
+            <div style="font-size:2rem;">⏳</div>
+            <h2 style="margin:8px 0 4px;font-size:1.2rem;font-weight:700;">Game Scheduled</h2>
+            <p style="margin:0;font-size:0.85rem;color:#aaa;">You're all set for this game</p>
+          </div>
+          <div style="background:#0d1117;border-radius:10px;padding:14px;margin-bottom:16px;text-align:center;">
+            <div id="nomosScheduledCode" style="font-size:1.5rem;font-weight:800;letter-spacing:2px;color:#4fc3f7;">--</div>
+            <div id="nomosScheduledStartTime" style="font-size:0.9rem;color:#aaa;margin-top:6px;">Game starts at 9:00 AM</div>
+          </div>
+          <p style="margin:0 0 18px;font-size:0.85rem;color:#aaa;line-height:1.5;text-align:center;">
+            Feel free to explore all features. When the coach starts the game, everything resets and live tracking begins.
+          </p>
+          <button id="nomosScheduledExploreBtn" style="width:100%;padding:14px;background:#4fc3f7;color:#000;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;">
+            Explore the app
+          </button>
+        </div>
+
         <!-- SCREEN 1: Welcome + game info -->
         <div id="nomosScreen1">
           <div style="text-align:center;margin-bottom:16px;">
@@ -88,6 +107,14 @@
         <button id="nomosCreateGameBtn" style="width:100%;padding:14px;background:#4fc3f7;color:#000;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;">Create Game</button>
         <button id="nomosCreateGameCancel" style="width:100%;padding:10px;background:transparent;color:#666;border:none;font-size:0.85rem;cursor:pointer;margin-top:6px;">Cancel</button>
 
+        <!-- Begin Game: transitions an already-scheduled active game to in_progress -->
+        <div style="border-top:1px solid #333;margin-top:18px;padding-top:14px;">
+          <p style="margin:0 0 10px;font-size:0.8rem;color:#aaa;text-align:center;">If a game is already scheduled:</p>
+          <button id="nomosBeginGameBtn" style="width:100%;padding:14px;background:#ef5350;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;">
+            Begin Game
+          </button>
+        </div>
+
         <!-- Post-creation: share UI -->
         <div id="nomosSharePanel" style="display:none;margin-top:20px;text-align:center;">
           <div id="nomosCreatedCode" style="font-size:1.8rem;font-weight:800;letter-spacing:3px;color:#4fc3f7;margin-bottom:8px;"></div>
@@ -109,7 +136,7 @@
   function hide(el) { if (el) el.style.display = 'none'; }
 
   function showScreen(id) {
-    ['nomosScreen1','nomosScreen2','nomosScreen3','nomosScreen4'].forEach((s) => {
+    ['nomosScreenScheduled','nomosScreen1','nomosScreen2','nomosScreen3','nomosScreen4'].forEach((s) => {
       const el = document.getElementById(s);
       if (el) el.style.display = s === id ? 'block' : 'none';
     });
@@ -203,6 +230,24 @@
 
     // Share done
     document.getElementById('nomosShareDone').addEventListener('click', closeCreatePanel);
+
+    // Begin Game (scheduled -> in_progress)
+    document.getElementById('nomosBeginGameBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('nomosBeginGameBtn');
+      btn.disabled = true;
+      btn.textContent = 'Starting...';
+      try {
+        await FelixGame.beginGame();
+        closeCreatePanel();
+      } catch (e) {
+        alert('Could not begin game: ' + e.message);
+        btn.disabled = false;
+        btn.textContent = 'Begin Game';
+      }
+    });
+
+    // Scheduled-screen Explore button: just dismisses the modal
+    document.getElementById('nomosScheduledExploreBtn').addEventListener('click', closeWelcome);
   }
 
   // ============================================================
@@ -222,8 +267,11 @@
         (game.rink_name ? ` · ${game.rink_name}` : '') +
         ` · ${game.game_date || 'Today'}`;
 
-      // Skip walkthrough screens if already seen
-      if (hasSeenWalkthrough()) {
+      if (game.status === 'scheduled') {
+        // Pre-start: show scheduled screen, no walkthrough yet
+        document.getElementById('nomosScheduledCode').textContent = game.code || '--';
+        showScreen('nomosScreenScheduled');
+      } else if (hasSeenWalkthrough()) {
         showScreen('nomosScreen1');
         document.getElementById('nomosStartWalkthrough').style.display = 'none';
         document.getElementById('nomosSkipWalkthrough').textContent = 'Got it, take me to the rink';
