@@ -1163,6 +1163,29 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       localStorage.setItem("felix-backup-latest", json);
       localStorage.setItem("felix-backup-stamp", stamp);
     }catch(e){}
+    // Mesh sync: mirror every event into NomosSync's offline-first queue.
+    // Idempotent — recordEvent dedupes by client_id and only re-marks an
+    // event pending if its payload changed since last record. No-op when
+    // no mesh game is active. Wrapped to ensure sync never breaks save().
+    try {
+      if (typeof NomosSync !== "undefined" && typeof FelixGame !== "undefined") {
+        const _g = FelixGame.getActiveGame();
+        if (_g && _g.id) {
+          const _ctx = { game_id: _g.id };
+          const _push = (ev) => {
+            if (!ev) return;
+            const id = NomosSync.recordEvent(
+              ev,
+              ev._client_id ? Object.assign({}, _ctx, { client_id: ev._client_id }) : _ctx
+            );
+            if (id && !ev._client_id) ev._client_id = id;
+          };
+          (state.events || []).forEach(_push);
+          (state.netEvents || []).forEach(_push);
+          (state.faceoffs || []).forEach(_push);
+        }
+      }
+    } catch(_) {}
     renderStats();
   }
 
@@ -5607,6 +5630,34 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
   });
   // Reposition on resize/scroll
   window.addEventListener("resize", ()=>{ if(document.getElementById("helpOverlay").classList.contains("active")) showStep(stepIdx); });
+})();
+</script>
+
+<!-- Mesh sync connection indicator: drives the existing #syncIndicator dot.
+     green = synced & online, yellow = pending events, red = offline. -->
+<script>
+(function () {
+  const dot = document.getElementById("syncIndicator");
+  if (!dot || typeof NomosSync === "undefined") return;
+  const COLORS = {
+    online_clean:   "#3AAEAC", // synced (accent teal — matches "good")
+    online_pending: "#C9A84C", // pending events (warning gold)
+    offline:        "#A0364E", // offline (destructive red)
+  };
+  function paint() {
+    const s = NomosSync.getStatus();
+    let color, label;
+    if (!s.online) { color = COLORS.offline; label = "Offline — events queued locally"; }
+    else if (s.pending > 0) { color = COLORS.online_pending; label = s.pending + " event(s) pending sync"; }
+    else { color = COLORS.online_clean; label = "Synced"; }
+    dot.style.color = color;
+    dot.setAttribute("title", label);
+    dot.setAttribute("aria-label", label);
+  }
+  paint();
+  NomosSync.onStatusChange(paint);
+  window.addEventListener("online", paint);
+  window.addEventListener("offline", paint);
 })();
 </script>
 
