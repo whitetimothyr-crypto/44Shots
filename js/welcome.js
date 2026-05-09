@@ -263,7 +263,7 @@
 
     // Listen for game join events (triggered by FelixGame.detectGameFromURL)
     FelixGame.onGameChange((evt) => {
-      if (evt.type === 'game_joined' || evt.type === 'game_created') {
+      if (evt.type === 'game_joined') {
         FelixWelcome.showJoinWelcome(evt.game);
       }
     });
