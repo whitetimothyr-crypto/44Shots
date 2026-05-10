@@ -982,11 +982,18 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 <div class="stat-card" id="reportOut" style="display:none;font-size:13px;color:var(--text);padding:14px">
 </div>
 
-<!-- Single native-share affordance. Replaces COPY REPORT / SHARE / EXPORT HTML / EXPORT PDF.
-     navigator.share opens the OS share sheet (Messages / Mail / AirDrop on iOS, etc.).
-     Falls back to clipboard when navigator.share is unavailable. -->
-<div class="row" style="margin-top:4px">
-  <button id="shareReportBtn" type="button" style="background:var(--surface);border:1px solid var(--border);color:var(--accent);font-family:var(--sans);min-height:44px;padding:0 18px;border-radius:10px;font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;cursor:pointer;width:100%;touch-action:manipulation">Share</button>
+<!-- Share (primary, accent) + Export dropdown (secondary, muted text).
+     Share opens the OS share sheet via navigator.share, fallback to clipboard.
+     Export drops down PDF / XLSX / Print. Export is intentionally less
+     prominent than Share — same surface but text-muted instead of accent. -->
+<div class="row" style="margin-top:4px;position:relative;gap:8px">
+  <button id="shareReportBtn" type="button" style="flex:2;background:var(--surface);border:1px solid var(--border);color:var(--accent);font-family:var(--sans);min-height:44px;padding:0 18px;border-radius:10px;font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;cursor:pointer;touch-action:manipulation">Share</button>
+  <button id="exportMenuBtn" type="button" aria-haspopup="true" aria-expanded="false" style="flex:1;background:var(--surface);border:1px solid var(--border);color:var(--text-muted);font-family:var(--sans);min-height:44px;padding:0 14px;border-radius:10px;font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;cursor:pointer;touch-action:manipulation">Export &#9662;</button>
+  <div id="exportMenu" role="menu" aria-labelledby="exportMenuBtn" style="display:none;position:absolute;top:48px;right:0;min-width:160px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px;z-index:60;box-shadow:0 8px 24px rgba(0,0,0,.5);font-family:var(--sans)">
+    <button id="exportPdfBtn" role="menuitem" type="button" style="display:block;width:100%;padding:10px 12px;background:transparent;border:0;color:var(--text);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;text-align:left;cursor:pointer;border-radius:6px;min-height:44px">PDF</button>
+    <button id="exportXlsxFromReportBtn" role="menuitem" type="button" style="display:block;width:100%;padding:10px 12px;background:transparent;border:0;color:var(--text);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;text-align:left;cursor:pointer;border-radius:6px;min-height:44px">XLSX</button>
+    <button id="printReportBtn" role="menuitem" type="button" style="display:block;width:100%;padding:10px 12px;background:transparent;border:0;color:var(--text);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;text-align:left;cursor:pointer;border-radius:6px;min-height:44px">Print</button>
+  </div>
 </div>
 <div class="row" style="margin-top:4px">
   <button class="btn ghost" id="emailBtn">Email Report</button>
@@ -4798,6 +4805,97 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       document.body.removeChild(ta);
     }
   });
+
+  // Export dropdown wiring (PDF / XLSX / Print). Secondary affordance next
+  // to Share. PDF lazy-loads jsPDF on first click; XLSX routes to the
+  // existing Stats-panel handler; Print opens buildHtmlReport in a new
+  // window with auto-print so iOS Safari + desktop both surface the system
+  // dialog (where users can also "Save as PDF" if they prefer).
+  (function wireExportDropdown(){
+    const menuBtn = document.getElementById("exportMenuBtn");
+    const menu = document.getElementById("exportMenu");
+    if(!menuBtn || !menu) return;
+
+    function setOpen(open){
+      menu.style.display = open ? "block" : "none";
+      menuBtn.setAttribute("aria-expanded", String(open));
+    }
+    menuBtn.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      setOpen(menu.style.display === "none" || !menu.style.display);
+    });
+    document.addEventListener("click", (e)=>{
+      if(menu.style.display === "block" && !menu.contains(e.target) && e.target !== menuBtn){
+        setOpen(false);
+      }
+    });
+    document.addEventListener("keydown", (e)=>{
+      if(e.key === "Escape" && menu.style.display === "block") setOpen(false);
+    });
+
+    let _jsPdfPromise = null;
+    function ensureJsPDF(){
+      if(window.jspdf && window.jspdf.jsPDF) return Promise.resolve(window.jspdf.jsPDF);
+      if(_jsPdfPromise) return _jsPdfPromise;
+      _jsPdfPromise = new Promise((resolve, reject)=>{
+        const s = document.createElement("script");
+        s.src = "https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js";
+        s.onload = ()=> (window.jspdf && window.jspdf.jsPDF) ? resolve(window.jspdf.jsPDF) : reject(new Error("jspdf missing"));
+        s.onerror = ()=> reject(new Error("jspdf load failed"));
+        document.head.appendChild(s);
+      });
+      return _jsPdfPromise;
+    }
+    document.getElementById("exportPdfBtn").addEventListener("click", async ()=>{
+      setOpen(false);
+      const txt = (typeof lastReportText !== "undefined" && lastReportText) ||
+                  document.getElementById("reportOut").textContent || "";
+      if(!txt.trim()){ toast("No report yet"); return; }
+      let JsPDF;
+      try { JsPDF = await ensureJsPDF(); }
+      catch(_){ toast("PDF library failed to load"); return; }
+      try {
+        const doc = new JsPDF({ unit:"pt", format:"letter" });
+        const margin = 36, pageW = 612, pageH = 792, lineH = 13, maxW = pageW - 2*margin;
+        doc.setFont("helvetica","bold"); doc.setFontSize(14);
+        doc.text("44 Shots — Game Report", margin, margin + 8);
+        doc.setFont("helvetica","normal"); doc.setFontSize(10);
+        const lines = doc.splitTextToSize(txt, maxW);
+        let y = margin + 32;
+        for(const line of lines){
+          if(y > pageH - margin){ doc.addPage(); y = margin + 16; }
+          doc.text(line, margin, y);
+          y += lineH;
+        }
+        const stamp = new Date().toISOString().slice(0,16).replace(/[-:T]/g,"");
+        doc.save("44shots-report-"+stamp+".pdf");
+      } catch(_){
+        toast("PDF export failed");
+      }
+    });
+
+    document.getElementById("exportXlsxFromReportBtn").addEventListener("click", ()=>{
+      setOpen(false);
+      const btn = document.getElementById("exportXlsxBtn");
+      if(!btn){ toast("XLSX export not available"); return; }
+      btn.click();
+    });
+
+    document.getElementById("printReportBtn").addEventListener("click", ()=>{
+      setOpen(false);
+      if(typeof buildHtmlReport !== "function"){ toast("Print not available"); return; }
+      const html = buildHtmlReport();
+      const printable = html.replace(
+        /<\/body>/i,
+        '<script>window.addEventListener("load",function(){setTimeout(function(){window.print();},150);});<\/script></body>'
+      );
+      const w = window.open("", "_blank");
+      if(!w){ toast("Popup blocked"); return; }
+      w.document.open();
+      w.document.write(printable);
+      w.document.close();
+    });
+  })();
 
   document.getElementById("exportTxtBtn").addEventListener("click",()=>{
     const b = buildBrief();
