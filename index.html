@@ -116,7 +116,7 @@ background:var(--ice);border-radius:14px;position:relative;overflow:hidden;
 box-shadow:var(--shadow), inset 0 0 0 2px rgba(0,0,0,.06);
 touch-action:manipulation;
 }
-.rink-wrap{aspect-ratio: 100 / 60; width:100%;max-width:min(100%, calc(78vh * 100 / 60));margin:0 auto;max-height:78vh}
+.rink-wrap{aspect-ratio: 100 / 60; width:100%;max-width:min(100%, calc(78vh * 100 / 60));margin:0 auto;max-height:100%;border-radius:0}
 .net-wrap{aspect-ratio: 6 / 4; width:100%}
 .zone-pulse{animation:zonePulse 3.6s ease-in-out infinite}
 @keyframes zonePulse{0%,100%{opacity:0}50%{opacity:.05}}
@@ -648,8 +648,8 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 <div id="headerStats" style="font-family:var(--sans);background:var(--surface);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;justify-content:flex-end;gap:24px">
   <div style="display:grid;grid-template-columns:auto 44px 44px;gap:14px;align-items:center;text-align:center;line-height:1">
     <span></span>
-    <span style="font-size:10px;letter-spacing:.18em;font-weight:300;color:var(--text-muted);text-transform:uppercase">G</span>
-    <span style="font-size:10px;letter-spacing:.18em;font-weight:300;color:var(--text-muted);text-transform:uppercase">SOG</span>
+    <span style="font-size:14px;letter-spacing:.18em;font-weight:500;color:var(--text);opacity:.9;text-transform:uppercase">G</span>
+    <span style="font-size:14px;letter-spacing:.18em;font-weight:500;color:var(--text);opacity:.9;text-transform:uppercase">SOG</span>
     <span id="homeRowLabel" style="font-size:10px;letter-spacing:.18em;font-weight:300;color:var(--text-muted);text-transform:uppercase;text-align:left">HOME</span>
     <b id="hHomeGoals" style="color:var(--text);font-size:28px;font-weight:600">0</b>
     <b id="hHomeShots" style="color:var(--text);font-size:28px;font-weight:600">0</b>
@@ -750,7 +750,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   <button id="rotateRinkBtn" class="btn" type="button">↻ Rotate View</button>
   <button id="inputModeBtn" class="btn" type="button" aria-label="Toggle input mode">✎ Input: Finger</button>
   <button id="helpBtn" class="btn" type="button" aria-label="Show What's New">📋 What's New</button>
-  <button id="topAccountBtn" class="btn" type="button" aria-label="Account">SIGN IN</button>
+  <button id="topAccountBtn" class="btn" type="button" aria-label="User Role">USER ROLE</button>
 </div>
 
 <!-- Last Shot bar (directly above rink, sticky) -->
@@ -2122,6 +2122,18 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   rinkSvg.addEventListener("pointerup", handleRinkPointerUp);
   rinkSvg.addEventListener("pointercancel", handleRinkPointerCancel);
   rinkSvg.addEventListener("pointerleave", handleRinkPointerCancel);
+
+  // Goalie markers (H / A circles in each crease) are display-only.
+  // Tapping the rink at their location should NOT register a shot;
+  // goalie change is on the Lineup screen. stopPropagation on
+  // pointerdown prevents the rink-level handler above from firing.
+  ["goalieLeft", "goalieRight"].forEach((id) => {
+    const g = document.getElementById(id);
+    if (!g) return;
+    const swallow = (e) => { e.stopPropagation(); };
+    g.addEventListener("pointerdown", swallow);
+    g.addEventListener("click", swallow);
+  });
 
   // ============ Faceoff system ============
   // Spec:
@@ -5452,16 +5464,16 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
 
   async function refreshAuthAffordance() {
     if (!topAccountBtn) return;
-    if (typeof FelixAuth === 'undefined') { topAccountBtn.textContent = 'SIGN IN'; return; }
+    if (typeof FelixAuth === 'undefined') { topAccountBtn.textContent = 'USER ROLE'; return; }
     try {
       const user = await FelixAuth.getUser();
       const role = await FelixAuth.getRole();
       if (user) {
         topAccountBtn.textContent = user.is_anonymous ? 'GUEST' : ((ROLE_LABEL[role] || role).toUpperCase());
       } else {
-        topAccountBtn.textContent = 'SIGN IN';
+        topAccountBtn.textContent = 'USER ROLE';
       }
-    } catch (e) { topAccountBtn.textContent = 'SIGN IN'; }
+    } catch (e) { topAccountBtn.textContent = 'USER ROLE'; }
   }
 
   if (topAccountBtn) topAccountBtn.addEventListener('click', openAccount);
