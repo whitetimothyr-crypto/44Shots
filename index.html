@@ -194,7 +194,7 @@ background:var(--ice);border-radius:14px;position:relative;overflow:hidden;
 box-shadow:var(--shadow), inset 0 0 0 2px rgba(0,0,0,.06);
 touch-action:manipulation;
 }
-.rink-wrap{aspect-ratio: 100 / 60; width:100%;max-width:min(100%, calc(78vh * 100 / 60));margin:0 auto;max-height:100%;border-radius:0}
+.rink-wrap{aspect-ratio: 100 / 60; width:100%;max-width:min(100%, calc(78vh * 100 / 60));margin:0 auto;max-height:100%;border-radius:0;box-shadow:none}
 .net-wrap{aspect-ratio: 6 / 4; width:100%}
 .zone-pulse{animation:zonePulse 3.6s ease-in-out infinite}
 @keyframes zonePulse{0%,100%{opacity:0}50%{opacity:.05}}
@@ -450,7 +450,10 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
      Felix photo (header > img) hidden — the rail eats horizontal space
      that would otherwise go to the photo. Matches pre-Commit-A behavior. */
   body > header > img { display: none !important; }
-  #leftRail {
+  /* Left rail is scoped to body.on-rink — switchTab() toggles this class
+     so the fixed-position rail only appears when the Rink tab is active.
+     Without scoping, the rail would overlay every tab in landscape. */
+  body.on-rink #leftRail {
     display: flex;
     flex-direction: column; align-items: center;
     gap: 16px; padding: 14px 0;
@@ -460,7 +463,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     background: var(--surface); border-right: 1px solid var(--border);
     z-index: 40; box-sizing: border-box;
   }
-  #leftRail .capIcon { color: var(--text-muted); }
+  body.on-rink #leftRail .capIcon { color: var(--text-muted); }
 
   /* Goalies row: drop in landscape — long names + dual change buttons
      don't fit the rail. Available via portrait or overflow menu. */
@@ -477,23 +480,27 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   }
 
   /* Rink panel uses block flow so the capture row, game-state row, and
-     rink stack vertically inside the center column. */
-  #panel-rink {
+     rink stack vertically inside the center column. All selectors below
+     scoped to #panel-rink.active so the rink layout only applies when
+     the Rink tab is the active panel. Without .active scoping, the rink
+     would render under every other tab (whiteboard / lineup / more), per
+     bug fixed game-day 2026-05-10. */
+  #panel-rink.active {
     display: block !important;
     height: 100% !important;
     padding: 0 !important; gap: 0 !important; margin: 0 !important;
     overflow: hidden !important;
   }
-  #panel-rink > #excusedBadge,
-  #panel-rink > #gameStateHint,
-  #panel-rink > .legend,
-  #panel-rink > #rinkActionsRow { display: none !important; }
+  #panel-rink.active > #excusedBadge,
+  #panel-rink.active > #gameStateHint,
+  #panel-rink.active > .legend,
+  #panel-rink.active > #rinkActionsRow { display: none !important; }
 
   /* PP / PK toggles + period dots migrated to the merged header (top bar).
      The old #panel-rink > #gameStateRow markup was deleted; no rule needed.
      Capture row below the rink is hidden in landscape — left rail handles
      Photo / Video / Gallery / Feed instead. */
-  #panel-rink > #captureRow { display: none !important; }
+  #panel-rink.active > #captureRow { display: none !important; }
 
   /* Right rail: 8 uniform lsBtn (GOAL+MISS+BLK+REB+WRAP+TIP+BREAK+FACEOFF).
      !important on top + bottom because the inline style is
@@ -501,7 +508,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
      and the bar overlaps the End Game cluster at the corner. Top = 88
      (full-width header height) + iPhone-LS sub-rule overrides to 56 to
      match the compressed header. Bottom = 40 (nav) + safe-area. */
-  #panel-rink #lastShotBar {
+  #panel-rink.active #lastShotBar {
     position: fixed !important;
     top: 88px !important;
     right: 0 !important;
@@ -521,8 +528,8 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     box-sizing: border-box;
     z-index: 40;
   }
-  #panel-rink #lastShotBar #lastShotLabel { display: none !important; }
-  #panel-rink #lastShotBar .lsBtn {
+  #panel-rink.active #lastShotBar #lastShotLabel { display: none !important; }
+  #panel-rink.active #lastShotBar .lsBtn {
     width: 100% !important;
     min-width: 0 !important;
     padding: 0 !important;
@@ -542,7 +549,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
      bottom-nav 40 + main padding/slack 20 + capture row ~40 + game-
      state toggles row ~40 = 140. Without this, the aspect-ratio'd rink
      overflows the center column on the smallest landscape viewports. */
-  #panel-rink .rink-wrap {
+  #panel-rink.active .rink-wrap {
     width: 100% !important;
     max-width: calc((100dvh - 124px - env(safe-area-inset-bottom)) * 100 / 60) !important;
     max-height: calc(100dvh - 124px - env(safe-area-inset-bottom)) !important;
@@ -573,17 +580,17 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     .seg-period button { min-height: 40px; min-width: 30px; }
     .seg-period button small { font-size: 8px; }
     #headerStatusBar { display: none; }
-    #panel-rink #lastShotBar {
+    #panel-rink.active #lastShotBar {
       top: 56px !important;
       gap: 4px !important;
     }
-    #panel-rink #lastShotBar .lsBtn {
+    #panel-rink.active #lastShotBar .lsBtn {
       height: 32px !important;
       min-height: 32px !important;
       flex: 0 0 32px !important;
       font-size: 10px !important;
     }
-    #leftRail { top: 56px; gap: 10px; padding: 8px 0; }
+    body.on-rink #leftRail { top: 56px; gap: 10px; padding: 8px 0; }
   }
 
   /* Bottom nav: 40px tall, label-less. Tap target = 40 + safe-area. */
@@ -606,7 +613,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet"></head>
-<body>
+<body class="on-rink">
 <div id="offlineBar" style="display:none;background:#c0392b;color:#fff;text-align:center;padding:6px;font-size:13px;font-weight:600;">Offline — changes saved locally</div>
 <div id="storageWarnBar" style="display:none;background:#e67e22;color:#fff;text-align:center;padding:6px;font-size:13px;font-weight:600;">Storage nearly full</div>
 <div id="gestureHintToast" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;z-index:9999;pointer-events:none;">Long-press shots to edit</div>
@@ -1661,6 +1668,10 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   function switchTab(tab){
     [...tabs.querySelectorAll("button")].forEach(x=>x.classList.toggle("active", x.dataset.tab===tab));
     document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("active", p.id==="panel-"+tab));
+    // body.on-rink scopes the landscape #leftRail rule so the fixed-position
+    // rail only shows when the Rink tab is active. Without this, the rail
+    // would persist as an overlay on every tab (game-day 2026-05-10 fix).
+    document.body.classList.toggle('on-rink', tab === 'rink');
     if(tab==="stats") renderStats();
     if(tab==="report" && window.refreshReportInputs) window.refreshReportInputs();
     if(tab==="net"){
