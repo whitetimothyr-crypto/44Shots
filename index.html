@@ -168,6 +168,22 @@ background:transparent;border:0;color:var(--text);border-radius:6px;width:100%;
 .overflow-menu .btn:hover{background:var(--border)}
 .overflow-menu hr{border:0;border-top:1px solid var(--border);margin:6px 0;opacity:.5}
 
+/* Calendar panel — schedule list rendered by FelixCalendar (js/calendar.js).
+   Off-rail tab; addressable from MORE menu. */
+.calendar-root{display:flex;flex-direction:column;gap:10px;padding:12px;font-family:var(--sans)}
+.calendar-head{display:flex;align-items:center;justify-content:space-between;padding:0 4px}
+.calendar-title{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-muted);font-weight:700}
+.calendar-refresh{background:transparent;border:1px solid var(--border);color:var(--text-muted);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:14px}
+.calendar-refresh:hover{color:var(--accent);border-color:var(--accent)}
+.calendar-list{display:flex;flex-direction:column;gap:8px}
+.calendar-row{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:grid;grid-template-columns:auto 1fr auto;grid-template-rows:auto auto;column-gap:12px;row-gap:4px;cursor:pointer;text-align:left;font-family:var(--sans);min-height:60px}
+.calendar-row:hover{border-color:var(--accent)}
+.calendar-row-date{grid-row:1;grid-column:1;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.calendar-row-match{grid-row:1;grid-column:2;font-size:13px;color:var(--text);font-weight:500}
+.calendar-row-code{grid-row:1;grid-column:3;font-size:10px;letter-spacing:.14em;color:var(--text-muted);font-family:monospace}
+.calendar-row-loc{grid-row:2;grid-column:1 / span 3;font-size:11px;color:var(--text-muted);letter-spacing:.02em;line-height:1.4}
+.calendar-empty{padding:18px;border:1px dashed var(--border);border-radius:10px;font-size:12px;color:var(--text-muted);text-align:center}
+
 main{flex:1;display:flex;flex-direction:column;padding:12px 12px calc(64px + env(safe-area-inset-bottom));gap:10px;min-height:0}
 .panel{display:none;flex:1;flex-direction:column;gap:10px;min-height:0}
 .panel.active{display:flex}
@@ -749,9 +765,36 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   <hr class="overflow-divider">
   <!-- Game lifecycle button. Single id="endGameBtn" — relocated from header
        in Commit B Item 6. Label + data-lifecycle swap based on
-       state.gameInfo.configured via toggleGameLifecycleBtn(). Coach-gated
-       via COACH_GATED_IDS (applyRoleGates hides for non-coach). -->
+       state.gameInfo.configured via toggleGameLifecycleBtn(). Visibility
+       gate stripped game-day 2026-05-10 — click handlers self-gate via
+       ensureCoach(). Restore visibility-gating in Commit C. -->
   <button id="endGameBtn" class="btn" type="button" data-lifecycle="start">START GAME</button>
+  <!-- JOIN GAME — visible to ALL roles (coach can join other coaches'
+       games; non-coach scorers join via short code). Opens a modal that
+       calls FelixGame.joinGame(code). QR scan TODO. -->
+  <button id="joinGameBtn" class="btn" type="button">JOIN GAME</button>
+</div>
+
+<!-- JOIN GAME modal — short-code entry. Calls FelixGame.joinGame(code)
+     and routes user into the game on success. Opens via #joinGameBtn
+     (overflow menu) or auto-prompts on app load when no game param + no
+     active game. TODO: QR scan input mode. -->
+<div id="joinGameBackdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:2600;align-items:center;justify-content:center;padding:20px;font-family:var(--sans)">
+  <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:12px;width:100%;max-width:380px;display:flex;flex-direction:column;gap:14px;padding:18px 20px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h3 style="margin:0;font-size:13px;letter-spacing:.18em;text-transform:uppercase;font-weight:800;color:var(--text)">Join Game</h3>
+      <button id="joinGameCloseBtn" type="button" aria-label="Close" style="background:transparent;border:0;color:var(--text-muted);font-size:24px;line-height:1;cursor:pointer;padding:0 4px;min-width:44px;min-height:44px">&times;</button>
+    </div>
+    <p style="margin:0;font-size:12px;letter-spacing:.04em;color:var(--text-muted);line-height:1.4">Enter the game code (e.g. <code style="background:var(--panel);padding:1px 5px;border-radius:4px;font-size:11px">BGBYG14B-0001</code>) printed on the rink screen or shared by a coach.</p>
+    <input id="joinGameCodeInput" type="text" placeholder="BGBYG14B-0001" autocapitalize="characters" autocorrect="off" spellcheck="false" style="width:100%;padding:12px 14px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-family:var(--sans);font-size:16px;letter-spacing:.06em;border-radius:8px;box-sizing:border-box;text-transform:uppercase">
+    <div id="joinGameMsg" style="display:none;font-size:11px;color:var(--destructive);letter-spacing:.04em;line-height:1.4"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button id="joinGameCancelBtn" type="button" class="btn ghost" style="padding:10px 14px;font-size:11px;letter-spacing:.14em">Cancel</button>
+      <button id="joinGameSubmitBtn" type="button" class="btn" style="padding:10px 16px;font-size:11px;letter-spacing:.14em;background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:700">Join</button>
+    </div>
+    <!-- TODO: QR scan input mode — capture button below the text input,
+         camera permission flow, decode game code on detection. -->
+  </div>
 </div>
 
 <!-- Last Shot bar (right rail in landscape, sticky above rink in portrait).
@@ -1147,6 +1190,11 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
         <span>Feed</span>
         <span class="more-arrow">&#8250;</span>
       </button>
+      <button type="button" class="more-item" data-more="calendar">
+        <svg class="more-icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>
+        <span>Calendar</span>
+        <span class="more-arrow">&#8250;</span>
+      </button>
       <button type="button" class="more-item" data-more="settings">
         <svg class="more-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>
         <span>Settings</span>
@@ -1506,6 +1554,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
      below so the legacy switchTab() sees a populated nav. -->
 <script src="js/whiteboard.js"></script>
 <script src="js/feed.js"></script>
+<script src="js/calendar.js"></script>
 <script src="js/lineup-api.js"></script>
 <script src="js/lineup.js"></script>
 <script src="js/nav.js"></script>
@@ -1650,13 +1699,13 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       const dest = item.dataset.more;
       if (dest === "stats" || dest === "report") {
         switchTab(dest);
-      } else if (dest === "feed") {
+      } else if (dest === "feed" || dest === "calendar") {
         // Off-rail module tab — route through FelixNav so module
         // lifecycle (onActivate) fires alongside panel switch.
         if (window.FelixNav && typeof window.FelixNav.activate === 'function') {
-          window.FelixNav.activate("feed");
+          window.FelixNav.activate(dest);
         } else if (typeof switchTab === "function") {
-          switchTab("feed");
+          switchTab(dest);
         }
       } else if (dest === "settings") {
         const sb = document.getElementById("settingsBtn");
@@ -5313,6 +5362,58 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
   function openSettings(){ settingsBackdrop.classList.add("active"); refreshSettingsUI(); }
   function closeSettings(){ settingsBackdrop.classList.remove("active"); }
   settingsBtn.addEventListener("click", openSettings);
+
+  // ============ JOIN GAME flow (game-day 2026-05-10) ============
+  // Overflow menu's JOIN GAME button opens a modal asking for a short
+  // game code (e.g. BGBYG14B-0001). On submit calls FelixGame.joinGame
+  // which queries Supabase and routes the user into the game. Visible
+  // to all roles — coaches join other coaches' games, scorers join via
+  // shared code. QR scan mode TODO.
+  (function () {
+    const openBtn = document.getElementById('joinGameBtn');
+    const backdrop = document.getElementById('joinGameBackdrop');
+    if (!openBtn || !backdrop) return;
+    const input = document.getElementById('joinGameCodeInput');
+    const submit = document.getElementById('joinGameSubmitBtn');
+    const cancel = document.getElementById('joinGameCancelBtn');
+    const closeBtn = document.getElementById('joinGameCloseBtn');
+    const msg = document.getElementById('joinGameMsg');
+    function show() {
+      backdrop.style.display = 'flex';
+      msg.style.display = 'none';
+      input.value = '';
+      setTimeout(() => input.focus(), 60);
+    }
+    function hide() { backdrop.style.display = 'none'; }
+    function setError(t) { msg.style.display = ''; msg.textContent = t; }
+    async function doJoin() {
+      const code = (input.value || '').trim().toUpperCase();
+      if (!code) { setError('Enter a game code.'); return; }
+      if (typeof FelixGame === 'undefined' || typeof FelixGame.joinGame !== 'function') {
+        setError('Join service unavailable. Reload the app.');
+        return;
+      }
+      submit.disabled = true; submit.textContent = 'Joining…';
+      try {
+        const game = await FelixGame.joinGame(code);
+        if (typeof toast === 'function') toast('Joined ' + (game.code || code));
+        hide();
+        // Surface the joined game to the user — reload so the rink screen
+        // boots with the joined game's state. The session persisted to
+        // IndexedDB by joinGame survives reload.
+        setTimeout(() => { window.location.reload(); }, 300);
+      } catch (e) {
+        setError((e && e.message) ? e.message : 'Could not join.');
+        submit.disabled = false; submit.textContent = 'Join';
+      }
+    }
+    openBtn.addEventListener('click', show);
+    submit.addEventListener('click', doJoin);
+    cancel.addEventListener('click', hide);
+    closeBtn.addEventListener('click', hide);
+    backdrop.addEventListener('click', (e) => { if (e.target === backdrop) hide(); });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') doJoin(); });
+  })();
   settingsCloseBtn.addEventListener("click", closeSettings);
   settingsBackdrop.addEventListener("click", (e)=>{
     if(e.target === settingsBackdrop) closeSettings();
@@ -5492,7 +5593,15 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
   });
 
   // ============ Coach gates + sign-in affordance (V3.0) ============
-  const COACH_GATED_IDS = ['endGameBtn', 'newGameBtn', 'newGameBtnTop', 'reportNewGameBtn', 'genReportBtn'];
+  // URGENT FIX (game day 2026-05-10): visibility gates on START / NEW / END
+  // GAME stripped because role detection on prod was hiding the buttons
+  // entirely for users whose FelixAuth.getRole() resolved to 'user'
+  // (anon, slow auth, or pre-roster-membership state). The click handlers
+  // already self-gate via ensureCoach() and toast 'Coach access required'
+  // for non-coach taps — so functionality is still locked, only the
+  // visibility hide is removed. Restore visibility-gating in Commit C
+  // alongside the scheduled-game gate. Report generation stays gated.
+  const COACH_GATED_IDS = ['genReportBtn'];
   const topAccountBtn = document.getElementById("topAccountBtn");
 
   async function ensureCoach() {
