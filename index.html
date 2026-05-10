@@ -176,19 +176,8 @@ background:none;border:0;padding:0;
    the below-rink #captureRow live instead via orientation gate. */
 #leftRail{display:none}
 
-/* Overflow menu (header "..." button reveals this). Coach-gated items hide via applyRoleGates(). */
-.overflow-menu{
-position:fixed;top:88px;right:8px;background:var(--surface);border:1px solid var(--border);
-border-radius:10px;padding:6px;z-index:60;box-shadow:0 8px 24px rgba(0,0,0,.5);min-width:180px;
-display:none;flex-direction:column;gap:2px;
-}
-.overflow-menu.open{display:flex}
-.overflow-menu .btn{
-padding:10px 12px;font-size:11px;letter-spacing:.14em;text-align:left;
-background:transparent;border:0;color:var(--text);border-radius:6px;width:100%;
-}
-.overflow-menu .btn:hover{background:var(--border)}
-.overflow-menu hr{border:0;border-top:1px solid var(--border);margin:6px 0;opacity:.5}
+/* Overflow menu CSS removed — three-dot trigger deleted; items moved
+   into the Settings modal "Game & App Tools" section. */
 
 /* Calendar panel — schedule list rendered by FelixCalendar (js/calendar.js).
    Off-rail tab; addressable from MORE menu. */
@@ -215,7 +204,7 @@ background:var(--ice);border-radius:14px;position:relative;overflow:hidden;
 box-shadow:var(--shadow), inset 0 0 0 2px rgba(0,0,0,.06);
 touch-action:manipulation;
 }
-.rink-wrap{aspect-ratio: 100 / 60; width:100%;max-width:min(100%, calc(78vh * 100 / 60));margin:0 auto;max-height:100%;border-radius:0;box-shadow:none}
+.rink-wrap{aspect-ratio: 100 / 60; width:100%;max-width:min(100%, calc(78vh * 100 / 60));margin:0 auto;max-height:100%;border-radius:0 !important;box-shadow:none !important;background:transparent !important;overflow:visible !important}
 .net-wrap{aspect-ratio: 6 / 4; width:100%}
 .zone-pulse{animation:zonePulse 3.6s ease-in-out infinite}
 @keyframes zonePulse{0%,100%{opacity:0}50%{opacity:.05}}
@@ -475,10 +464,14 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
      so the fixed-position rail only appears when the Rink tab is active.
      Without scoping, the rail would overlay every tab in landscape. */
   body.on-rink #leftRail {
-    display: flex;
+    display: flex !important;
     flex-direction: column; align-items: center;
     gap: 16px; padding: 14px 0;
-    position: fixed; left: 0; top: 88px;
+    position: fixed !important; left: 0 !important;
+    /* iPad-landscape Chrome was rendering top:0 (rail overlapping the
+       header) without !important. Forced to header height = 88. iPhone-LS
+       sub-rule below overrides to 56 to match the compressed header. */
+    top: 88px !important;
     bottom: calc(40px + env(safe-area-inset-bottom));
     width: 56px;
     background: var(--surface); border-right: 1px solid var(--border);
@@ -539,7 +532,10 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     flex-wrap: nowrap !important;
     align-items: stretch !important;
     justify-content: flex-start !important;
-    gap: 12px !important;
+    /* iPad landscape rail: compressed to fit 8 buttons (incl. FACEOFF)
+       in viewports that lose height to the Chrome address bar.
+       8 × 56 + 7 × 8 = 504 + 16 padding = 520 < 636 worst-case rail. */
+    gap: 8px !important;
     padding: 8px 4px !important;
     background: var(--surface) !important;
     border: 0 !important;
@@ -554,10 +550,10 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     width: 100% !important;
     min-width: 0 !important;
     padding: 0 !important;
-    height: 64px !important;
-    min-height: 64px !important;
-    flex: 0 0 64px !important;
-    font-size: 13px !important;
+    height: 56px !important;
+    min-height: 56px !important;
+    flex: 0 0 56px !important;
+    font-size: 12px !important;
     letter-spacing: .12em !important;
     border-radius: 9px !important;
     line-height: 1 !important;
@@ -611,7 +607,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       flex: 0 0 32px !important;
       font-size: 10px !important;
     }
-    body.on-rink #leftRail { top: 56px; gap: 10px; padding: 8px 0; }
+    body.on-rink #leftRail { top: 56px !important; gap: 10px; padding: 8px 0; }
   }
 
   /* Bottom nav: 40px tall, label-less. Tap target = 40 + safe-area. */
@@ -682,7 +678,9 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       <span id="penIndicator" aria-label="Apple Pencil input mode active" title="Apple Pencil input mode" style="display:none;font-size:13px;line-height:1;color:var(--accent);">✎</span>
       <span id="syncIndicator" aria-label="Sync status" style="font-size:12px;line-height:1;">●</span>
     </div>
-    <button id="overflowMenuBtn" aria-label="More options" type="button" style="background:transparent;border:0;color:var(--text-muted);font-size:24px;line-height:1;cursor:pointer;padding:4px 10px">⋯</button>
+    <!-- Three-dot overflow removed; all items moved to Settings modal
+         (accessed from MORE → Settings). -->
+
   </div>
 </header>
 
@@ -782,27 +780,10 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 </div>
 <div id="gameStateHint" style="font-family:var(--sans);font-size:10px;color:var(--text-muted);letter-spacing:.06em;padding:0 4px;min-height:14px"></div>
 
-<!-- Overflow menu (revealed by header "..." button). IDs preserved so existing handlers bind unchanged.
-     Coach-gating on settingsBtn/helpBtnUtil/rotateRinkBtn/topAccountBtn is independent of menu visibility. -->
-<div id="overflowMenu" class="overflow-menu" role="menu">
-  <button id="settingsBtn" class="btn" type="button" aria-label="Settings">⚙ Settings</button>
-  <button id="helpBtnUtil" class="btn" type="button" aria-label="Help">? Help</button>
-  <button id="rotateRinkBtn" class="btn" type="button">↻ Rotate View</button>
-  <button id="inputModeBtn" class="btn" type="button" aria-label="Toggle input mode">✎ Input: Finger</button>
-  <button id="helpBtn" class="btn" type="button" aria-label="Show What's New">📋 What's New</button>
-  <button id="topAccountBtn" class="btn" type="button" aria-label="User Role">USER ROLE</button>
-  <hr class="overflow-divider">
-  <!-- Game lifecycle button. Single id="endGameBtn" — relocated from header
-       in Commit B Item 6. Label + data-lifecycle swap based on
-       state.gameInfo.configured via toggleGameLifecycleBtn(). Visibility
-       gate stripped game-day 2026-05-10 — click handlers self-gate via
-       ensureCoach(). Restore visibility-gating in Commit C. -->
-  <button id="endGameBtn" class="btn" type="button" data-lifecycle="start">START GAME</button>
-  <!-- JOIN GAME — visible to ALL roles (coach can join other coaches'
-       games; non-coach scorers join via short code). Opens a modal that
-       calls FelixGame.joinGame(code). QR scan TODO. -->
-  <button id="joinGameBtn" class="btn" type="button">JOIN GAME</button>
-</div>
+<!-- Overflow menu deleted (game-day fix). All items relocated to the
+     Settings modal "Game & App Tools" section. Settings modal opens
+     from MORE → Settings via openSettings(). IDs preserved so existing
+     event handlers continue to bind. -->
 
 <!-- JOIN GAME modal — short-code entry. Calls FelixGame.joinGame(code)
      and routes user into the game on success. Opens via #joinGameBtn
@@ -1388,6 +1369,23 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       <div class="desc" id="accountStatusDesc">Loading…</div>
     </div>
 
+    <!-- Game & App Tools — items relocated from the deleted three-dot
+         overflow menu. IDs preserved so existing event handlers continue
+         to bind (helpBtnUtil, rotateRinkBtn, inputModeBtn, helpBtn,
+         topAccountBtn, endGameBtn, joinGameBtn). -->
+    <div class="group">
+      <div class="label">Game &amp; App Tools</div>
+      <div class="row" style="flex-wrap:wrap;gap:6px">
+        <button class="opt" id="endGameBtn" type="button" data-lifecycle="start" style="flex:1 1 auto">START GAME</button>
+        <button class="opt" id="joinGameBtn" type="button" style="flex:1 1 auto">JOIN GAME</button>
+        <button class="opt" id="rotateRinkBtn" type="button" style="flex:1 1 auto">↻ Rotate View</button>
+        <button class="opt" id="inputModeBtn" type="button" aria-label="Toggle input mode" style="flex:1 1 auto">✎ Input: Finger</button>
+        <button class="opt" id="helpBtnUtil" type="button" aria-label="Help" style="flex:1 1 auto">? Help</button>
+        <button class="opt" id="helpBtn" type="button" aria-label="Show What's New" style="flex:1 1 auto">📋 What's New</button>
+        <button class="opt" id="topAccountBtn" type="button" aria-label="User Role" style="flex:1 1 auto">USER ROLE</button>
+      </div>
+    </div>
+
     <div class="close-row">
       <button id="settingsCloseBtn">Done</button>
     </div>
@@ -1742,8 +1740,10 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
           switchTab(dest);
         }
       } else if (dest === "settings") {
-        const sb = document.getElementById("settingsBtn");
-        if (sb) sb.click();
+        // Three-dot overflow removed; settings now opens directly via
+        // openSettings(). The Game & App Tools section inside the modal
+        // hosts the previously-overflow items.
+        if (typeof openSettings === "function") openSettings();
       } else if (dest === "profile") {
         if (typeof toast === "function") toast("Profile coming soon");
       }
@@ -5396,6 +5396,9 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
 
   // ============ Settings modal wiring ============
   const settingsBackdrop = document.getElementById("settingsBackdrop");
+  // settingsBtn was the overflow-menu trigger; deleted in the game-day
+  // refactor. Settings now opens via panel-more handler → openSettings().
+  // Kept null-safe lookup so the const exists for any legacy reference.
   const settingsBtn = document.getElementById("settingsBtn");
   const settingsCloseBtn = document.getElementById("settingsCloseBtn");
   const reboundModeRow = document.getElementById("reboundModeRow");
@@ -5415,7 +5418,7 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
   }
   function openSettings(){ settingsBackdrop.classList.add("active"); refreshSettingsUI(); }
   function closeSettings(){ settingsBackdrop.classList.remove("active"); }
-  settingsBtn.addEventListener("click", openSettings);
+  if (settingsBtn) settingsBtn.addEventListener("click", openSettings);
 
   // ============ JOIN GAME flow (game-day 2026-05-10) ============
   // Overflow menu's JOIN GAME button opens a modal asking for a short
@@ -6493,16 +6496,9 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
   }
   document.getElementById("helpBtn").addEventListener("click", ()=>{ document.getElementById("whatsNewBackdrop").classList.add("active"); });
 
-  // Overflow menu (header "..." button) open/close. Items keep their own handlers;
-  // clicking any menu button just closes the menu after the original handler runs.
-  (function(){
-    const trigger = document.getElementById("overflowMenuBtn");
-    const menu = document.getElementById("overflowMenu");
-    if(!trigger || !menu) return;
-    trigger.addEventListener("click", (e)=>{ e.stopPropagation(); menu.classList.toggle("open"); });
-    menu.addEventListener("click", (e)=>{ if(e.target.closest("button")) menu.classList.remove("open"); });
-    document.addEventListener("click", (e)=>{ if(!menu.contains(e.target) && e.target !== trigger) menu.classList.remove("open"); });
-  })();
+  // Overflow menu IIFE removed — three-dot trigger deleted in game-day
+  // refactor. Items now live in the Settings modal's Game & App Tools
+  // section; their existing event handlers bind by id and continue to work.
 
   const _helpUtil = document.getElementById("helpBtnUtil");
   if(_helpUtil) _helpUtil.addEventListener("click", openHelp);
