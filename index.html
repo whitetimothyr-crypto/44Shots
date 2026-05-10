@@ -475,7 +475,10 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     bottom: calc(40px + env(safe-area-inset-bottom));
     width: 56px;
     background: var(--surface); border-right: 1px solid var(--border);
-    z-index: 40; box-sizing: border-box;
+    /* z-index 60 = above bottom-nav (50). Defensive against any
+       stacking context promotion from rink-wrap's aspect-ratio +
+       overflow combo. */
+    z-index: 60; box-sizing: border-box;
   }
   body.on-rink #leftRail .capIcon { color: var(--text-muted); }
 
@@ -504,10 +507,22 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
      would render under every other tab (whiteboard / lineup / more), per
      bug fixed game-day 2026-05-10. */
   #panel-rink.active {
-    display: block !important;
+    /* Flex column, bottom-anchored. rink-wrap sizes via aspect-ratio
+       against THIS parent's intrinsic height (not dvh) — no chrome-
+       reservation math, no drift when iPad Chrome URL bar toggles.
+       isolation:isolate confines any stacking context inside the panel
+       so fixed rails (#leftRail, #lastShotBar) stay above the rink
+       regardless of what aspect-ratio + overflow promote. */
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
     height: 100% !important;
-    padding: 0 !important; gap: 0 !important; margin: 0 !important;
+    padding: 0 0 8px 0 !important;
+    gap: 0 !important;
+    margin: 0 !important;
     overflow: hidden !important;
+    isolation: isolate;
   }
   #panel-rink.active > #excusedBadge,
   #panel-rink.active > #gameStateHint,
@@ -547,7 +562,9 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     border-radius: 0 !important;
     box-shadow: none !important;
     box-sizing: border-box;
-    z-index: 40;
+    /* z-index 60 = above bottom-nav (50). Pair with #leftRail bump
+       so both rails are guaranteed top of stack in landscape. */
+    z-index: 60;
   }
   #panel-rink.active #lastShotBar #lastShotLabel { display: none !important; }
   #panel-rink.active #lastShotBar .lsBtn {
@@ -563,20 +580,22 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     line-height: 1 !important;
   }
 
-  /* Rink fits inside the center area while preserving 100/60 aspect.
-     max-width clamp: never let height (= width * 60/100) exceed the
-     viewport height minus chrome. */
-  /* Reserve 140 px for the chrome stacked above the rink in landscape:
-     bottom-nav 40 + main padding/slack 20 + capture row ~40 + game-
-     state toggles row ~40 = 140. Without this, the aspect-ratio'd rink
-     overflows the center column on the smallest landscape viewports. */
+  /* Rink-wrap sizes relative to its flex parent (#panel-rink.active),
+     not the viewport. height:100% fills the parent's available space
+     (which already excludes header/nav via main's height calc), and
+     aspect-ratio 100/60 derives width. max-width:100% clamps when the
+     center column is narrower than the height-derived width — at that
+     point aspect-ratio scales height down to maintain ratio. Same rule
+     works on iPad-LS AND iPhone-LS because the parent's height already
+     reflects whichever header height applies (88 vs 56). */
   #panel-rink.active .rink-wrap {
-    width: 100% !important;
-    max-width: calc((100dvh - 132px - env(safe-area-inset-bottom)) * 100 / 60) !important;
-    max-height: calc(100dvh - 132px - env(safe-area-inset-bottom)) !important;
-    height: auto !important;
-    margin: 0 auto !important;
+    height: 100% !important;
+    width: auto !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
     aspect-ratio: 100 / 60 !important;
+    margin: 0 !important;
+    flex: 0 1 auto !important;
   }
 
   /* iPhone landscape (=<500 px tall) sub-rule. The strict 64 px
@@ -612,14 +631,11 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       font-size: 10px !important;
     }
     body.on-rink #leftRail { top: 56px !important; gap: 10px; padding: 8px 0; }
-    /* iPhone-LS: main + rink-wrap reserve 56 px header (compressed)
-       instead of the 88 px full-width header used on iPad-LS. */
+    /* iPhone-LS: main reserves 56 px header (compressed) instead of
+       the 88 px full-width header used on iPad-LS. rink-wrap inherits
+       sizing from its flex parent — no separate calc needed. */
     main {
       height: calc(100dvh - 56px - 40px - env(safe-area-inset-bottom)) !important;
-    }
-    #panel-rink.active .rink-wrap {
-      max-width: calc((100dvh - 100px - env(safe-area-inset-bottom)) * 100 / 60) !important;
-      max-height: calc(100dvh - 100px - env(safe-area-inset-bottom)) !important;
     }
   }
 
