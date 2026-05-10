@@ -202,20 +202,83 @@
     });
   }
 
+  // Tile pointerdown: kicks off both a long-press timer AND a drag
+  // detector. Whichever fires first wins, the other cancels:
+  //   - User holds still ≥500 ms → long-press menu (Edit / Remove)
+  //   - User moves ≥8 px        → custom pointer drag with ghost,
+  //                                released over a .lineup-slot to
+  //                                assign the player.
+  //   - User taps (release <500 ms, no move) → click handler fires
+  //                                            and opens edit modal.
   function onTilePointerDown(e) {
     const tile = e.currentTarget;
     tile._longPressFired = false;
+    tile._dragActive = false;
     clearTimeout(_longPressTimer);
+    const startX = e.clientX, startY = e.clientY;
+    const playerId = tile.dataset.playerId;
+    let ghost = null;
+
     _longPressTimer = setTimeout(() => {
+      if (tile._dragActive) return;
       tile._longPressFired = true;
-      const id = tile.dataset.playerId;
-      const p = _state.players.find((x) => x.id === id);
-      if (!p) return;
-      openTileMenu(tile, p, e.clientX, e.clientY);
+      const p = _state.players.find((x) => x.id === playerId);
+      if (p) openTileMenu(tile, p, e.clientX, e.clientY);
     }, 500);
+
+    function onMove(ev) {
+      if (!tile._dragActive) {
+        const dx = ev.clientX - startX, dy = ev.clientY - startY;
+        if (Math.hypot(dx, dy) < 8) return;
+        tile._dragActive = true;
+        clearTimeout(_longPressTimer);
+        ghost = tile.cloneNode(true);
+        ghost.classList.add("lineup-drag-ghost");
+        ghost.style.cssText =
+          "position:fixed;pointer-events:none;opacity:.88;z-index:3500;" +
+          "width:" + tile.offsetWidth + "px;" +
+          "left:" + (ev.clientX - 32) + "px;top:" + (ev.clientY - 32) + "px;";
+        document.body.appendChild(ghost);
+        try { tile.setPointerCapture(ev.pointerId); } catch (_) {}
+      }
+      if (tile._dragActive && ghost) {
+        ghost.style.left = (ev.clientX - 32) + "px";
+        ghost.style.top  = (ev.clientY - 32) + "px";
+        document.querySelectorAll(".lineup-slot.drop-hover").forEach((s) => s.classList.remove("drop-hover"));
+        const slot = _slotUnder(ev.clientX, ev.clientY);
+        if (slot) slot.classList.add("drop-hover");
+      }
+    }
+    async function onUp(ev) {
+      clearTimeout(_longPressTimer);
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      document.removeEventListener("pointercancel", onUp);
+      if (!tile._dragActive) return;
+      tile._dragActive = false;
+      tile._longPressFired = true; // suppress the trailing click
+      document.querySelectorAll(".lineup-slot.drop-hover").forEach((s) => s.classList.remove("drop-hover"));
+      const slot = _slotUnder(ev.clientX, ev.clientY);
+      if (ghost) ghost.remove();
+      if (slot && _state.activeConfig) {
+        const slotId = slot.dataset.slotId;
+        try {
+          await window.FelixLineupApi.assignPlayerToSlot(_state.activeConfig.id, slotId, playerId);
+          await refresh();
+        } catch (e) { toast("Assign failed: " + e.message); }
+      }
+    }
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+    document.addEventListener("pointercancel", onUp);
   }
   function onTilePointerUp() { clearTimeout(_longPressTimer); }
   function onTilePointerCancel() { clearTimeout(_longPressTimer); }
+
+  function _slotUnder(x, y) {
+    const el = document.elementFromPoint(x, y);
+    return el ? el.closest(".lineup-slot") : null;
+  }
 
   function openTileMenu(tile, player, x, y) {
     closeTileMenu();
@@ -251,6 +314,167 @@
   function closeTileMenu() {
     const m = document.getElementById("lineupTileMenu");
     if (m) m.remove();
+  }
+
+  // ── Group/slot management (long-press + Add Group button) ─────────
+  async function addSlotToGroup(groupLabel) {
+    if (!_state.activeConfig) return;
+    const pos = prompt("Position label (e.g. LW, C, RW, LD, RD, G):", "C");
+    if (pos === null) return;
+    const trimmed = pos.trim() || "C";
+    const slotsInGroup = _state.slots.filter((s) => s.group_label === groupLabel);
+    const groupOrder = slotsInGroup[0] ? slotsInGroup[0].group_order : 0;
+    const maxSlotOrder = slotsInGroup.reduce((m, s) => Math.max(m, s.slot_order), -1);
+    await window.FelixLineupApi.addSlot(_state.activeConfig.id, {
+      group_label: groupLabel,
+      group_order: groupOrder,
+      slot_position: trimmed,
+      slot_order: maxSlotOrder + 1,
+    });
+    await refresh();
+  }
+  async function removeSlotFromGroup(groupLabel) {
+    if (!_state.activeConfig) return;
+    const slotsInGroup = _state.slots
+      .filter((s) => s.group_label === groupLabel)
+      .sort((a, b) => b.slot_order - a.slot_order);
+    if (slotsInGroup.length === 0) { toast("No slots in this group"); return; }
+    const last = slotsInGroup[0];
+    if (!confirm(`Remove the last ${last.slot_position} slot from ${groupLabel}?`)) return;
+    await window.FelixLineupApi.deleteSlot(last.id);
+    await refresh();
+  }
+  async function renameGroupPrompt(groupLabel) {
+    if (!_state.activeConfig) return;
+    const newName = prompt("New group name:", groupLabel);
+    if (!newName || newName.trim() === "" || newName === groupLabel) return;
+    await window.FelixLineupApi.renameGroup(_state.activeConfig.id, groupLabel, newName.trim());
+    await refresh();
+  }
+  async function deleteGroupPrompt(groupLabel) {
+    if (!_state.activeConfig) return;
+    if (!confirm(`Delete group "${groupLabel}" and all its slots?`)) return;
+    await window.FelixLineupApi.deleteGroup(_state.activeConfig.id, groupLabel);
+    await refresh();
+  }
+  async function addGroup() {
+    if (!_state.activeConfig) { toast("No active config"); return; }
+    const name = prompt("New group name (e.g. PP 1):", "");
+    if (!name || !name.trim()) return;
+    const trimmed = name.trim();
+    const exists = _state.slots.some((s) => s.group_label === trimmed);
+    if (exists) { toast("Group already exists"); return; }
+    const max = _state.slots.reduce((m, s) => Math.max(m, s.group_order), -1);
+    // Seed one placeholder slot so the group has something to render
+    await window.FelixLineupApi.addSlot(_state.activeConfig.id, {
+      group_label: trimmed,
+      group_order: max + 1,
+      slot_position: "F",
+      slot_order: 0,
+    });
+    await refresh();
+  }
+
+  function openGroupMenu(groupLabel, x, y) {
+    closeGroupMenu();
+    const menu = document.createElement("div");
+    menu.className = "lineup-context-menu";
+    menu.id = "lineupGroupMenu";
+    menu.style.left = (x - 8) + "px";
+    menu.style.top = (y - 8) + "px";
+    menu.innerHTML = `
+      <button type="button" data-act="add-slot">Add slot</button>
+      <button type="button" data-act="remove-slot">Remove slot</button>
+      <button type="button" data-act="rename">Rename group</button>
+      <button type="button" data-act="delete">Delete group</button>
+    `;
+    document.body.appendChild(menu);
+    setTimeout(() => document.addEventListener("click", _groupMenuOutsideClick, { once: true }), 0);
+    menu.addEventListener("click", async (e) => {
+      const act = e.target.dataset.act;
+      if (!act) return;
+      closeGroupMenu();
+      try {
+        if (act === "add-slot")    await addSlotToGroup(groupLabel);
+        if (act === "remove-slot") await removeSlotFromGroup(groupLabel);
+        if (act === "rename")      await renameGroupPrompt(groupLabel);
+        if (act === "delete")      await deleteGroupPrompt(groupLabel);
+      } catch (err) { toast(err.message || "Action failed"); }
+    });
+  }
+  function _groupMenuOutsideClick(e) {
+    const m = document.getElementById("lineupGroupMenu");
+    if (m && !m.contains(e.target)) closeGroupMenu();
+  }
+  function closeGroupMenu() {
+    const m = document.getElementById("lineupGroupMenu");
+    if (m) m.remove();
+  }
+
+  // ── SortableJS wiring (slot reorder + group reorder) ──────────────
+  // Slot reorder is per-group: each .lineup-group-slots is its own
+  // Sortable so a slot can't drag across groups (use Add/Remove slot
+  // from the group menu instead). Group reorder runs on the grid with
+  // the group header as the handle.
+  function wireSortables() {
+    if (typeof window.Sortable === "undefined") return;
+    document.querySelectorAll("#lineupGrid .lineup-group-slots").forEach((container) => {
+      const groupName = "slots-" + (container.parentElement?.dataset.groupLabel || "x").replace(/[^a-z0-9]/gi, "-");
+      // eslint-disable-next-line no-new
+      new window.Sortable(container, {
+        animation: 150,
+        draggable: ".lineup-slot",
+        group: { name: groupName },
+        delayOnTouchOnly: true,
+        delay: 100,
+        onUpdate: async () => {
+          const updates = Array.from(container.querySelectorAll(".lineup-slot")).map((s, i) => ({
+            id: s.dataset.slotId,
+            slot_order: i,
+          }));
+          try { await window.FelixLineupApi.reorderSlots(updates); await refresh(); }
+          catch (e) { toast("Slot reorder failed: " + e.message); }
+        },
+      });
+    });
+
+    const grid = document.getElementById("lineupGrid");
+    if (grid) {
+      // eslint-disable-next-line no-new
+      new window.Sortable(grid, {
+        animation: 150,
+        draggable: ".lineup-group",
+        handle: ".lineup-group-head",
+        delayOnTouchOnly: true,
+        delay: 100,
+        onUpdate: async () => {
+          if (!_state.activeConfig) return;
+          const ordering = Array.from(grid.querySelectorAll(".lineup-group")).map((g, i) => ({
+            group_label: g.dataset.groupLabel,
+            group_order: i,
+          }));
+          try { await window.FelixLineupApi.reorderGroups(_state.activeConfig.id, ordering); await refresh(); }
+          catch (e) { toast("Group reorder failed: " + e.message); }
+        },
+      });
+    }
+  }
+
+  function wireGroupHeaderLongPress() {
+    document.querySelectorAll("#lineupGrid .lineup-group-head").forEach((head) => {
+      let pressTimer = null;
+      head.addEventListener("pointerdown", (e) => {
+        const groupLabel = head.parentElement?.dataset.groupLabel;
+        if (!groupLabel) return;
+        clearTimeout(pressTimer);
+        pressTimer = setTimeout(() => openGroupMenu(groupLabel, e.clientX, e.clientY), 500);
+      });
+      const cancel = () => clearTimeout(pressTimer);
+      head.addEventListener("pointerup", cancel);
+      head.addEventListener("pointercancel", cancel);
+      head.addEventListener("pointermove", cancel);
+      head.addEventListener("pointerleave", cancel);
+    });
   }
 
   // ── Render lineup grid ────────────────────────────────────────────
@@ -293,10 +517,21 @@
         }).join("");
       return `
         <div class="lineup-group" data-group-label="${esc(label)}">
-          <div class="lineup-group-head"><span>${esc(label)}</span></div>
+          <div class="lineup-group-head" title="Long-press for group menu"><span>${esc(label)}</span></div>
           <div class="lineup-group-slots">${slotHtml}</div>
         </div>`;
-    }).join("");
+    }).join("") + `
+      <button type="button" id="lineupAddGroupBtn" class="lineup-btn-ghost lineup-add-group-btn">+ Add Group</button>`;
+
+    document.getElementById("lineupAddGroupBtn").addEventListener("click", async () => {
+      try { await addGroup(); }
+      catch (e) { toast(e.message || "Add group failed"); }
+    });
+
+    // Wire SortableJS + group long-press AFTER innerHTML replacement so
+    // listeners bind to the freshly rendered DOM.
+    wireSortables();
+    wireGroupHeaderLongPress();
   }
 
   // ── Modals: Player ────────────────────────────────────────────────

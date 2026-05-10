@@ -411,3 +411,33 @@
   min-height: 44px;
 }
 .lineup-context-menu button:hover { background: var(--border); }
+
+/* PR 4 — drag/drop visuals */
+.lineup-drag-ghost {
+  transform: rotate(-2deg);
+  box-shadow: 0 12px 32px rgba(0,0,0,.55);
+}
+.lineup-slot.drop-hover {
+  border-style: solid;
+  border-color: var(--accent);
+  background: var(--panel);
+}
+/* SortableJS-applied classes during drag */
+.lineup-slot.sortable-ghost { opacity: .35; }
+.lineup-slot.sortable-chosen { box-shadow: 0 0 0 2px var(--accent); }
+.lineup-group.sortable-ghost { opacity: .35; }
+.lineup-group.sortable-chosen { box-shadow: 0 0 0 2px var(--accent); }
+.lineup-group-head {
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none; /* let SortableJS handle finger gestures */
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+.lineup-add-group-btn {
+  margin-top: 8px;
+  align-self: flex-start;
+  border-style: dashed;
+}
