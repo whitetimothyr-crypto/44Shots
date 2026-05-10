@@ -140,6 +140,17 @@ border-radius:7px;font-weight:600;font-family:var(--sans);transition:all .15s ea
 .seg.miss button.on{background:var(--miss);color:#fff}
 .seg.goal button.on{background:var(--gold);color:var(--bg)}
 
+/* PP / PK toggle pair (#gameStateSeg). 5v5 is the default — both off
+   means "even strength", no separate button needed. */
+.gs-toggles{display:flex;gap:6px}
+.gs-toggles button{
+  flex:1;background:var(--panel);border:1px solid var(--border);color:var(--text-muted);
+  padding:11px 6px;font-family:var(--sans);font-size:12px;letter-spacing:.14em;
+  text-transform:uppercase;font-weight:700;border-radius:8px;cursor:pointer;
+  min-height:44px;transition:all .15s ease
+}
+.gs-toggles button.on{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+
 .row{display:flex;gap:8px}
 .row > *{flex:1}
 
@@ -351,12 +362,13 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     min-height: 44px !important; min-width: 44px !important;
   }
 
-  /* Left rail TOP: compact score block. Two columns (G|SOG), two rows
-     (HOME|AWAY). Header row + row labels hidden to save height. */
+  /* Left rail TOP: score block with HOME/AWAY rows + G/SOG headers
+     (NOMOS tokens — labels --text-muted, values --stat). 84 px wide so
+     the 3-column grid (label, G, SOG) actually fits the labels. */
   #headerStats {
     position: fixed !important;
     top: 0; left: 0;
-    width: 64px;
+    width: 84px;
     height: 50%;
     padding: 6px 4px !important;
     border: 0 !important;
@@ -369,30 +381,45 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   }
   #headerStats > div {
     display: grid !important;
-    grid-template-columns: minmax(0,1fr) minmax(0,1fr) !important;
-    gap: 4px 6px !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) !important;
+    column-gap: 4px !important;
+    row-gap: 4px !important;
     text-align: center !important;
     width: 100% !important;
+    align-items: center;
   }
-  #headerStats > div > span:nth-child(1),
-  #headerStats > div > span:nth-child(2),
-  #headerStats > div > span:nth-child(3),
+  /* Tighten the auto-generated labels so they fit at 84 px wide. */
+  #headerStats > div > span {
+    font-size: 8px !important;
+    letter-spacing: .12em !important;
+    color: var(--text-muted) !important;
+    line-height: 1 !important;
+  }
   #headerStats > div > #homeRowLabel,
-  #headerStats > div > #awayRowLabel { display: none !important; }
+  #headerStats > div > #awayRowLabel {
+    text-align: left !important;
+    font-size: 8px !important;
+  }
   #headerStats #hHomeGoals, #headerStats #hHomeShots,
   #headerStats #hAwayGoals, #headerStats #hAwayShots {
-    font-size: 16px !important; line-height: 1.2 !important;
+    font-size: 18px !important;
+    line-height: 1.1 !important;
+    color: var(--stat) !important;
   }
-  #headerStats #hAwayGoals, #headerStats #hAwayShots {
+  /* Light divider between HOME row and AWAY row */
+  #headerStats #hAwayGoals,
+  #headerStats #hAwayShots,
+  #headerStats > div > #awayRowLabel {
     border-top: 1px solid var(--border);
-    padding-top: 4px !important; margin-top: 2px !important;
+    padding-top: 4px !important;
+    margin-top: 2px !important;
   }
 
   /* Left rail BOTTOM: period pills stacked vertically. */
   #globalGameRow {
     position: fixed !important;
     top: 50%; left: 0;
-    width: 64px;
+    width: 84px;
     bottom: calc(40px + env(safe-area-inset-bottom));
     padding: 6px 4px !important;
     border: 0 !important;
@@ -422,59 +449,94 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 
   /* Main: bounded box between rails + bottom nav. */
   main {
-    margin: 0 100px calc(40px + env(safe-area-inset-bottom)) 64px !important;
+    margin: 0 100px calc(40px + env(safe-area-inset-bottom)) 84px !important;
     padding: 4px !important;
     height: calc(100dvh - 40px - env(safe-area-inset-bottom)) !important;
     overflow: hidden !important;
     box-sizing: border-box;
   }
 
-  /* Rink panel: rink fills the box; secondary rows hidden. */
+  /* Rink panel uses block flow so the capture row, game-state row, and
+     rink stack vertically inside the center column. */
   #panel-rink {
     display: block !important;
     height: 100% !important;
     padding: 0 !important; gap: 0 !important; margin: 0 !important;
     overflow: hidden !important;
   }
-  #panel-rink > #captureRow,
   #panel-rink > #excusedBadge,
   #panel-rink > #gameStateHint,
   #panel-rink > .legend,
   #panel-rink > #rinkActionsRow { display: none !important; }
 
-  /* Game state row collapses to 0 height; FACEOFF escapes via fixed
-     positioning into the right rail bottom; 5v5/PP/PK seg hidden. */
+  /* Capture row (Photo / Video / Gallery) — restored in landscape, sits
+     at the top of the center column. Compact heights to leave rink room. */
+  #panel-rink > #captureRow {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 1fr !important;
+    gap: 6px !important;
+    padding: 0 !important;
+    margin-bottom: 4px !important;
+  }
+  #panel-rink > #captureRow .btn {
+    min-height: 36px !important;
+    padding: 6px 8px !important;
+    font-size: 10px !important;
+    letter-spacing: .08em !important;
+  }
+
+  /* Game state row — PP / PK toggles visible at top of center column.
+     FACEOFF still escapes to the right rail bottom via fixed positioning. */
   #panel-rink > #gameStateRow {
-    display: block !important;
-    padding: 0 !important; margin: 0 !important;
-    height: 0 !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    padding: 0 !important;
+    margin: 0 0 4px 0 !important;
+    height: auto !important;
     overflow: visible !important;
   }
-  #panel-rink > #gameStateRow > #gameStateSeg { display: none !important; }
+  #panel-rink > #gameStateRow > #gameStateSeg {
+    display: flex !important;
+    width: 100%;
+  }
+  #panel-rink > #gameStateRow > #gameStateSeg button {
+    min-height: 36px !important;
+    font-size: 11px !important;
+    padding: 6px 8px !important;
+  }
+  /* FACEOFF: rounded teal outline, matching REB / WRAP / TIP / BREAK
+     visual weight per spec. Snug to bottom-right corner with a small
+     inset so the rounded border isn't clipped against the rail / nav. */
   #panel-rink > #gameStateRow > #faceoffBtn {
     position: fixed !important;
-    right: 0;
-    bottom: calc(40px + env(safe-area-inset-bottom));
-    width: 100px; height: 44px;
-    border-radius: 0 !important;
-    border: 0 !important;
-    border-top: 1px solid var(--border) !important;
-    border-left: 1px solid var(--border) !important;
+    right: 4px !important;
+    bottom: calc(44px + env(safe-area-inset-bottom)) !important;
+    width: 92px !important;
+    height: 44px !important;
+    border-radius: 8px !important;
+    border: 1px solid var(--border) !important;
     padding: 0 !important;
     font-size: 11px !important;
     letter-spacing: .12em !important;
-    background: var(--panel) !important;
+    font-weight: 700 !important;
+    background: var(--surface) !important;
+    color: var(--accent) !important;
     margin: 0 !important;
     z-index: 41;
   }
 
-  /* Right rail: lastShotBar reflowed as vertical column above FACEOFF. */
+  /* Right rail: lastShotBar reflowed as vertical column above FACEOFF.
+     !important on top + bottom because the inline style is
+     position:sticky;top:0 — without !important the inline top:0 wins
+     and the bar overlaps the End Game cluster at the corner.
+     Bottom = 92 (44 nav + 44 faceoff + 4 inset) so the rail sits 4 px
+     above the FACEOFF button. */
   #panel-rink #lastShotBar {
     position: fixed !important;
-    top: 56px;
-    right: 0;
-    width: 100px;
-    bottom: calc(84px + env(safe-area-inset-bottom));
+    top: 56px !important;
+    right: 0 !important;
+    width: 100px !important;
+    bottom: calc(92px + env(safe-area-inset-bottom)) !important;
     flex-direction: column !important;
     flex-wrap: nowrap !important;
     align-items: stretch !important;
@@ -512,13 +574,29 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   /* Rink fits inside the center area while preserving 100/60 aspect.
      max-width clamp: never let height (= width * 60/100) exceed the
      viewport height minus chrome. */
+  /* Reserve 140 px for the chrome stacked above the rink in landscape:
+     bottom-nav 40 + main padding/slack 20 + capture row ~40 + game-
+     state toggles row ~40 = 140. Without this, the aspect-ratio'd rink
+     overflows the center column on the smallest landscape viewports. */
   #panel-rink .rink-wrap {
     width: 100% !important;
-    max-width: calc((100dvh - 60px - env(safe-area-inset-bottom)) * 100 / 60) !important;
-    max-height: calc(100dvh - 60px - env(safe-area-inset-bottom)) !important;
+    max-width: calc((100dvh - 124px - env(safe-area-inset-bottom)) * 100 / 60) !important;
+    max-height: calc(100dvh - 124px - env(safe-area-inset-bottom)) !important;
     height: auto !important;
     margin: 0 auto !important;
     aspect-ratio: 100 / 60 !important;
+  }
+
+  /* iPhone landscape (=<500 px tall) only: shrink lsBtn min-height
+     from 44 to 32 so all 7 actions fit between the End Game cluster
+     (top 56 px) and the FACEOFF button (bottom 92 px) in 242 px of
+     vertical space. iPad landscapes stay at 44. The wider buttons
+     (100 px width) still meet Apple HIG hit-area target. */
+  @media (max-height: 500px) {
+    #panel-rink #lastShotBar .lsBtn {
+      min-height: 32px !important;
+      font-size: 10px !important;
+    }
   }
 
   /* Bottom nav: 40px tall, label-less. Tap target = 40 + safe-area. */
@@ -643,12 +721,15 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 </div>
 <div id="excusedBadge" style="display:none;padding:6px 10px;margin:0 4px 6px;background:var(--accent-2);color:var(--bg);font-family:var(--sans);font-size:10px;letter-spacing:.16em;font-weight:800;border-radius:6px;text-align:center">EXCUSED · TAP NEXT EVENT TO RE-ENGAGE</div>
 
-<!-- Game state row (5v5 / PP / PK) + FACEOFF action — period selector lives in global row above -->
+<!-- Game state row: PP / PK toggles (mutually exclusive). Both off = 5v5,
+     no separate 5v5 button. The data-gs attributes are preserved so the
+     existing setGameState handler + body.gs-pp / body.gs-pk pulse rules
+     continue to work without changes. FACEOFF action sits to the right;
+     in landscape it's fixed-positioned to the right rail bottom. -->
 <div id="gameStateRow" class="controls" style="grid-template-columns:3fr 1fr">
-  <div class="seg" id="gameStateSeg">
-    <button class="on" data-gs="5v5">5v5</button>
-    <button data-gs="pp">PP</button>
-    <button data-gs="pk">PK</button>
+  <div id="gameStateSeg" class="gs-toggles">
+    <button type="button" data-gs="pp">PP</button>
+    <button type="button" data-gs="pk">PK</button>
   </div>
   <button id="faceoffBtn" class="btn" style="padding:10px 12px;font-size:11px;letter-spacing:.14em;font-weight:700;border-radius:8px;background:var(--panel);color:var(--accent);border:1px solid var(--accent);white-space:nowrap">FACEOFF</button>
 </div>
@@ -1696,7 +1777,12 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   if(gameStateSeg){
     gameStateSeg.addEventListener("click", e=>{
       const b = e.target.closest("button"); if(!b) return;
-      setGameState(b.dataset.gs);
+      // Toggle semantics: pressing the active mode switches to 5v5
+      // (default). Pressing the inactive mode switches to it. PP and PK
+      // are mutually exclusive because state.gameState only holds one
+      // value, so toggling one off implicitly toggles the other off.
+      const next = state.gameState === b.dataset.gs ? "5v5" : b.dataset.gs;
+      setGameState(next);
     });
     // Restore active state on load
     [...gameStateSeg.querySelectorAll("button")].forEach(b=>b.classList.toggle("on", b.dataset.gs===state.gameState));

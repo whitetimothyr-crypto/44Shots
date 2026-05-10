@@ -15,10 +15,14 @@ import { test, expect, Page } from '@playwright/test';
  *   BASE_URL=http://localhost:8088 npx playwright test landscape.spec.ts --project=smoke
  */
 
+// `lsBtnMinHeight` is the per-viewport floor for the 7 action buttons in
+// the right rail. iPhone landscape has only 242 px of rail height
+// between the End Game cluster (top 56) and the FACEOFF button (bottom
+// 92), so 7 buttons can't all hit 44. iPad sizes keep the 44 floor.
 const VIEWPORTS = [
-  { name: 'iPhone 14/15 Pro landscape', width: 844, height: 390 },
-  { name: 'iPad Pro 11" landscape',     width: 1180, height: 820 },
-  { name: 'iPad Pro 13" landscape',     width: 1366, height: 1024 },
+  { name: 'iPhone 14/15 Pro landscape', width: 844, height: 390,  lsBtnMinHeight: 32 },
+  { name: 'iPad Pro 11" landscape',     width: 1180, height: 820, lsBtnMinHeight: 44 },
+  { name: 'iPad Pro 13" landscape',     width: 1366, height: 1024, lsBtnMinHeight: 44 },
 ];
 
 async function inViewport(page: Page, selector: string): Promise<boolean> {
@@ -110,12 +114,23 @@ for (const vp of VIEWPORTS) {
       expect(rink, 'rink-wrap exists').not.toBeNull();
       expect(rink!.w / vp.width, 'rink width / viewport width').toBeGreaterThanOrEqual(0.5);
 
-      // 4. 44x44 minimum on every tappable control we listed (excluding the
-      //    container divs and the SVG which are not tap targets themselves).
-      const tapTargets = [
+      // 4. Tap target floor. Standard 44 for chrome (End Game, period
+      //    pills, FACEOFF). lsBtn rail uses the per-viewport floor —
+      //    44 on iPad sizes, 32 on iPhone landscape where 7 buttons +
+      //    chrome can't all meet 44 in 390 px of total height.
+      const standardTargets = [
         '#endGameBtn',
         '#globalGameRow .seg-period button[data-period="1"]',
         '#globalGameRow .seg-period button[data-period="4"]',
+        '#faceoffBtn',
+      ];
+      for (const sel of standardTargets) {
+        const sz = await elementSize(page, sel);
+        expect(sz, `${sel} measurable`).not.toBeNull();
+        expect(sz!.w, `${sel} width >= 44`).toBeGreaterThanOrEqual(43.5);
+        expect(sz!.h, `${sel} height >= 44`).toBeGreaterThanOrEqual(43.5);
+      }
+      const lsBtnTargets = [
         '#lastShotBar .lsBtn[data-action="goal"]',
         '#lastShotBar .lsBtn[data-action="miss"]',
         '#lastShotBar .lsBtn[data-action="block"]',
@@ -123,14 +138,13 @@ for (const vp of VIEWPORTS) {
         '#lastShotBar .lsBtn[data-action="wraparound"]',
         '#lastShotBar .lsBtn[data-action="tip"]',
         '#lastShotBar .lsBtn[data-action="breakaway"]',
-        '#faceoffBtn',
       ];
-      for (const sel of tapTargets) {
+      const lsFloor = vp.lsBtnMinHeight - 0.5;
+      for (const sel of lsBtnTargets) {
         const sz = await elementSize(page, sel);
         expect(sz, `${sel} measurable`).not.toBeNull();
-        // Allow 0.5px slack for sub-pixel rounding.
         expect(sz!.w, `${sel} width >= 44`).toBeGreaterThanOrEqual(43.5);
-        expect(sz!.h, `${sel} height >= 44`).toBeGreaterThanOrEqual(43.5);
+        expect(sz!.h, `${sel} height >= ${vp.lsBtnMinHeight}`).toBeGreaterThanOrEqual(lsFloor);
       }
 
       // 5. No element overlaps another among the critical rails. Spot-check
