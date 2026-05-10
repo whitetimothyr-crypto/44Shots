@@ -10,7 +10,7 @@ Until 2026-05-07 the schema lived only in the Supabase dashboard. If the project
 
 Files follow Supabase CLI convention: `<UTC timestamp>_<snake_case_name>.sql`. Files are applied in lexicographic order, which matches chronological order because the timestamp prefix sorts cleanly.
 
-## Current migrations (16 files)
+## Current migrations (17 files)
 
 | # | Filename | Purpose |
 |---|----------|---------|
@@ -30,6 +30,7 @@ Files follow Supabase CLI convention: `<UTC timestamp>_<snake_case_name>.sql`. F
 | 12 | `20260509115303_12_nomos_game_created_by.sql` | Adds `created_by uuid` to `nomos_game`, FK to `public.profiles(id) ON DELETE SET NULL` (parity with `games.created_by`). No backfill — existing rows pre-date the column and creator is unknowable. New inserts populate from auth session. Enables future ownership gates (e.g. `currentUser.id === game.created_by`). |
 | 13 | `20260509161633_13_nomos_event_rls.sql` | RLS policies for `nomos_event`. Migration 10 enabled RLS on this table but never granted policies, so authenticated INSERTs were silently denied (root cause of "zero rows in nomos_event" report). SELECT `TO authenticated USING (true)` for consensus visibility; INSERT `TO authenticated WITH CHECK` that the parent submission's `submitter_id = auth.uid()`. UPDATE/DELETE intentionally absent — events are an append-only audit log. |
 | 14 | `20260509172947_14_nomos_game_client_game_id_unique.sql` | Partial UNIQUE index on `nomos_game(client_game_id) WHERE client_game_id IS NOT NULL`. DB-level race stop for the duplicate-create scenario the app-layer SELECT could not catch on simultaneous coach inserts. Partial so legacy NULL rows still coexist. Pre-req: the historical `PLYM-0001` duplicate was deduped before applying. `createGame()` catches the resulting Postgres 23505 and routes to `joinGame()` — same UX as the app-layer dedup hit. |
+| 15 | `20260510000000_15_lineup_schema_and_ical.sql` | LINEUP sprint schema. Adds `teams.ical_url` (Biggby Black backfilled with TeamSnap iCal URL, Phantoms NULL — calendar UI ships next sprint). Seeds 2 teams (`Plymouth Phantoms`, `Biggby Black`) with hardcoded UUIDs `00000000-0000-4000-8000-00000000000{1,2}` and seeds Tim as `head_coach` in `team_members` for both — required so `is_team_coach()` returns true and the new policies don't lock him out. Creates `players`, `lineup_configs`, `lineup_slots` with FKs and indexes. RLS: SELECT for any authenticated user; INSERT/UPDATE/DELETE only when `is_team_coach(team_id)` is true (slots derive `team_id` via subquery on parent config). Partial UNIQUE index on `lineup_configs(team_id) WHERE is_default = true` enforces one default per team. `set_updated_at()` triggers on all three tables. |
 
 ## Restoring from these files
 
