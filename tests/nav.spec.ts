@@ -45,15 +45,16 @@ test.describe('Modular bottom nav', () => {
     expect(active).toBe('rink');
   });
 
-  test('clicking each new tab activates the matching panel and renders stub content', async ({ page }) => {
+  test('clicking each new tab activates its panel; whiteboard/feed render the stub, lineup renders its full root', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(800);
     await dismissModals(page);
 
-    for (const id of ['whiteboard', 'feed', 'lineup']) {
+    // Whiteboard + Feed are still stub modules (real builds next sprint).
+    for (const id of ['whiteboard', 'feed']) {
       await page.click(`nav.bottom-nav button[data-tab="${id}"]`);
       await page.waitForTimeout(120);
-      const result = await page.evaluate((tabId) => {
+      const r = await page.evaluate((tabId) => {
         const p = document.getElementById('panel-' + tabId);
         const stub = p?.querySelector('.stub-panel');
         return {
@@ -62,10 +63,28 @@ test.describe('Modular bottom nav', () => {
           h2: stub?.querySelector('h2')?.textContent || '',
         };
       }, id);
-      expect(result.panelActive, `${id} panel active`).toBe(true);
-      expect(result.hasStub, `${id} renders stub-panel`).toBe(true);
-      expect(result.h2.toLowerCase(), `${id} title matches`).toContain(id);
+      expect(r.panelActive, `${id} panel active`).toBe(true);
+      expect(r.hasStub, `${id} renders stub-panel`).toBe(true);
+      expect(r.h2.toLowerCase(), `${id} title matches`).toContain(id);
     }
+
+    // Lineup is now the full module (PR 3+). Asserts the real scaffold,
+    // not the stub.
+    await page.click('nav.bottom-nav button[data-tab="lineup"]');
+    await page.waitForTimeout(120);
+    const lineup = await page.evaluate(() => {
+      const p = document.getElementById('panel-lineup');
+      return {
+        panelActive: !!p?.classList.contains('active'),
+        hasRoot: !!document.getElementById('lineup-root'),
+        hasTopbar: !!document.getElementById('lineupTopbar'),
+        hasPool: !!document.getElementById('lineupPool'),
+      };
+    });
+    expect(lineup.panelActive, 'lineup panel active').toBe(true);
+    expect(lineup.hasRoot, 'lineup-root rendered').toBe(true);
+    expect(lineup.hasTopbar, 'lineup topbar rendered').toBe(true);
+    expect(lineup.hasPool, 'lineup pool rendered').toBe(true);
   });
 
   test('MORE panel hosts Stats / Report / Settings / Profile and switches via legacy switchTab', async ({ page }) => {
