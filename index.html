@@ -13,6 +13,7 @@
 <link rel="apple-touch-icon" sizes="152x152" href="/icons/apple-touch-icon-152.png" />
 <link rel="apple-touch-icon" sizes="120x120" href="/icons/apple-touch-icon-120.png" />
 <link rel="manifest" href="/manifest.json" />
+<link rel="stylesheet" href="css/nav.css" />
 <meta name="apple-mobile-web-app-title" content="44 Shots" />
 <title>44 Shots</title>
 <!-- Sentry error tracking. Loads asynchronously, lazy-loads SDK, captures unhandled errors before SDK fully loads. -->
@@ -80,18 +81,7 @@ background:linear-gradient(180deg,var(--surface),var(--bg));
 .stats{font-family:var(--sans);font-size:11px;text-align:right;color:var(--text-muted);line-height:1.5}
 .stats b{color:#fff;font-size:14px;display:block}
 
-/* Bottom nav (Rink/Net/Stats/Report). Always visible; sits above iOS safe-area inset. */
-nav.bottom-nav{
-position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--surface);
-border-top:1px solid var(--border);padding-bottom:env(safe-area-inset-bottom);z-index:50;
-}
-nav.bottom-nav button{
-flex:1;background:transparent;border:0;color:var(--text-muted);padding:8px 4px 10px;
-font-family:var(--sans);font-size:9px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;
-display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;transition:color .15s;
-}
-nav.bottom-nav button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-nav.bottom-nav button.active{color:var(--accent)}
+/* Bottom nav styles moved to css/nav.css (owned by js/nav.js). */
 
 /* Period pill selector: surface pills, active fills with --accent. Always visible. */
 .seg-period{display:inline-flex;gap:6px}
@@ -1013,27 +1003,45 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 </p>
 
   </section>
+
+  <!-- New modular tab panels. Whiteboard / Feed / Lineup contents are
+       rendered by their respective modules (js/whiteboard.js, etc.) on
+       first activation. MORE is inline because it's just a static list
+       of secondary destinations. -->
+  <section class="panel" id="panel-whiteboard"></section>
+  <section class="panel" id="panel-feed"></section>
+  <section class="panel" id="panel-lineup"></section>
+
+  <section class="panel" id="panel-more">
+    <div class="more-list">
+      <button type="button" class="more-item" data-more="stats">
+        <svg class="more-icon" viewBox="0 0 24 24"><line x1="6" y1="20" x2="6" y2="12"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="18" y1="20" x2="18" y2="14"/><line x1="3" y1="20" x2="21" y2="20"/></svg>
+        <span>Stats</span>
+        <span class="more-arrow">&#8250;</span>
+      </button>
+      <button type="button" class="more-item" data-more="report">
+        <svg class="more-icon" viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="17" rx="1.5"/><rect x="9" y="2.5" width="6" height="3" rx="0.8"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="13.5" x2="15" y2="13.5"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+        <span>Report</span>
+        <span class="more-arrow">&#8250;</span>
+      </button>
+      <button type="button" class="more-item" data-more="settings">
+        <svg class="more-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>
+        <span>Settings</span>
+        <span class="more-arrow">&#8250;</span>
+      </button>
+      <button type="button" class="more-item" data-more="profile">
+        <svg class="more-icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+        <span>Profile</span>
+        <span class="more-arrow">&#8250;</span>
+      </button>
+    </div>
+  </section>
 </main>
 
-<!-- Bottom tab nav. id/data-tab kept identical to old top nav so existing JS handler still binds. -->
-<nav class="bottom-nav" id="tabs" aria-label="Primary views">
-  <button class="active" data-tab="rink" aria-label="Rink">
-    <svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="6"/><line x1="12" y1="6" x2="12" y2="18"/><circle cx="12" cy="12" r="2"/></svg>
-    Rink
-  </button>
-  <button data-tab="net" aria-label="Net">
-    <svg viewBox="0 0 24 24"><path d="M4 7 L20 7 L18 18 L6 18 Z"/><line x1="8" y1="7" x2="8" y2="18"/><line x1="12" y1="7" x2="12" y2="18"/><line x1="16" y1="7" x2="16" y2="18"/><line x1="4" y1="11" x2="20" y2="11"/><line x1="5" y1="15" x2="19" y2="15"/></svg>
-    Net
-  </button>
-  <button data-tab="stats" aria-label="Stats">
-    <svg viewBox="0 0 24 24"><line x1="6" y1="20" x2="6" y2="12"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="18" y1="20" x2="18" y2="14"/><line x1="3" y1="20" x2="21" y2="20"/></svg>
-    Stats
-  </button>
-  <button data-tab="report" aria-label="Report">
-    <svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="17" rx="1.5"/><rect x="9" y="2.5" width="6" height="3" rx="0.8"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="13.5" x2="15" y2="13.5"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
-    Report
-  </button>
-</nav>
+<!-- Bottom tab nav. Rendered by js/nav.js into this slot. id="tabs" +
+     class="bottom-nav" preserved so existing #tabs and .bottom-nav
+     selectors in the main IIFE keep working. -->
+<nav class="bottom-nav" id="tabs" aria-label="Primary views"></nav>
 
 <!-- LOAD GAME MODAL -->
 
@@ -1366,6 +1374,15 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 <!-- V3.0 media: camera/mic capture engine -->
 <script src="js/media.js"></script>
 
+<!-- V3.0 modular nav (5-tab, role-aware) + tab modules. Order matters:
+     stub modules register on window.Felix<Name>; nav.js renders the rail
+     and calls them. All four scripts must parse before the main IIFE
+     below so the legacy switchTab() sees a populated nav. -->
+<script src="js/whiteboard.js"></script>
+<script src="js/feed.js"></script>
+<script src="js/lineup.js"></script>
+<script src="js/nav.js"></script>
+
 <script>
 (function(){
   const STORAGE_KEY = "felix-shot-tracker-v1";
@@ -1490,10 +1507,30 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     }
     // Period selector now persists across all tabs (refactor).
   }
+  // Expose for js/nav.js (FelixNav.activate) and the MORE panel handlers.
+  window.switchTab = switchTab;
   tabs.addEventListener("click", e=>{
     const b = e.target.closest("button"); if(!b) return;
     switchTab(b.dataset.tab);
   });
+  // MORE panel: secondary destinations. Stats/Report -> switch tab;
+  // Settings -> open settings modal via existing handler; Profile -> stub.
+  const _morePanel = document.getElementById("panel-more");
+  if (_morePanel) {
+    _morePanel.addEventListener("click", (e) => {
+      const item = e.target.closest("[data-more]");
+      if (!item) return;
+      const dest = item.dataset.more;
+      if (dest === "stats" || dest === "report") {
+        switchTab(dest);
+      } else if (dest === "settings") {
+        const sb = document.getElementById("settingsBtn");
+        if (sb) sb.click();
+      } else if (dest === "profile") {
+        if (typeof toast === "function") toast("Profile coming soon");
+      }
+    });
+  }
   // V3.0 Step 8 init pass: ensure period selector visibility matches initial tab
   // on first paint, even if the active tab on load isn't RINK.
   // DEFERRED to next tick: switchTab() touches consts (markersG, netG, periodSegGlobal,

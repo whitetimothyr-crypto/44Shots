@@ -1,0 +1,135 @@
+/* css/nav.css — Bottom nav (44 Shots / NOMOS).
+   Owned by js/nav.js. Scoped to nav.bottom-nav (DOM id="tabs" preserved
+   for backward compat with existing handlers in index.html). Styles for
+   the MORE panel and stub-panel placeholders also live here. */
+
+nav.bottom-nav {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  display: flex;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 50;
+}
+nav.bottom-nav button {
+  flex: 1;
+  background: transparent;
+  border: 0;
+  color: var(--text-muted);
+  padding: 8px 4px 10px;
+  font-family: var(--sans);
+  font-size: 9px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  transition: color .15s;
+}
+nav.bottom-nav button svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+nav.bottom-nav button.active { color: var(--accent); }
+
+/* Landscape no-scroll override (matches the rule that lived inline in
+   index.html before the extraction). 40px nav, no labels. */
+@media (orientation: landscape) and (max-height: 1024px) {
+  nav.bottom-nav {
+    height: 40px !important;
+    min-height: 40px !important;
+    padding-top: 0 !important;
+    padding-bottom: env(safe-area-inset-bottom) !important;
+  }
+  nav.bottom-nav button {
+    padding: 4px 4px !important;
+    font-size: 0 !important;
+    gap: 0 !important;
+  }
+  nav.bottom-nav button svg {
+    width: 22px !important;
+    height: 22px !important;
+  }
+}
+
+/* MORE panel — list of secondary destinations. */
+#panel-more .more-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 0;
+}
+#panel-more .more-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-family: var(--sans);
+  font-size: 13px;
+  letter-spacing: .04em;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  min-height: 44px;
+  font-weight: 500;
+  width: 100%;
+}
+#panel-more .more-item:hover { border-color: var(--accent); }
+#panel-more .more-item .more-icon {
+  width: 22px; height: 22px;
+  color: var(--accent);
+  flex-shrink: 0;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+#panel-more .more-item .more-arrow {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-size: 18px;
+}
+
+/* Stub modules — "Coming soon" placeholder used by Whiteboard / Feed
+   (and Lineup until the full build lands). */
+.stub-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 50vh;
+  text-align: center;
+  font-family: var(--sans);
+  color: var(--text-muted);
+  padding: 24px;
+}
+.stub-panel h2 {
+  margin: 0 0 12px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 32px;
+  font-weight: 300;
+  color: var(--stat);
+  letter-spacing: .02em;
+}
+.stub-panel p {
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: .04em;
+  line-height: 1.6;
+  max-width: 320px;
+}
