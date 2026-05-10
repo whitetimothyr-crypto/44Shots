@@ -25,6 +25,21 @@ nav.bottom-nav {
 body:not(.input-mode-pen) nav.bottom-nav {
   min-height: 54px;
 }
+/* Finger-mode icon + label floors. Pen mode gets visual size via the
+   body.input-mode-pen min-height:60 cascade on buttons; finger mode
+   had no equivalent and was rendering icons at ~18-20 px + labels
+   invisible on Tim's iPad (game-day 2026-05-10). Bump svg to 24 and
+   labels to 11 so finger mode reads cleanly without forcing pen-mode
+   60×60 buttons. Landscape rules below have !important on font-size:0
+   + svg:22, so labels stay hidden + svg stays 22 in landscape. */
+body:not(.input-mode-pen) nav.bottom-nav button {
+  font-size: 11px;
+  min-height: 54px;
+}
+body:not(.input-mode-pen) nav.bottom-nav button svg {
+  width: 24px;
+  height: 24px;
+}
 nav.bottom-nav button {
   flex: 1;
   background: transparent;
