@@ -166,6 +166,7 @@ padding:10px 12px;font-size:11px;letter-spacing:.14em;text-align:left;
 background:transparent;border:0;color:var(--text);border-radius:6px;width:100%;
 }
 .overflow-menu .btn:hover{background:var(--border)}
+.overflow-menu hr{border:0;border-top:1px solid var(--border);margin:6px 0;opacity:.5}
 
 main{flex:1;display:flex;flex-direction:column;padding:12px 12px calc(64px + env(safe-area-inset-bottom));gap:10px;min-height:0}
 .panel{display:none;flex:1;flex-direction:column;gap:10px;min-height:0}
@@ -629,14 +630,13 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       <button type="button" data-gs="pk">PK</button>
     </div>
   </div>
-  <!-- Status indicators + End Game (stays in header for Commit A;
-       Commit B relocates to overflow) + overflow trigger. -->
+  <!-- Status indicators + overflow trigger. END GAME relocated to the
+       overflow menu in Commit B Item 6. -->
   <div id="topBarRight">
     <div id="headerStatusBar" style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);">
       <span id="penIndicator" aria-label="Apple Pencil input mode active" title="Apple Pencil input mode" style="display:none;font-size:13px;line-height:1;color:var(--accent);">✎</span>
       <span id="syncIndicator" aria-label="Sync status" style="font-size:12px;line-height:1;">●</span>
     </div>
-    <button id="endGameBtn" type="button" style="background:transparent;border:1px solid var(--border);color:var(--accent-2);padding:8px 14px;font-family:var(--sans);font-size:10px;letter-spacing:.18em;font-weight:700;text-transform:uppercase;border-radius:8px;cursor:pointer;min-height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center;pointer-events:auto;touch-action:manipulation;position:relative;z-index:2800">End Game</button>
     <button id="overflowMenuBtn" aria-label="More options" type="button" style="background:transparent;border:0;color:var(--text-muted);font-size:24px;line-height:1;cursor:pointer;padding:4px 10px">⋯</button>
   </div>
 </header>
@@ -746,6 +746,12 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   <button id="inputModeBtn" class="btn" type="button" aria-label="Toggle input mode">✎ Input: Finger</button>
   <button id="helpBtn" class="btn" type="button" aria-label="Show What's New">📋 What's New</button>
   <button id="topAccountBtn" class="btn" type="button" aria-label="User Role">USER ROLE</button>
+  <hr class="overflow-divider">
+  <!-- Game lifecycle button. Single id="endGameBtn" — relocated from header
+       in Commit B Item 6. Label + data-lifecycle swap based on
+       state.gameInfo.configured via toggleGameLifecycleBtn(). Coach-gated
+       via COACH_GATED_IDS (applyRoleGates hides for non-coach). -->
+  <button id="endGameBtn" class="btn" type="button" data-lifecycle="start">START GAME</button>
 </div>
 
 <!-- Last Shot bar (right rail in landscape, sticky above rink in portrait).
@@ -1134,6 +1140,11 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       <button type="button" class="more-item" data-more="report">
         <svg class="more-icon" viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="17" rx="1.5"/><rect x="9" y="2.5" width="6" height="3" rx="0.8"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="9" y1="13.5" x2="15" y2="13.5"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
         <span>Report</span>
+        <span class="more-arrow">&#8250;</span>
+      </button>
+      <button type="button" class="more-item" data-more="feed">
+        <svg class="more-icon" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        <span>Feed</span>
         <span class="more-arrow">&#8250;</span>
       </button>
       <button type="button" class="more-item" data-more="settings">
@@ -1639,6 +1650,14 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       const dest = item.dataset.more;
       if (dest === "stats" || dest === "report") {
         switchTab(dest);
+      } else if (dest === "feed") {
+        // Off-rail module tab — route through FelixNav so module
+        // lifecycle (onActivate) fires alongside panel switch.
+        if (window.FelixNav && typeof window.FelixNav.activate === 'function') {
+          window.FelixNav.activate("feed");
+        } else if (typeof switchTab === "function") {
+          switchTab("feed");
+        }
       } else if (dest === "settings") {
         const sb = document.getElementById("settingsBtn");
         if (sb) sb.click();
@@ -3535,6 +3554,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     save();
     syncSegs();
     updateGoalieBanner(); if(typeof renderNetZoneLabels === "function") renderNetZoneLabels();
+    if (typeof toggleGameLifecycleBtn === "function") toggleGameLifecycleBtn();
     hideLoadGame();
     toast("Game loaded · "+ourTeam+" vs "+opponent);
     // Open the center-ice faceoff picker — every game starts with one
@@ -5502,6 +5522,21 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
     });
   }
 
+  // Toggles the START GAME / END GAME label + data-lifecycle dispatch attr
+  // on the overflow menu's lifecycle button. Visibility for non-coach is
+  // owned by applyRoleGates (COACH_GATED_IDS includes 'endGameBtn'). Called
+  // at init (after state hydration) and after the Load Game form is
+  // submitted so the label tracks state.gameInfo.configured.
+  // TODO Commit C: also hide when the user is NOT in a scheduled game
+  //   (per "scheduled games only" gate in item 8).
+  function toggleGameLifecycleBtn() {
+    const btn = document.getElementById('endGameBtn');
+    if (!btn) return;
+    const inGame = !!(state.gameInfo && state.gameInfo.configured);
+    btn.textContent = inGame ? 'END GAME' : 'START GAME';
+    btn.dataset.lifecycle = inGame ? 'end' : 'start';
+  }
+
   async function refreshAuthAffordance() {
     if (!topAccountBtn) return;
     if (typeof FelixAuth === 'undefined') { topAccountBtn.textContent = 'USER ROLE'; return; }
@@ -5521,6 +5556,12 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
   function refreshAuthUI(){ refreshAccountUI(); applyRoleGates(); refreshAuthAffordance(); }
   if (typeof FelixAuth !== "undefined") FelixAuth.onAuthChange(refreshAuthUI);
   setTimeout(refreshAuthUI, 150);
+  // Initial paint of the overflow START / END GAME label. State was
+  // already hydrated synchronously via load() at IIFE start, so reading
+  // state.gameInfo.configured here is correct. Match the 150 ms delay
+  // so the button is firmly in DOM (it is — it's in markup) and any
+  // role gate has fired before label changes.
+  setTimeout(toggleGameLifecycleBtn, 150);
 
   // ============ Photo / Video capture (V3.0) ============
   if (!state.gameId) state.gameId = (typeof FelixDB !== 'undefined' && FelixDB.uuid ? FelixDB.uuid() : ('g_' + Date.now()));
@@ -5954,6 +5995,10 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
   }
 
   // ============ End Game flow ============
+  // TODO: reset state.gameInfo.configured = false after archive so the
+  // overflow lifecycle button reverts to START GAME (Commit B Item 5
+  // edge case — currently the button stays "END GAME" until startNewGame
+  // explicitly clears configured).
   const endGameBtn = document.getElementById("endGameBtn");
   async function endGame(){
     if(!await ensureCoach()) return;
@@ -5993,7 +6038,13 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
     }, 350);
     toast("Game saved · report ready");
   }
-  if(endGameBtn) endGameBtn.addEventListener("click", endGame);
+  if(endGameBtn) endGameBtn.addEventListener("click", () => {
+    // Single button in the overflow menu — dispatch by data-lifecycle.
+    // toggleGameLifecycleBtn() keeps this attr in sync with
+    // state.gameInfo.configured. Default 'end' so an unset attr behaves
+    // as the legacy End Game flow did.
+    return endGameBtn.dataset.lifecycle === 'start' ? startNewGame() : endGame();
+  });
 
   // ============ Mini-report on period change ============
   // Tiny floating card with summary stats for the period that just ended.

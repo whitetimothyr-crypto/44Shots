@@ -41,7 +41,9 @@
   const STORAGE_KEY = "felix.tabOrder";
 
   // Coach/admin default order — shipped now. Parent default deferred.
-  const DEFAULT_ORDER_COACH = ["rink", "whiteboard", "feed", "lineup", "more"];
+  // TODO: SortableJS-driven custom order for the bottom nav rail —
+  // separate commit after Commit B verifies on prod.
+  const DEFAULT_ORDER_COACH = ["rink", "whiteboard", "lineup", "more"];
 
   // Tab registry. `legacy: true` means panel activation is handled by
   // index.html's switchTab() (kept for now — extraction is a later PR).
@@ -56,11 +58,6 @@
       label: "Whiteboard",
       icon: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="1.5"/><line x1="3" y1="20" x2="21" y2="20"/><line x1="7" y1="9" x2="13" y2="9"/><line x1="7" y1="13" x2="17" y2="13"/></svg>',
     },
-    feed: {
-      module: () => window.FelixFeed,
-      label: "Feed",
-      icon: '<svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>',
-    },
     lineup: {
       module: () => window.FelixLineup,
       label: "Lineup",
@@ -72,6 +69,11 @@
       icon: '<svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="18" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>',
     },
     // Off-rail tabs — addressable from MORE, not in the visible nav.
+    feed: {
+      module: () => window.FelixFeed,
+      label: "Feed",
+      icon: '<svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>',
+    },
     stats: {
       legacy: true,
       label: "Stats",
@@ -92,7 +94,15 @@
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed) && parsed.length > 0 && parsed.every((t) => TABS[t])) {
-          return parsed;
+          // Migration: Feed moved off-rail to MORE in Commit B. Filter
+          // it out of any returning user's saved order and persist so
+          // we don't refilter on every read. When sortable nav lands,
+          // drop this filter.
+          const filtered = parsed.filter((t) => t !== "feed");
+          if (filtered.length !== parsed.length) {
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered)); } catch (_) {}
+          }
+          if (filtered.length > 0) return filtered;
         }
       }
     } catch (_) {}
@@ -188,13 +198,22 @@
     activate(id) {
       const btn = document.querySelector(`nav.bottom-nav button[data-tab="${id}"]`);
       if (btn) { btn.click(); return; }
-      // Tab not in the visible rail (e.g. stats/report from MORE).
+      // Tab not in the visible rail (e.g. feed / stats / report from MORE).
       // Switch panels via the legacy handler when available, else fall
-      // back to a generic .panel.active toggle.
-      if (typeof window.switchTab === "function") { try { window.switchTab(id); } catch (_) {} return; }
-      document.querySelectorAll(".panel").forEach((p) =>
-        p.classList.toggle("active", p.id === "panel-" + id)
-      );
+      // back to a generic .panel.active toggle. Then drive module
+      // lifecycle so module-backed off-rail tabs (currently feed) get
+      // onActivate / onDeactivate fired. Legacy tabs (stats, report)
+      // early-return inside activateModuleTab — safe no-op.
+      if (typeof window.switchTab === "function") {
+        try { window.switchTab(id); } catch (_) {}
+      } else {
+        document.querySelectorAll(".panel").forEach((p) =>
+          p.classList.toggle("active", p.id === "panel-" + id)
+        );
+      }
+      if (_prevActiveId && _prevActiveId !== id) deactivateModuleTab(_prevActiveId);
+      activateModuleTab(id);
+      _prevActiveId = id;
     },
   };
 
