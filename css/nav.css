@@ -11,6 +11,19 @@ nav.bottom-nav {
   border-top: 1px solid var(--border);
   padding-bottom: env(safe-area-inset-bottom);
   z-index: 50;
+  /* HIG floor — prevents nav from collapsing below visible footprint
+     in finger mode if computed button height drops unexpectedly
+     (font fallback, dynamic viewport, PWA scroll behavior). Landscape
+     `height: 40px !important` below still wins, so this is portrait-only
+     in practice. */
+  min-height: 44px;
+}
+/* Defensive floor for finger mode (no input-mode-pen class). Anchors
+   nav at the natural button stack height (8 + 22 svg + 3 + ~11 label
+   + 10 = 54) in case computed height differs from expected. Pen mode
+   already has min-height:60 on buttons cascading to nav children. */
+body:not(.input-mode-pen) nav.bottom-nav {
+  min-height: 54px;
 }
 nav.bottom-nav button {
   flex: 1;
