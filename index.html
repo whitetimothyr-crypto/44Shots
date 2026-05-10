@@ -177,6 +177,39 @@ font-family:var(--sans);font-size:12px;letter-spacing:.18em;text-transform:upper
 .armed .rink-wrap.surface { animation: armedRink 1.2s ease-in-out infinite }
 .armed .lsBtn[data-action="rebound"] { animation: armedReb 1s ease-in-out infinite !important }
 
+/* Disabled state for lsBtn — initial paint before updateLastShotBar runs.
+   JS sets b.style.opacity directly afterward (.4 / .5 / 1) which beats this
+   rule because inline > non-!important CSS. Existed inline only before; now
+   centralised so per-button inline opacity:.4 isn't required. */
+.lsBtn[disabled] { opacity: .4 }
+
+/* Capture row icons (Photo / Video / Gallery, below rink). 44 px hit area
+   wraps a 22 px stroke-only SVG; matches the bottom-nav icon family. */
+.capIcon{
+  background:transparent;border:0;padding:0;margin:0;cursor:pointer;
+  width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;
+  color:var(--text-muted);transition:color .15s ease;touch-action:manipulation;
+}
+.capIcon:hover, .capIcon:focus{color:var(--accent);outline:none}
+.capIcon svg{
+  width:22px;height:22px;stroke:currentColor;fill:none;
+  stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;
+}
+
+/* Video-icon tap popover — single-line tooltip, dismissible by tap-out / X. */
+#mediaTipPopover{
+  position:fixed;z-index:2600;background:var(--surface);
+  border:1px solid var(--border);border-radius:10px;padding:10px 14px;
+  font-family:var(--sans);font-size:12px;letter-spacing:.04em;color:var(--text);
+  box-shadow:0 8px 24px rgba(0,0,0,.5);max-width:280px;
+  display:none;align-items:center;gap:10px;
+}
+#mediaTipPopover.active{display:flex}
+#mediaTipPopover button{
+  background:transparent;border:0;color:var(--text-muted);font-size:18px;
+  line-height:1;cursor:pointer;padding:0 4px;min-width:32px;min-height:32px;
+}
+
 .marker{pointer-events:none}
 .pulse{animation:pulse .6s ease-out}
 @keyframes pulse{
@@ -469,24 +502,8 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   #panel-rink > .legend,
   #panel-rink > #rinkActionsRow { display: none !important; }
 
-  /* Capture row (Photo / Video / Gallery) — restored in landscape, sits
-     at the top of the center column. Compact heights to leave rink room. */
-  #panel-rink > #captureRow {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr 1fr !important;
-    gap: 6px !important;
-    padding: 0 !important;
-    margin-bottom: 4px !important;
-  }
-  #panel-rink > #captureRow .btn {
-    min-height: 36px !important;
-    padding: 6px 8px !important;
-    font-size: 10px !important;
-    letter-spacing: .08em !important;
-  }
-
-  /* Game state row — PP / PK toggles visible at top of center column.
-     FACEOFF still escapes to the right rail bottom via fixed positioning. */
+  /* Game state row — PP / PK toggles only. Sits in the center column,
+     above the rink. FACEOFF lives in #lastShotBar now (right rail). */
   #panel-rink > #gameStateRow {
     display: grid !important;
     grid-template-columns: 1fr !important;
@@ -504,45 +521,36 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     font-size: 11px !important;
     padding: 6px 8px !important;
   }
-  /* FACEOFF: rounded teal outline, matching REB / WRAP / TIP / BREAK
-     visual weight per spec. Snug to bottom-right corner with a small
-     inset so the rounded border isn't clipped against the rail / nav. */
-  #panel-rink > #gameStateRow > #faceoffBtn {
-    position: fixed !important;
-    right: 4px !important;
-    bottom: calc(44px + env(safe-area-inset-bottom)) !important;
-    width: 92px !important;
-    height: 44px !important;
-    border-radius: 8px !important;
-    border: 1px solid var(--border) !important;
-    padding: 0 !important;
-    font-size: 11px !important;
-    letter-spacing: .12em !important;
-    font-weight: 700 !important;
-    background: var(--surface) !important;
-    color: var(--accent) !important;
+  /* Capture row (Photo / Video / Gallery) — below the rink, sits at the
+     bottom of the center column. Compact in landscape so it doesn't
+     steal vertical space from the rink. Default flex layout from the
+     element's inline style is fine; only fine-tune size here. */
+  #panel-rink > #captureRow {
+    padding: 4px 0 !important;
     margin: 0 !important;
-    z-index: 41;
+  }
+  #panel-rink > #captureRow .capIcon {
+    width: 40px !important; height: 40px !important;
   }
 
-  /* Right rail: lastShotBar reflowed as vertical column above FACEOFF.
+  /* Right rail: 8 uniform lsBtn (GOAL+MISS+BLK+REB+WRAP+TIP+BREAK+FACEOFF).
      !important on top + bottom because the inline style is
      position:sticky;top:0 — without !important the inline top:0 wins
-     and the bar overlaps the End Game cluster at the corner.
-     Bottom = 92 (44 nav + 44 faceoff + 4 inset) so the rail sits 4 px
-     above the FACEOFF button. */
+     and the bar overlaps the End Game cluster at the corner. With
+     FACEOFF now inside the rail, no separate fixed FACEOFF below — so
+     the rail bottom is just the bottom-nav clearance. */
   #panel-rink #lastShotBar {
     position: fixed !important;
     top: 56px !important;
     right: 0 !important;
     width: 100px !important;
-    bottom: calc(92px + env(safe-area-inset-bottom)) !important;
+    bottom: calc(40px + env(safe-area-inset-bottom)) !important;
     flex-direction: column !important;
     flex-wrap: nowrap !important;
     align-items: stretch !important;
-    justify-content: space-between !important;
-    gap: 3px !important;
-    padding: 4px !important;
+    justify-content: flex-start !important;
+    gap: 12px !important;
+    padding: 8px 4px !important;
     background: var(--surface) !important;
     border: 0 !important;
     border-left: 1px solid var(--border) !important;
@@ -552,22 +560,16 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     z-index: 40;
   }
   #panel-rink #lastShotBar #lastShotLabel { display: none !important; }
-  /* Vertical 1px divider between BLK and REB becomes horizontal */
-  #panel-rink #lastShotBar > span {
-    width: 100% !important;
-    height: 1px !important;
-    margin: 1px 0 !important;
-    flex: 0 0 1px !important;
-  }
   #panel-rink #lastShotBar .lsBtn {
     width: 100% !important;
     min-width: 0 !important;
     padding: 0 !important;
-    min-height: 44px !important;
-    flex: 1 1 auto !important;
-    font-size: 11px !important;
-    letter-spacing: .08em !important;
-    border-radius: 8px !important;
+    height: 64px !important;
+    min-height: 64px !important;
+    flex: 0 0 64px !important;
+    font-size: 13px !important;
+    letter-spacing: .12em !important;
+    border-radius: 9px !important;
     line-height: 1 !important;
   }
 
@@ -587,14 +589,21 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     aspect-ratio: 100 / 60 !important;
   }
 
-  /* iPhone landscape (=<500 px tall) only: shrink lsBtn min-height
-     from 44 to 32 so all 7 actions fit between the End Game cluster
-     (top 56 px) and the FACEOFF button (bottom 92 px) in 242 px of
-     vertical space. iPad landscapes stay at 44. The wider buttons
-     (100 px width) still meet Apple HIG hit-area target. */
+  /* iPhone landscape (=<500 px tall) sub-rule. The strict 64 px
+     uniform height from the outer rule won't fit 8 buttons in the
+     294 px-tall rail (vh − 56 − 40 − saa). Math:
+       8 × 32 + 7 × 4 = 256 + 28 = 284 px ≤ 294 (10 px slack)
+     Source-order tie-breaker: this nested @media follows the outer
+     rule, so on iPhone-LS its 32 px height + 4 px gap win. iPad +
+     desktop landscape never enter this block, keep the strict 64. */
   @media (max-height: 500px) {
+    #panel-rink #lastShotBar {
+      gap: 4px !important;
+    }
     #panel-rink #lastShotBar .lsBtn {
+      height: 32px !important;
       min-height: 32px !important;
+      flex: 0 0 32px !important;
       font-size: 10px !important;
     }
   }
@@ -713,25 +722,22 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       </div>
     </div>
 
-<!-- V3.0 Media capture row (above game-state row, persistent visibility) -->
-<div id="captureRow" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 4px;margin-bottom:6px;align-items:center">
-  <button id="capPhotoBtn" class="btn" style="padding:10px 12px;font-size:11px;letter-spacing:.12em;font-weight:700;border-radius:8px;background:var(--panel);color:var(--text);border:1px solid rgba(255,255,255,.15)">📷 Photo</button>
-  <button id="capVideoBtn" class="btn" style="padding:10px 12px;font-size:11px;letter-spacing:.12em;font-weight:700;border-radius:8px;background:var(--panel);color:var(--text);border:1px solid rgba(255,255,255,.15)">📹 Video 15s</button>
-  <button id="mediaGalleryBtn" class="btn ghost" style="padding:10px 12px;font-size:10px;letter-spacing:.10em">🗂 Gallery <span id="mediaCountBadge" style="opacity:.7">(0)</span></button>
-</div>
+<!-- Capture row markup moved below the rink (see end of #panel-rink). The
+     #mediaCountBadge span is dropped per spec — refreshMediaCount guards
+     on its presence so the no-op is silent. -->
+<!-- ↳ The new <div id="captureRow"> lives after the .rink-wrap closing div below. -->
 <div id="excusedBadge" style="display:none;padding:6px 10px;margin:0 4px 6px;background:var(--accent-2);color:var(--bg);font-family:var(--sans);font-size:10px;letter-spacing:.16em;font-weight:800;border-radius:6px;text-align:center">EXCUSED · TAP NEXT EVENT TO RE-ENGAGE</div>
 
-<!-- Game state row: PP / PK toggles (mutually exclusive). Both off = 5v5,
-     no separate 5v5 button. The data-gs attributes are preserved so the
-     existing setGameState handler + body.gs-pp / body.gs-pk pulse rules
-     continue to work without changes. FACEOFF action sits to the right;
-     in landscape it's fixed-positioned to the right rail bottom. -->
-<div id="gameStateRow" class="controls" style="grid-template-columns:3fr 1fr">
+<!-- Game state row: PP / PK toggles only (mutually exclusive). Both off
+     = 5v5, no separate 5v5 button. The data-gs attributes are preserved
+     so the existing setGameState handler + body.gs-pp / body.gs-pk
+     pulse rules continue to work. FACEOFF moved into #lastShotBar as
+     the 8th lsBtn — see commit covering items 8 + 11. -->
+<div id="gameStateRow" class="controls" style="grid-template-columns:1fr">
   <div id="gameStateSeg" class="gs-toggles">
     <button type="button" data-gs="pp">PP</button>
     <button type="button" data-gs="pk">PK</button>
   </div>
-  <button id="faceoffBtn" class="btn" style="padding:10px 12px;font-size:11px;letter-spacing:.14em;font-weight:700;border-radius:8px;background:var(--panel);color:var(--accent);border:1px solid var(--accent);white-space:nowrap">FACEOFF</button>
 </div>
 <!-- Hidden compat anchor for legacy periodSeg bindings -->
 <div id="periodSeg" style="display:none">
@@ -753,17 +759,21 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   <button id="topAccountBtn" class="btn" type="button" aria-label="User Role">USER ROLE</button>
 </div>
 
-<!-- Last Shot bar (directly above rink, sticky) -->
+<!-- Last Shot bar (right rail in landscape, sticky above rink in portrait).
+     8 uniform lsBtn buttons: GOAL is gold (primary), the rest are neutral.
+     FACEOFF is in this rail too; its own click handler binds via id and
+     the lsBtn-iteration JS uses :not([data-action="faceoff"]) so the
+     default click handler doesn't mutate state.events. -->
 <div id="lastShotBar" style="position:sticky;top:0;z-index:20;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-family:var(--sans);display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;box-shadow:0 4px 12px rgba(0,0,0,.25)">
   <div style="font-size:11px;color:var(--text-muted);font-weight:700;letter-spacing:.1em;flex:0 0 auto;min-width:70px" id="lastShotLabel">Last: —</div>
-  <button class="lsBtn" data-action="goal" style="background:var(--accent-2);color:var(--bg);border:1px solid var(--border);padding:12px 18px;font-size:13px;letter-spacing:.12em;font-weight:700;border-radius:9px;opacity:.4;min-width:72px" disabled>GOAL</button>
-  <button class="lsBtn" data-action="miss" style="background:var(--surface);color:var(--text-muted);border:1px solid var(--border);padding:12px 18px;font-size:13px;letter-spacing:.12em;font-weight:700;border-radius:9px;opacity:.4;min-width:72px" disabled>MISS</button>
-  <button class="lsBtn" data-action="block" style="background:var(--surface);color:var(--text-muted);border:1px solid var(--border);padding:12px 16px;font-size:13px;letter-spacing:.12em;font-weight:700;border-radius:9px;opacity:.4;min-width:66px" disabled>BLK</button>
-  <span style="width:1px;height:28px;background:rgba(255,255,255,.15);margin:0 4px"></span>
-  <button class="lsBtn" data-action="rebound" style="background:var(--surface);color:var(--accent);border:1px solid var(--border);padding:12px 16px;font-size:13px;letter-spacing:.12em;font-weight:700;border-radius:9px;min-width:66px">REB</button>
-  <button class="lsBtn" data-action="wraparound" style="background:var(--surface);color:var(--accent);border:1px solid var(--border);padding:12px 16px;font-size:13px;letter-spacing:.12em;font-weight:700;border-radius:9px;opacity:.4;min-width:74px" disabled>WRAP</button>
-  <button class="lsBtn" data-action="tip" style="background:var(--surface);color:var(--accent);border:1px solid var(--border);padding:12px 16px;font-size:13px;letter-spacing:.12em;font-weight:700;border-radius:9px;opacity:.4;min-width:66px" disabled>TIP</button>
-  <button class="lsBtn" data-action="breakaway" style="background:var(--surface);color:var(--accent);border:1px solid var(--border);padding:12px 16px;font-size:13px;letter-spacing:.12em;font-weight:700;border-radius:9px;opacity:.4;min-width:80px" disabled>BREAK</button>
+  <button class="lsBtn" data-action="goal"       style="background:var(--accent-2);color:var(--bg);border:1px solid var(--border);height:64px;padding:0 14px;font-size:13px;letter-spacing:.12em;font-weight:700;border-radius:9px" disabled>GOAL</button>
+  <button class="lsBtn" data-action="miss"       style="background:var(--surface);color:var(--text);border:1px solid var(--border);height:64px;padding:0 14px;font-size:13px;letter-spacing:.12em;font-weight:700;border-radius:9px" disabled>MISS</button>
+  <button class="lsBtn" data-action="block"      style="background:var(--surface);color:var(--text);border:1px solid var(--border);height:64px;padding:0 14px;font-size:13px;letter-spacing:.12em;font-weight:700;border-radius:9px" disabled>BLK</button>
+  <button class="lsBtn" data-action="rebound"    style="background:var(--surface);color:var(--text);border:1px solid var(--border);height:64px;padding:0 14px;font-size:13px;letter-spacing:.12em;font-weight:700;border-radius:9px">REB</button>
+  <button class="lsBtn" data-action="wraparound" style="background:var(--surface);color:var(--text);border:1px solid var(--border);height:64px;padding:0 14px;font-size:13px;letter-spacing:.12em;font-weight:700;border-radius:9px" disabled>WRAP</button>
+  <button class="lsBtn" data-action="tip"        style="background:var(--surface);color:var(--text);border:1px solid var(--border);height:64px;padding:0 14px;font-size:13px;letter-spacing:.12em;font-weight:700;border-radius:9px" disabled>TIP</button>
+  <button class="lsBtn" data-action="breakaway"  style="background:var(--surface);color:var(--text);border:1px solid var(--border);height:64px;padding:0 14px;font-size:13px;letter-spacing:.12em;font-weight:700;border-radius:9px" disabled>BREAK</button>
+  <button class="lsBtn" data-action="faceoff" id="faceoffBtn" style="background:var(--surface);color:var(--text);border:1px solid var(--border);height:64px;padding:0 14px;font-size:13px;letter-spacing:.12em;font-weight:700;border-radius:9px">FACEOFF</button>
 </div>
 
 <div class="surface rink-wrap">
@@ -838,6 +848,37 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     <!-- Faceoff overlay layer (populated only during FACEOFF mode) -->
     <g id="faceoffOverlay"></g>
   </svg>
+</div>
+
+<!-- Capture row (Photo / Video / Gallery), below rink. Icons-only, no
+     text labels, no count badges. SVG icon family matches js/nav.js. -->
+<div id="captureRow" style="display:flex;justify-content:center;gap:24px;padding:6px 4px;align-items:center">
+  <button id="capPhotoBtn" type="button" aria-label="Photo" class="capIcon">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="3" y="7" width="18" height="13" rx="2"/>
+      <rect x="9" y="4" width="6" height="3" rx="0.5"/>
+      <circle cx="12" cy="13.5" r="3.5"/>
+    </svg>
+  </button>
+  <button id="capVideoBtn" type="button" aria-label="Video" class="capIcon">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="3" y="7" width="14" height="10" rx="1.5"/>
+      <path d="M17 10 L21 7 L21 17 L17 14 Z"/>
+    </svg>
+  </button>
+  <button id="mediaGalleryBtn" type="button" aria-label="Gallery" class="capIcon">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="3" y="3" width="8" height="8" rx="1"/>
+      <rect x="13" y="3" width="8" height="8" rx="1"/>
+      <rect x="3" y="13" width="8" height="8" rx="1"/>
+      <rect x="13" y="13" width="8" height="8" rx="1"/>
+    </svg>
+  </button>
+</div>
+<!-- Video-tap tooltip — single-line, dismissible by X or tap-outside. -->
+<div id="mediaTipPopover" role="status" aria-live="polite">
+  <span>15 second max for upload or share</span>
+  <button type="button" id="mediaTipCloseBtn" aria-label="Dismiss">&times;</button>
 </div>
 
 <div class="legend" style="font-size:14px;font-weight:600;color:#B8B8C8;">
@@ -2382,7 +2423,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 
   function updateLastShotBar(){
     const label = document.getElementById("lastShotLabel");
-    const buttons = document.querySelectorAll(".lsBtn");
+    const buttons = document.querySelectorAll('.lsBtn:not([data-action="faceoff"])');
     if(!label) return;
     if(lastEventIndex < 0 || !state.events[lastEventIndex]){
       label.textContent = "Last: —";
@@ -2415,7 +2456,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 
   // Handle Last bar button clicks: result buttons toggle/set, style buttons stack
   // EXCEPTION: REB now arms the NEXT shot as a rebound linked to the most recent shot
-  document.querySelectorAll(".lsBtn").forEach(b=>{
+  document.querySelectorAll('.lsBtn:not([data-action="faceoff"])').forEach(b=>{
     const action = b.dataset.action;
     if(action === "rebound"){
       // REB button: tap or long-press both toggle armed mode
@@ -5702,7 +5743,40 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
   }
 
   if (capPhotoBtn) capPhotoBtn.addEventListener('click', () => openCapture('photo'));
-  if (capVideoBtn) capVideoBtn.addEventListener('click', () => openCapture('video'));
+  if (capVideoBtn) capVideoBtn.addEventListener('click', () => {
+    showMediaTip();
+    openCapture('video');
+  });
+
+  // 15-second-max heads-up popover. Tap-outside or X dismisses.
+  // Capture flow runs in parallel — the popover is informational only,
+  // not a gate on the capture action (per "do not change capture logic").
+  function showMediaTip() {
+    const tip = document.getElementById('mediaTipPopover');
+    const btn = document.getElementById('capVideoBtn');
+    if (!tip || !btn) return;
+    const r = btn.getBoundingClientRect();
+    const w = 280;
+    const left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width/2 - w/2));
+    tip.style.left = left + 'px';
+    tip.style.bottom = (window.innerHeight - r.top + 8) + 'px';
+    tip.style.top = 'auto';
+    tip.classList.add('active');
+    // Defer the outside-click listener so the activating tap doesn't
+    // immediately re-trigger dismissal.
+    setTimeout(() => document.addEventListener('click', _onMediaTipOutside), 0);
+  }
+  function hideMediaTip() {
+    const tip = document.getElementById('mediaTipPopover');
+    if (tip) tip.classList.remove('active');
+    document.removeEventListener('click', _onMediaTipOutside);
+  }
+  function _onMediaTipOutside(e) {
+    const tip = document.getElementById('mediaTipPopover');
+    if (tip && tip.classList.contains('active') && !tip.contains(e.target)) hideMediaTip();
+  }
+  const _mediaTipCloseBtn = document.getElementById('mediaTipCloseBtn');
+  if (_mediaTipCloseBtn) _mediaTipCloseBtn.addEventListener('click', hideMediaTip);
   if (captureSnapBtn) captureSnapBtn.addEventListener('click', () => {
     if (_captureMode === 'photo') doSnapPhoto();
     else doStartVideo();
