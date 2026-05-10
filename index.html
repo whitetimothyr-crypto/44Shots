@@ -3806,16 +3806,36 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     toast("Goalie change · "+newName+" in net");
   });
 
-  // Show load game on first launch (no game configured), UNLESS the URL
-  // carries a mesh join code (?game=PLYM-XXXX). In that case FelixGame
-  // detectGameFromURL handles it and the user goes directly to scoring —
-  // no NEW GAME setup form should interrupt the join flow.
+  // First-launch routing (no game configured, no ?game= URL param):
+  //   - Coach role → showLoadGame (full setup form to start a new game)
+  //   - Non-coach (user / anon) → JOIN GAME modal (enter shared code)
+  // This matches the spec: parents/scorers join via code, coaches start
+  // games. Role detection is async (FelixAuth.getRole), so we resolve
+  // role first, then route.
   const _hasMeshJoinParam = (() => {
     try { return new URLSearchParams(window.location.search).has("game"); }
     catch(e) { return false; }
   })();
   if(!state.gameInfo.configured && !_hasMeshJoinParam){
-    setTimeout(showLoadGame, 200);
+    (async () => {
+      let role = 'user';
+      try { if (typeof FelixAuth !== 'undefined') role = await FelixAuth.getRole(); } catch (e) {}
+      if (role === 'coach') {
+        setTimeout(showLoadGame, 200);
+      } else {
+        // Non-coach: open JOIN GAME modal as primary entry. Falls back to
+        // showLoadGame if the modal is missing for any reason.
+        setTimeout(() => {
+          const backdrop = document.getElementById('joinGameBackdrop');
+          const openBtn = document.getElementById('joinGameBtn');
+          if (backdrop && openBtn) {
+            openBtn.click();
+          } else {
+            showLoadGame();
+          }
+        }, 200);
+      }
+    })();
   }
   updateGoalieBanner(); if(typeof renderNetZoneLabels === "function") renderNetZoneLabels();
 
