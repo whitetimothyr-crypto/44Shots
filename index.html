@@ -114,6 +114,13 @@ pointer-events:none;
    + overflow on the right. AWAY-on-top, HOME-on-bottom is static across
    all periods (press-box convention). Period flip on the rink graphic
    is handled separately by updateGoalieMarkers (line ~1843). */
+/* Top bar: 4-col grid `auto auto 1fr auto`. Each child PINNED to its
+   column explicitly so hiding any one (e.g. Felix img in landscape via
+   body > header > img) doesn't shift the others left via auto-placement.
+   Cluster centers within the 1fr middle column; three-dot stays at the
+   right edge regardless of viewport. This works for both portrait (Felix
+   img visible at col 1) and landscape (col 1 collapses to 0 since img
+   is display:none — score takes left, cluster centers, three-dot right). */
 header#topBar{
 display:grid;
 grid-template-columns:auto auto 1fr auto;
@@ -125,12 +132,13 @@ border-bottom:1px solid rgba(255,255,255,.08);
 background:linear-gradient(180deg,var(--surface),var(--bg));
 min-height:88px;
 }
-/* Felix photo: spans both header rows in col 1. Auto-placement puts the
-   img in col 1, score block in col 2, period+PP/PK in col 3, status
-   cluster in col 4. Landscape hide rule below collapses the column. */
-header#topBar > img{grid-row:1 / span 2;align-self:center;justify-self:start}
+/* Felix photo: col 1, spans both rows. Hidden in landscape via the
+   body > header > img rule. */
+header#topBar > img{grid-column:1;grid-row:1 / span 2;align-self:center;justify-self:start}
 #headerStats{
+grid-column:2;
 grid-row:1 / span 2;
+justify-self:start;
 display:grid;
 grid-template-columns:auto auto auto;
 column-gap:14px;row-gap:3px;
@@ -141,14 +149,27 @@ font-family:var(--sans);
 #homeRowLabel,#awayRowLabel{font-size:11px;letter-spacing:.14em;color:var(--text-muted);text-transform:uppercase;font-weight:500;text-align:left}
 #hHomeGoals,#hHomeShots,#hAwayGoals,#hAwayShots{font-size:22px;font-weight:600;color:var(--text);text-align:center;line-height:1}
 #globalGameRow{
+grid-column:3;
 grid-row:1 / span 2;
+justify-self:center;
 display:grid;
 grid-template-rows:auto auto;
 row-gap:4px;
 justify-items:center;align-items:center;
 background:none;border:0;padding:0;
 }
-#topBarRight{grid-row:1 / span 2;display:flex;align-items:center;gap:8px}
+#topBarRight{grid-column:4;grid-row:1 / span 2;justify-self:end;display:flex;align-items:center;gap:8px}
+
+/* iPhone portrait — compress period dots to fit a narrower 1fr middle
+   column (129 px available at 393 vw after fixed cols + gaps). Same
+   pattern as the iPhone-LS compression in the landscape sub-rule. */
+@media (orientation: portrait) and (max-width: 480px) {
+  header#topBar { column-gap: 10px; padding: 8px 10px; }
+  .seg-period { gap: 6px; }
+  .seg-period button { min-width: 26px; min-height: 40px; }
+  .seg-period button .dot { width: 8px; height: 8px; }
+  .seg-period button small { font-size: 8px; }
+}
 
 /* Left rail (Photo / Video / Gallery / Feed) — landscape only. Hidden
    by default; the landscape @media block below shows it. Portrait keeps
