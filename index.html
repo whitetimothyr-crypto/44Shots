@@ -6158,10 +6158,10 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
   }
 
   // ============ End Game flow ============
-  // TODO: reset state.gameInfo.configured = false after archive so the
-  // overflow lifecycle button reverts to START GAME (Commit B Item 5
-  // edge case — currently the button stays "END GAME" until startNewGame
-  // explicitly clears configured).
+  // Archives the current game snapshot, renders the report, then resets
+  // live state so the next game starts clean. State reset fires inside
+  // the report-render setTimeout so #reportOut DOM is populated before
+  // state.events / state.netEvents are wiped.
   const endGameBtn = document.getElementById("endGameBtn");
   async function endGame(){
     if(!await ensureCoach()) return;
@@ -6197,6 +6197,31 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
         if(out && out.style.display !== "none"){
           out.scrollIntoView({behavior:"smooth", block:"start"});
         }
+        // RESET LIVE STATE. Archive snapshot is captured at the top of
+        // endGame (line ~6175 archiveCurrentGame). The report is rendered
+        // as static HTML in #reportOut, so wiping state.events doesn't
+        // blank what the coach sees. Next launch reads configured:false
+        // and routes back to JOIN GAME / Load Game.
+        state.events = [];
+        state.netEvents = [];
+        state.faceoffs = [];
+        state.goalies = [];
+        state.activeGoalie = null;
+        state.armedForRebound = false;
+        state.lastShotIdForRebound = null;
+        state.pendingNetGoalTeam = null;
+        state.period = 1;
+        state.gameState = "5v5";
+        state.gameStateExpiresAt = null;
+        if (state.gameInfo) {
+          state.gameInfo.configured = false;
+          state.gameInfo.opponent = "";
+          delete state.gameInfo.endGameNotes;
+        }
+        save();
+        if (typeof redrawAll === "function") redrawAll();
+        if (typeof updateLastShotBar === "function") updateLastShotBar();
+        if (typeof toggleGameLifecycleBtn === "function") toggleGameLifecycleBtn();
       }, 250);
     }, 350);
     toast("Game saved · report ready");
