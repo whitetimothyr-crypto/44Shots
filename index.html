@@ -14,6 +14,7 @@
 <link rel="apple-touch-icon" sizes="120x120" href="/icons/apple-touch-icon-120.png" />
 <link rel="manifest" href="/manifest.json" />
 <link rel="stylesheet" href="css/nav.css" />
+<link rel="stylesheet" href="css/whiteboard.css" />
 <meta name="apple-mobile-web-app-title" content="44 Shots" />
 <title>44 Shots</title>
 <!-- Sentry error tracking. Loads asynchronously, lazy-loads SDK, captures unhandled errors before SDK fully loads. -->
@@ -1378,6 +1379,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
      stub modules register on window.Felix<Name>; nav.js renders the rail
      and calls them. All four scripts must parse before the main IIFE
      below so the legacy switchTab() sees a populated nav. -->
+<script src="js/whiteboard-api.js"></script>
 <script src="js/whiteboard.js"></script>
 <script src="js/feed.js"></script>
 <script src="js/lineup.js"></script>
