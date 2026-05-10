@@ -197,7 +197,7 @@ background:none;border:0;padding:0;
 
 main{flex:1;display:flex;flex-direction:column;padding:12px 12px calc(64px + env(safe-area-inset-bottom));gap:10px;min-height:0}
 .panel{display:none;flex:1;flex-direction:column;gap:10px;min-height:0}
-.panel.active{display:flex}
+.panel.active{display:flex;overflow-y:auto}
 
 .surface{
 background:var(--ice);border-radius:14px;position:relative;overflow:hidden;
@@ -488,8 +488,12 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   main {
     margin: 0 100px calc(40px + env(safe-area-inset-bottom)) 56px !important;
     padding: 4px !important;
-    height: calc(100dvh - 40px - env(safe-area-inset-bottom)) !important;
-    overflow: hidden !important;
+    /* 88 = full-width header (Commit A 41697bf), 40 = bottom nav.
+       iPhone-LS sub-rule below overrides 88 → 56 for the compressed
+       header. Universal `overflow: hidden` was removed game-day
+       2026-05-10: it blocked scroll on non-rink panels (Lineup, etc).
+       Rink panel sets its own overflow:hidden via #panel-rink.active. */
+    height: calc(100dvh - 88px - 40px - env(safe-area-inset-bottom)) !important;
     box-sizing: border-box;
   }
 
@@ -568,8 +572,8 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
      overflows the center column on the smallest landscape viewports. */
   #panel-rink.active .rink-wrap {
     width: 100% !important;
-    max-width: calc((100dvh - 124px - env(safe-area-inset-bottom)) * 100 / 60) !important;
-    max-height: calc(100dvh - 124px - env(safe-area-inset-bottom)) !important;
+    max-width: calc((100dvh - 132px - env(safe-area-inset-bottom)) * 100 / 60) !important;
+    max-height: calc(100dvh - 132px - env(safe-area-inset-bottom)) !important;
     height: auto !important;
     margin: 0 auto !important;
     aspect-ratio: 100 / 60 !important;
@@ -608,6 +612,15 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       font-size: 10px !important;
     }
     body.on-rink #leftRail { top: 56px !important; gap: 10px; padding: 8px 0; }
+    /* iPhone-LS: main + rink-wrap reserve 56 px header (compressed)
+       instead of the 88 px full-width header used on iPad-LS. */
+    main {
+      height: calc(100dvh - 56px - 40px - env(safe-area-inset-bottom)) !important;
+    }
+    #panel-rink.active .rink-wrap {
+      max-width: calc((100dvh - 100px - env(safe-area-inset-bottom)) * 100 / 60) !important;
+      max-height: calc(100dvh - 100px - env(safe-area-inset-bottom)) !important;
+    }
   }
 
   /* Bottom nav: 40px tall, label-less. Tap target = 40 + safe-area. */
