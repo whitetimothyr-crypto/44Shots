@@ -307,6 +307,17 @@
   function onSvgPointerDown(e) {
     if (_dragMarker) return;
     if (e.target.closest(".wb-marker")) return;   // marker drag wins
+    // Take EXPLICIT pointer capture on the SVG itself. Without this,
+    // the browser implicitly captures the touch to whatever element
+    // pointerdown landed on (often a <path> stroke in eraser mode).
+    // When eraseAt removes that <path> from DOM, iPad Safari can leave
+    // the implicit-capture in a "lost track" state that silently blocks
+    // the NEXT pointerdown on the SVG — symptom: pen draws nothing
+    // after a single eraser action. Capturing to the SVG itself keeps
+    // the touch session anchored to a node that never gets removed.
+    if (e.pointerId != null && _svg.setPointerCapture) {
+      try { _svg.setPointerCapture(e.pointerId); } catch (_) {}
+    }
     if (_state.tool === "eraser") { eraseAt(e); return; }
     if (_state.tool === "pen")    { startStroke(e); return; }
   }
@@ -375,6 +386,7 @@
   // rect caught the event. Now we translate tap to SVG coords, then
   // scan all strokes' polylines for closest segment within tolerance.
   function eraseAt(e) {
+    e.preventDefault();
     const p = clientToSVG(e.clientX, e.clientY);
     let bestId = null;
     let bestDist = Infinity;
