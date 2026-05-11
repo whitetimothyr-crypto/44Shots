@@ -204,7 +204,7 @@ background:var(--ice);border-radius:14px;position:relative;overflow:hidden;
 box-shadow:var(--shadow), inset 0 0 0 2px rgba(0,0,0,.06);
 touch-action:manipulation;
 }
-.rink-wrap{aspect-ratio: 100 / 60; width:100%;max-width:min(100%, calc(78vh * 100 / 60));margin:0 auto;max-height:100%;border-radius:0 !important;box-shadow:none !important;background:transparent !important;overflow:visible !important}
+.rink-wrap{aspect-ratio: 200 / 85; width:100%;max-width:min(100%, calc(78vh * 200 / 85));margin:0 auto;max-height:100%;border-radius:0 !important;box-shadow:none !important;background:transparent !important;overflow:visible !important}
 .net-wrap{aspect-ratio: 6 / 4; width:100%}
 .zone-pulse{animation:zonePulse 3.6s ease-in-out infinite}
 @keyframes zonePulse{0%,100%{opacity:0}50%{opacity:.05}}
@@ -593,7 +593,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     width: auto !important;
     max-width: 100% !important;
     max-height: 100% !important;
-    aspect-ratio: 100 / 60 !important;
+    aspect-ratio: 200 / 85 !important;
     margin: 0 !important;
     flex: 0 1 auto !important;
   }
@@ -698,6 +698,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     <div id="gameStateSeg" class="gs-toggles">
       <button type="button" data-gs="pp">PP</button>
       <button type="button" data-gs="pk">PK</button>
+      <button class="btn ghost" id="undoBtn">Undo</button>
     </div>
   </div>
   <!-- Status indicators + overflow trigger. END GAME relocated to the
@@ -854,69 +855,70 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 </div>
 
 <div class="surface rink-wrap">
-  <svg class="rink" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid meet" id="rinkSvg">
-    <!-- Rink background -->
+  <svg class="rink" viewBox="0 0 1000 425" preserveAspectRatio="xMidYMid meet" id="rinkSvg">
+    <!-- Rink background. ViewBox rescaled 1000x600 → 1000x425 (regulation
+         NHL 200ft x 85ft) 2026-05-11. All y-coords multiplied by 0.7083. -->
     <defs>
       <pattern id="iceTexture" width="6" height="6" patternUnits="userSpaceOnUse">
         <rect width="6" height="6" fill="#e8f1ff"/>
         <circle cx="3" cy="3" r=".4" fill="#cfe0f5" opacity=".5"/>
       </pattern>
     </defs>
-    <rect x="0" y="0" width="1000" height="600" rx="60" ry="60" fill="url(#iceTexture)" stroke="#1a1a1a" stroke-width="4"/>
+    <rect x="0" y="0" width="1000" height="425" rx="60" ry="60" fill="url(#iceTexture)" stroke="#1a1a1a" stroke-width="4"/>
 
     <!-- Goal lines -->
-    <line x1="60" y1="40" x2="60" y2="560" stroke="#c8262b" stroke-width="2"/>
-    <line x1="940" y1="40" x2="940" y2="560" stroke="#c8262b" stroke-width="2"/>
+    <line x1="60" y1="28" x2="60" y2="397" stroke="#c8262b" stroke-width="2"/>
+    <line x1="940" y1="28" x2="940" y2="397" stroke="#c8262b" stroke-width="2"/>
 
     <!-- Blue lines -->
-    <line x1="370" y1="40" x2="370" y2="560" stroke="#1f5fc4" stroke-width="6"/>
-    <line x1="630" y1="40" x2="630" y2="560" stroke="#1f5fc4" stroke-width="6"/>
+    <line x1="370" y1="28" x2="370" y2="397" stroke="#1f5fc4" stroke-width="6"/>
+    <line x1="630" y1="28" x2="630" y2="397" stroke="#1f5fc4" stroke-width="6"/>
 
     <!-- Center line -->
-    <line x1="500" y1="40" x2="500" y2="560" stroke="#c8262b" stroke-width="4" stroke-dasharray="2 0"/>
-    <circle cx="500" cy="300" r="50" fill="none" stroke="#1f5fc4" stroke-width="2"/>
+    <line x1="500" y1="28" x2="500" y2="397" stroke="#c8262b" stroke-width="4" stroke-dasharray="2 0"/>
+    <circle cx="500" cy="212" r="50" fill="none" stroke="#1f5fc4" stroke-width="2"/>
     <!-- Center ice dot -->
-    <circle cx="500" cy="300" r="3" fill="#1f5fc4"/>
+    <circle cx="500" cy="212" r="3" fill="#1f5fc4"/>
 
     <!-- Faceoff circles -->
     <g stroke="#c8262b" stroke-width="2" fill="none">
-      <circle cx="200" cy="170" r="55"/>
-      <circle cx="200" cy="430" r="55"/>
-      <circle cx="800" cy="170" r="55"/>
-      <circle cx="800" cy="430" r="55"/>
+      <circle cx="200" cy="120" r="55"/>
+      <circle cx="200" cy="305" r="55"/>
+      <circle cx="800" cy="120" r="55"/>
+      <circle cx="800" cy="305" r="55"/>
     </g>
     <g fill="#c8262b">
-      <circle cx="200" cy="170" r="3"/>
-      <circle cx="200" cy="430" r="3"/>
-      <circle cx="800" cy="170" r="3"/>
-      <circle cx="800" cy="430" r="3"/>
+      <circle cx="200" cy="120" r="3"/>
+      <circle cx="200" cy="305" r="3"/>
+      <circle cx="800" cy="120" r="3"/>
+      <circle cx="800" cy="305" r="3"/>
     </g>
 
     <!-- Neutral zone faceoff dots (4 total: 2 just outside each blue line) -->
     <g fill="#c8262b">
-      <circle cx="396" cy="170" r="3"/>
-      <circle cx="396" cy="430" r="3"/>
-      <circle cx="604" cy="170" r="3"/>
-      <circle cx="604" cy="430" r="3"/>
+      <circle cx="396" cy="120" r="3"/>
+      <circle cx="396" cy="305" r="3"/>
+      <circle cx="604" cy="120" r="3"/>
+      <circle cx="604" cy="305" r="3"/>
     </g>
 
-    <!-- Creases -->
-    <path d="M 60 270 A 40 30 0 0 1 60 330 Z" fill="#1f5fc4" opacity=".55" stroke="#c8262b" stroke-width="1.5"/>
-    <path d="M 940 270 A 40 30 0 0 0 940 330 Z" fill="#1f5fc4" opacity=".55" stroke="#c8262b" stroke-width="1.5"/>
+    <!-- Creases. Arc ry scaled 30 → 21, endpoints 270/330 → 191/234. -->
+    <path d="M 60 191 A 40 21 0 0 1 60 234 Z" fill="#1f5fc4" opacity=".55" stroke="#c8262b" stroke-width="1.5"/>
+    <path d="M 940 191 A 40 21 0 0 0 940 234 Z" fill="#1f5fc4" opacity=".55" stroke="#c8262b" stroke-width="1.5"/>
 
     <!-- Goals -->
-    <rect x="50" y="285" width="10" height="30" fill="#fff" stroke="#c8262b" stroke-width="1.5"/>
-    <rect x="940" y="285" width="10" height="30" fill="#fff" stroke="#c8262b" stroke-width="1.5"/>
+    <rect x="50" y="202" width="10" height="21" fill="#fff" stroke="#c8262b" stroke-width="1.5"/>
+    <rect x="940" y="202" width="10" height="21" fill="#fff" stroke="#c8262b" stroke-width="1.5"/>
 
     <!-- Goalie markers in each crease (auto-positioned by period) -->
     <g id="goalieMarkers">
       <g id="goalieLeft">
-        <circle cx="80" cy="300" r="14" fill="var(--bg)" stroke="#fff" stroke-width="2"/>
-        <text x="80" y="305" text-anchor="middle" fill="#fff" font-family="var(--sans)" font-size="13" font-weight="700">H</text>
+        <circle cx="80" cy="212" r="14" fill="var(--bg)" stroke="#fff" stroke-width="2"/>
+        <text x="80" y="217" text-anchor="middle" fill="#fff" font-family="var(--sans)" font-size="13" font-weight="700">H</text>
       </g>
       <g id="goalieRight">
-        <circle cx="920" cy="300" r="14" fill="var(--bg)" stroke="#fff" stroke-width="2"/>
-        <text x="920" y="305" text-anchor="middle" fill="#fff" font-family="var(--sans)" font-size="13" font-weight="700">A</text>
+        <circle cx="920" cy="212" r="14" fill="var(--bg)" stroke="#fff" stroke-width="2"/>
+        <text x="920" y="217" text-anchor="middle" fill="#fff" font-family="var(--sans)" font-size="13" font-weight="700">A</text>
       </g>
     </g>
 
@@ -967,7 +969,8 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 </div>
 
 <div id="rinkActionsRow" class="row">
-  <button class="btn ghost" id="undoBtn">Undo</button>
+  <!-- undoBtn moved to merged header (#gameStateSeg) after PK 2026-05-11.
+       clearBtn kept here (hidden) so existing reset wiring stays intact. -->
   <button class="btn danger" id="clearBtn" style="display:none">Reset Game</button>
 </div>
 
@@ -1926,8 +1929,8 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     const gs = state.gameState || "5v5";
     document.body.classList.toggle("gs-pp", gs === "pp");
     document.body.classList.toggle("gs-pk", gs === "pk");
-    if(gs === "pp")      document.body.setAttribute("data-gs-label", "POWER PLAY · TAP 5v5 WHEN OVER");
-    else if(gs === "pk") document.body.setAttribute("data-gs-label", "PENALTY KILL · TAP 5v5 WHEN OVER");
+    if(gs === "pp")      document.body.setAttribute("data-gs-label", "POWER PLAY · TAP TO DESELECT");
+    else if(gs === "pk") document.body.setAttribute("data-gs-label", "PENALTY KILL · TAP TO DESELECT");
     else document.body.removeAttribute("data-gs-label");
   }
   function setGameState(gs){
@@ -1941,6 +1944,10 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   if(gameStateSeg){
     gameStateSeg.addEventListener("click", e=>{
       const b = e.target.closest("button"); if(!b) return;
+      // Guard: only PP/PK buttons (with data-gs) drive state. UndoBtn now
+      // lives in #gameStateSeg too (2026-05-11) and has no data-gs — its
+      // own click handler at the foot of the script wires Undo separately.
+      if(!b.dataset.gs) return;
       // Toggle semantics: pressing the active mode switches to 5v5
       // (default). Pressing the inactive mode switches to it. PP and PK
       // are mutually exclusive because state.gameState only holds one
@@ -1957,8 +1964,8 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   function updateGameStateHint(){
     const hint = document.getElementById("gameStateHint");
     if(!hint) return;
-    if(state.gameState === "pp")      hint.textContent = "POWER PLAY active · tap 5v5 when over";
-    else if(state.gameState === "pk") hint.textContent = "PENALTY KILL active · tap 5v5 when over";
+    if(state.gameState === "pp")      hint.textContent = "POWER PLAY active · tap to deselect";
+    else if(state.gameState === "pk") hint.textContent = "PENALTY KILL active · tap to deselect";
     else hint.textContent = "";
   }
 
@@ -2099,7 +2106,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     lpFired = false;
     lpCancelled = false;
     const p = svgPoint(rinkSvg, evt);
-    if(p.x<60||p.x>940||p.y<40||p.y>560){ lpCancelled = true; return; }
+    if(p.x<60||p.x>940||p.y<28||p.y>397){ lpCancelled = true; return; }
     lpStart = {
       svgPt: { x: p.x, y: p.y },
       clientX: evt.clientX,
@@ -2148,7 +2155,7 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     if(now - rinkLastHandled < 80) return; // 80ms anti-jitter, allows legitimate double-taps through
     rinkLastHandled = now;
     let p = svgPoint(rinkSvg, evt);
-    if(p.x<60||p.x>940||p.y<40||p.y>560) return;
+    if(p.x<60||p.x>940||p.y<28||p.y>397) return;
 
     // ---- Double-tap gesture detection (runs FIRST, before any FOR/AGAINST prompts) ----
     // The second tap of a double-tap pair does NOT place a new marker.
