@@ -161,6 +161,11 @@ svg.wb-rink {
   #wbRightRail .wb-tray-dot {
     width: 32px;
     height: 32px;
+    /* Override body.input-mode-pen button { min-width:60px; min-height:60px }
+       in index.html — pen-mode tap-target inflation would push tray dots
+       past the 100 px rail width. Keep dots at declared compact size. */
+    min-width: 32px;
+    min-height: 32px;
     border-radius: 50%;
     border: 2px solid var(--text);
     cursor: grab;
@@ -223,6 +228,11 @@ svg.wb-rink {
   #wbRightRail .wb-swatch {
     width: 22px;
     height: 22px;
+    /* Override body.input-mode-pen button { min-width:60px; min-height:60px }
+       in index.html — pen-mode tap-target inflation would push 3 swatches
+       past the 100 px rail width (proven cause of d817e9b regression). */
+    min-width: 22px;
+    min-height: 22px;
     border-radius: 50%;
     border: 2px solid var(--border);
     cursor: pointer;
@@ -271,9 +281,9 @@ svg.wb-rink {
       gap: 4px !important;
       padding: 6px 4px !important;
     }
-    #wbRightRail .wb-tray-dot { width: 26px; height: 26px; }
+    #wbRightRail .wb-tray-dot { width: 26px; height: 26px; min-width: 26px; min-height: 26px; }
     #wbRightRail .wb-tool { height: 32px; font-size: 9px; }
-    #wbRightRail .wb-swatch { width: 18px; height: 18px; }
+    #wbRightRail .wb-swatch { width: 18px; height: 18px; min-width: 18px; min-height: 18px; }
     #wbRightRail .wb-slider-label { font-size: 8px; }
   }
 }
