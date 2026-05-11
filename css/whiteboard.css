@@ -20,9 +20,9 @@
 #wbRightRail { display: none; }
 
 .wb-rink-wrap {
-  aspect-ratio: 100 / 60;
+  aspect-ratio: 200 / 85;
   width: 100%;
-  max-width: min(100%, calc(78vh * 100 / 60));
+  max-width: min(100%, calc(78vh * 200 / 85));
   margin: 0 auto;
   max-height: 100%;
   position: relative;
@@ -117,13 +117,14 @@ svg.wb-rink {
     isolation: isolate;
   }
 
-  /* CENTER SURFACE — aspect-ratio 100/60 (identical to Rink) */
+  /* CENTER SURFACE — aspect-ratio 200/85 (regulation NHL, diverges
+     from Rink's 100/60 — locked 2026-05-11). */
   #panel-whiteboard.active .wb-rink-wrap {
     height: 100% !important;
     width: auto !important;
     max-width: 100% !important;
     max-height: 100% !important;
-    aspect-ratio: 100 / 60 !important;
+    aspect-ratio: 200 / 85 !important;
     margin: 0 !important;
     flex: 0 1 auto !important;
   }

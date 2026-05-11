@@ -1,23 +1,23 @@
 // js/whiteboard.js — Whiteboard tab module (44 Shots / NOMOS).
 // LOCKED 2026-05-11. Layout mirrors Rink screen (#panel-rink + #leftRail).
 //
-// DOM emitted on first activation:
+// DOM emitted on first activation (no #whiteboard-root wrapper — direct
+// children of #panel-whiteboard per 2026-05-11 locked spec):
 //   body > #wbLeftRail            (empty tonight; reserved for animation)
 //   #panel-whiteboard
-//     > #whiteboard-root
-//         > .wb-rink-wrap
-//             > svg.wb-rink (viewBox 1000x600, rink graphic verbatim from Rink)
-//                 > <g class="wb-strokes">  pen strokes
-//                 > <g class="wb-markers">  dragged red/blue player tokens
-//         > #wbRightRail
-//             > .wb-tray         (red + blue tray-dots, drag sources)
-//             > .wb-divider
-//             > .wb-tool[pen]    (active by default)
-//             > .wb-colors       (black / blue / red swatches)
-//             > .wb-slider-wrap  (SIZE label + range slider 1..12)
-//             > .wb-divider
-//             > .wb-tool[eraser] (tap a stroke to remove it)
-//             > .wb-tool.danger[clear]
+//     > .wb-rink-wrap
+//         > svg.wb-rink (viewBox 1000x425, regulation NHL 200ft×85ft)
+//             > <g class="wb-strokes">  pen strokes
+//             > <g class="wb-markers">  dragged red/blue player tokens
+//     > #wbRightRail
+//         > .wb-tray         (red + blue tray-dots, drag sources)
+//         > .wb-divider
+//         > .wb-tool[pen]    (active by default)
+//         > .wb-colors       (black / blue / red swatches)
+//         > .wb-slider-wrap  (SIZE label + range slider 1..12)
+//         > .wb-divider
+//         > .wb-tool[eraser] (tap a stroke to remove it)
+//         > .wb-tool.danger[clear]
 //
 // In-memory only tonight. Persistence (FelixWhiteboardAPI) untouched on
 // disk and not imported here. Tuesday 2026-05-12 audit decides re-wire.
@@ -26,7 +26,9 @@
   "use strict";
 
   const COLOR_HEX = { black: "#000000", blue: "#1f5fc4", red: "#c8262b" };
-  const RINK_W = 1000, RINK_H = 600;
+  // ViewBox 1000 × 425 — regulation NHL aspect 200ft × 85ft (~2.353:1).
+  // y-coords rescaled from prior 1000×600 by factor 425/600 = 0.7083.
+  const RINK_W = 1000, RINK_H = 425;
   const MARKER_R = 18;
   const SVGNS = "http://www.w3.org/2000/svg";
 
@@ -99,6 +101,9 @@
     _rightRail   = _root.querySelector("#wbRightRail");
   }
 
+  // Rink graphic — y-coords rescaled by 425/600 (0.7083) from #rinkSvg.
+  // x-coords unchanged. Crease arc ry scaled 30→21; creased endpoints
+  // 270→191, 330→234 (span 43 → ry≈21.5 rounded to 21).
   const RINK_GRAPHICS = `
     <defs>
       <pattern id="wbIceTexture" width="6" height="6" patternUnits="userSpaceOnUse">
@@ -106,74 +111,74 @@
         <circle cx="3" cy="3" r=".4" fill="#cfe0f5" opacity=".5"/>
       </pattern>
     </defs>
-    <rect x="0" y="0" width="1000" height="600" rx="60" ry="60" fill="url(#wbIceTexture)" stroke="#1a1a1a" stroke-width="4"/>
-    <line x1="60"  y1="40" x2="60"  y2="560" stroke="#c8262b" stroke-width="2"/>
-    <line x1="940" y1="40" x2="940" y2="560" stroke="#c8262b" stroke-width="2"/>
-    <line x1="370" y1="40" x2="370" y2="560" stroke="#1f5fc4" stroke-width="6"/>
-    <line x1="630" y1="40" x2="630" y2="560" stroke="#1f5fc4" stroke-width="6"/>
-    <line x1="500" y1="40" x2="500" y2="560" stroke="#c8262b" stroke-width="4" stroke-dasharray="2 0"/>
-    <circle cx="500" cy="300" r="50" fill="none" stroke="#1f5fc4" stroke-width="2"/>
-    <circle cx="500" cy="300" r="3"  fill="#1f5fc4"/>
+    <rect x="0" y="0" width="1000" height="425" rx="60" ry="60" fill="url(#wbIceTexture)" stroke="#1a1a1a" stroke-width="4"/>
+    <line x1="60"  y1="28" x2="60"  y2="397" stroke="#c8262b" stroke-width="2"/>
+    <line x1="940" y1="28" x2="940" y2="397" stroke="#c8262b" stroke-width="2"/>
+    <line x1="370" y1="28" x2="370" y2="397" stroke="#1f5fc4" stroke-width="6"/>
+    <line x1="630" y1="28" x2="630" y2="397" stroke="#1f5fc4" stroke-width="6"/>
+    <line x1="500" y1="28" x2="500" y2="397" stroke="#c8262b" stroke-width="4" stroke-dasharray="2 0"/>
+    <circle cx="500" cy="212" r="50" fill="none" stroke="#1f5fc4" stroke-width="2"/>
+    <circle cx="500" cy="212" r="3"  fill="#1f5fc4"/>
     <g stroke="#c8262b" stroke-width="2" fill="none">
-      <circle cx="200" cy="170" r="55"/>
-      <circle cx="200" cy="430" r="55"/>
-      <circle cx="800" cy="170" r="55"/>
-      <circle cx="800" cy="430" r="55"/>
+      <circle cx="200" cy="120" r="55"/>
+      <circle cx="200" cy="305" r="55"/>
+      <circle cx="800" cy="120" r="55"/>
+      <circle cx="800" cy="305" r="55"/>
     </g>
     <g fill="#c8262b">
-      <circle cx="200" cy="170" r="3"/>
-      <circle cx="200" cy="430" r="3"/>
-      <circle cx="800" cy="170" r="3"/>
-      <circle cx="800" cy="430" r="3"/>
+      <circle cx="200" cy="120" r="3"/>
+      <circle cx="200" cy="305" r="3"/>
+      <circle cx="800" cy="120" r="3"/>
+      <circle cx="800" cy="305" r="3"/>
     </g>
     <g fill="#c8262b">
-      <circle cx="396" cy="170" r="3"/>
-      <circle cx="396" cy="430" r="3"/>
-      <circle cx="604" cy="170" r="3"/>
-      <circle cx="604" cy="430" r="3"/>
+      <circle cx="396" cy="120" r="3"/>
+      <circle cx="396" cy="305" r="3"/>
+      <circle cx="604" cy="120" r="3"/>
+      <circle cx="604" cy="305" r="3"/>
     </g>
-    <path d="M 60 270 A 40 30 0 0 1 60 330 Z" fill="#1f5fc4" opacity=".55" stroke="#c8262b" stroke-width="1.5"/>
-    <path d="M 940 270 A 40 30 0 0 0 940 330 Z" fill="#1f5fc4" opacity=".55" stroke="#c8262b" stroke-width="1.5"/>
-    <rect x="50"  y="285" width="10" height="30" fill="#fff" stroke="#c8262b" stroke-width="1.5"/>
-    <rect x="940" y="285" width="10" height="30" fill="#fff" stroke="#c8262b" stroke-width="1.5"/>
+    <path d="M 60 191 A 40 21 0 0 1 60 234 Z" fill="#1f5fc4" opacity=".55" stroke="#c8262b" stroke-width="1.5"/>
+    <path d="M 940 191 A 40 21 0 0 0 940 234 Z" fill="#1f5fc4" opacity=".55" stroke="#c8262b" stroke-width="1.5"/>
+    <rect x="50"  y="202" width="10" height="21" fill="#fff" stroke="#c8262b" stroke-width="1.5"/>
+    <rect x="940" y="202" width="10" height="21" fill="#fff" stroke="#c8262b" stroke-width="1.5"/>
     <g>
-      <circle cx="80"  cy="300" r="14" fill="var(--bg)" stroke="#fff" stroke-width="2"/>
-      <text   x="80"  y="305" text-anchor="middle" fill="#fff" font-family="var(--sans)" font-size="13" font-weight="700">H</text>
+      <circle cx="80"  cy="212" r="14" fill="var(--bg)" stroke="#fff" stroke-width="2"/>
+      <text   x="80"  y="216" text-anchor="middle" fill="#fff" font-family="var(--sans)" font-size="13" font-weight="700">H</text>
     </g>
     <g>
-      <circle cx="920" cy="300" r="14" fill="var(--bg)" stroke="#fff" stroke-width="2"/>
-      <text   x="920" y="305" text-anchor="middle" fill="#fff" font-family="var(--sans)" font-size="13" font-weight="700">A</text>
+      <circle cx="920" cy="212" r="14" fill="var(--bg)" stroke="#fff" stroke-width="2"/>
+      <text   x="920" y="216" text-anchor="middle" fill="#fff" font-family="var(--sans)" font-size="13" font-weight="700">A</text>
     </g>`;
 
+  // SHELL_HTML — direct children of #panel-whiteboard. The prior
+  // #whiteboard-root wrapper was stripped 2026-05-11 — locked spec.
   const SHELL_HTML = `
-    <div id="whiteboard-root">
-      <div class="wb-rink-wrap">
-        <svg class="wb-rink" viewBox="0 0 ${RINK_W} ${RINK_H}" preserveAspectRatio="xMidYMid meet">
-          ${RINK_GRAPHICS}
-          <g class="wb-strokes"></g>
-          <g class="wb-markers"></g>
-        </svg>
+    <div class="wb-rink-wrap">
+      <svg class="wb-rink" viewBox="0 0 ${RINK_W} ${RINK_H}" preserveAspectRatio="xMidYMid meet">
+        ${RINK_GRAPHICS}
+        <g class="wb-strokes"></g>
+        <g class="wb-markers"></g>
+      </svg>
+    </div>
+    <div id="wbRightRail" role="toolbar" aria-label="Whiteboard tools">
+      <div class="wb-tray" role="group" aria-label="Player markers">
+        <button class="wb-tray-dot red"  data-tray="red"  aria-label="Drag red player onto rink"></button>
+        <button class="wb-tray-dot blue" data-tray="blue" aria-label="Drag blue player onto rink"></button>
       </div>
-      <div id="wbRightRail" role="toolbar" aria-label="Whiteboard tools">
-        <div class="wb-tray" role="group" aria-label="Player markers">
-          <button class="wb-tray-dot red"  data-tray="red"  aria-label="Drag red player onto rink"></button>
-          <button class="wb-tray-dot blue" data-tray="blue" aria-label="Drag blue player onto rink"></button>
-        </div>
-        <div class="wb-divider"></div>
-        <button class="wb-tool active" data-tool="pen">PEN</button>
-        <div class="wb-colors" role="group" aria-label="Pen color">
-          <button class="wb-swatch active" data-color="black" aria-label="Black"></button>
-          <button class="wb-swatch"        data-color="blue"  aria-label="Blue"></button>
-          <button class="wb-swatch"        data-color="red"   aria-label="Red"></button>
-        </div>
-        <div class="wb-slider-wrap">
-          <span class="wb-slider-label">SIZE</span>
-          <input type="range" class="wb-slider" min="1" max="12" value="3" aria-label="Pen line size">
-        </div>
-        <div class="wb-divider"></div>
-        <button class="wb-tool" data-tool="eraser">ERASER</button>
-        <button class="wb-tool danger" data-tool="clear">CLEAR</button>
+      <div class="wb-divider"></div>
+      <button class="wb-tool active" data-tool="pen">PEN</button>
+      <div class="wb-colors" role="group" aria-label="Pen color">
+        <button class="wb-swatch active" data-color="black" aria-label="Black"></button>
+        <button class="wb-swatch"        data-color="blue"  aria-label="Blue"></button>
+        <button class="wb-swatch"        data-color="red"   aria-label="Red"></button>
       </div>
+      <div class="wb-slider-wrap">
+        <span class="wb-slider-label">SIZE</span>
+        <input type="range" class="wb-slider" min="1" max="12" value="3" aria-label="Pen line size">
+      </div>
+      <div class="wb-divider"></div>
+      <button class="wb-tool" data-tool="eraser">ERASER</button>
+      <button class="wb-tool danger" data-tool="clear">CLEAR</button>
     </div>`;
 
   // ── Right rail handlers ─────────────────────────────────────────
