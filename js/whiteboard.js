@@ -50,6 +50,27 @@
     markers: [],           // [{ id, color: "red"|"blue", x, y, el }]
   };
 
+  // ── TEMPORARY DEBUG ─────────────────────────────────────────────
+  // Diagnostic-only on-page log. Removed in a follow-up commit once
+  // pen/eraser button click flow is proven. DO NOT extend or rely on.
+  function _wbDbg(msg) {
+    let el = document.getElementById('wbDbgLog');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'wbDbgLog';
+      el.style.cssText =
+        'position:fixed;top:100px;left:60px;' +
+        'background:rgba(0,0,0,.85);color:#0f0;' +
+        'font:11px ui-monospace,monospace;padding:8px 10px;' +
+        'z-index:9999;max-width:340px;border:1px solid #0f0;' +
+        'border-radius:4px;white-space:pre-wrap;line-height:1.4;';
+      document.body.appendChild(el);
+    }
+    const stamp = new Date().toLocaleTimeString().slice(0,8);
+    el.textContent = `${stamp} ${msg}\n` +
+      (el.textContent || '').split('\n').slice(0, 8).join('\n');
+  }
+
   let _drawing = null;
   let _dragMarker = null;
   let _nid = 1;
@@ -189,13 +210,16 @@
     _rightRail.addEventListener("click", (e) => {
       const tool   = e.target.closest(".wb-tool");
       const swatch = e.target.closest(".wb-swatch");
+      _wbDbg(`CLICK target=${e.target.tagName}.${e.target.className||'(none)'} closest_tool=${tool?.dataset?.tool||'NONE'}`);
       if (tool) {
         const t = tool.dataset.tool;
+        _wbDbg(`  tool branch: t=${t} state_before=${_state.tool}`);
         if (t === "clear") { clearBoard(); return; }
         _state.tool = t;
         _rightRail.querySelectorAll(".wb-tool").forEach((b) => {
           b.classList.toggle("active", b === tool && b.dataset.tool !== "clear");
         });
+        _wbDbg(`  after toggle: state=${_state.tool} pen.cls=${_rightRail.querySelector('[data-tool=pen]').className} erase.cls=${_rightRail.querySelector('[data-tool=eraser]').className}`);
         return;
       }
       if (swatch) {
@@ -305,6 +329,7 @@
   }
 
   function onSvgPointerDown(e) {
+    _wbDbg(`PTR target=${e.target.tagName} state.tool=${_state.tool}`);
     if (_dragMarker) return;
     if (e.target.closest(".wb-marker")) return;   // marker drag wins
     // Take EXPLICIT pointer capture on the SVG itself. Without this,
