@@ -217,6 +217,8 @@ svg.wb-rink {
     align-items: center;
     gap: 4px;
     padding: 4px 2px;
+    width: 100%;
+    box-sizing: border-box;
   }
   #wbRightRail .wb-swatch {
     width: 22px;
@@ -227,6 +229,7 @@ svg.wb-rink {
     padding: 0;
     background: transparent;
     box-sizing: border-box;
+    flex-shrink: 0;
   }
   #wbRightRail .wb-swatch.active {
     box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);

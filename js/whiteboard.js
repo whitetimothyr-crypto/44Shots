@@ -334,7 +334,17 @@
   function startStroke(e) {
     e.preventDefault();
     const p = clientToSVG(e.clientX, e.clientY);
-    const stroke = { id: uid(), color: _state.color, size: _state.size, points: [p] };
+    const stroke = {
+      id: uid(),
+      color: _state.color,
+      size: _state.size,
+      points: [p],
+      // Pin this stroke to the originating finger. onStrokeMove /
+      // onStrokeUp / onStrokeCancel reject events from any other
+      // pointerId so a second finger touching the rink can't inject
+      // points into this stroke (the "refracted ray" bug).
+      pointerId: e.pointerId,
+    };
     _state.strokes.push(stroke);
     const path = document.createElementNS(SVGNS, "path");
     path.setAttribute("class", "wb-stroke");
@@ -345,26 +355,47 @@
     _strokeLayer.appendChild(path);
     stroke.el = path;
     _drawing = stroke;
-    document.addEventListener("pointermove", onStrokeMove);
-    document.addEventListener("pointerup",   onStrokeUp, { once: true });
+    // No `{ once: true }` — we need to filter by pointerId, and an
+    // early-return on wrong pointerId would consume a once-listener,
+    // leaving the real pointerup unhandled. Manual removal in endStroke.
+    document.addEventListener("pointermove",   onStrokeMove);
+    document.addEventListener("pointerup",     onStrokeUp);
+    document.addEventListener("pointercancel", onStrokeCancel);
   }
 
   function onStrokeMove(e) {
     if (!_drawing) return;
+    if (_drawing.pointerId != null && e.pointerId !== _drawing.pointerId) return;
     const p = clientToSVG(e.clientX, e.clientY);
     _drawing.points.push(p);
     _drawing.el.setAttribute("d", smoothPath(_drawing.points));
   }
 
-  function onStrokeUp() {
-    document.removeEventListener("pointermove", onStrokeMove);
+  function onStrokeUp(e) {
+    if (!_drawing) return;
+    if (_drawing.pointerId != null && e.pointerId !== _drawing.pointerId) return;
+    endStroke();
+  }
+
+  // iOS sends pointercancel on palm rejection, app switch, low-memory
+  // interrupts, and certain system gestures. Without a handler, _drawing
+  // stayed set and onStrokeMove stayed registered — the next touch fed
+  // points into the orphaned stroke, painting a "refracted ray" from
+  // the old stroke's last point to the new touch's location.
+  function onStrokeCancel(e) {
+    if (!_drawing) return;
+    if (_drawing.pointerId != null && e.pointerId !== _drawing.pointerId) return;
+    endStroke();
+  }
+
+  function endStroke() {
+    document.removeEventListener("pointermove",   onStrokeMove);
+    document.removeEventListener("pointerup",     onStrokeUp);
+    document.removeEventListener("pointercancel", onStrokeCancel);
     _drawing = null;
   }
 
-  function cancelDrawing() {
-    document.removeEventListener("pointermove", onStrokeMove);
-    _drawing = null;
-  }
+  function cancelDrawing() { endStroke(); }
 
   // Midpoint quadratic Bézier smoothing. For ≥3 points, each interior
   // point becomes a control point and the curve passes through midpoints
