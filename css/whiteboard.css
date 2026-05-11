@@ -1,21 +1,61 @@
-/* css/whiteboard.css — Whiteboard module styles (44 Shots / NOMOS).
-   Owned by js/whiteboard.js. ALL rules scoped under #whiteboard-root so
-   the module never bleeds into the rest of the app. NOMOS palette via
-   the existing :root CSS variables (--accent, --gold, --stat, etc.). */
+/* css/whiteboard.css
+ * 44 Shots — Whiteboard module — LOCKED 2026-05-11
+ *
+ * Layout mirrors Rink (panel-rink) screen for app continuity.
+ * - SVG-based surface (same rink graphic as Rink screen)
+ * - Right rail (100px): marker tray, pen, 3 colors, slider, eraser, clear
+ * - Left rail (56px): reserved for animation (empty)
+ *
+ * Rink-pattern duplicate from inline rules at index.html lines 451-657.
+ * Tuesday 2026-05-12 audit will consolidate this + Rink inline rules.
+ *
+ * Strip notice: all prior canvas-based toolbar styles (wb-topbar,
+ * wb-marker-bar, wb-tool-bar, wb-action-bar, wb-anim-bar, wb-modal,
+ * wb-pen-only, wb-stage, wb-btn) are intentionally removed. Recon dead.
+ */
 
-#whiteboard-root {
-  display: flex;
-  flex-direction: column;
+/* === Base (portrait default) === */
+
+#wbLeftRail,
+#wbRightRail { display: none; }
+
+.wb-rink-wrap {
+  aspect-ratio: 100 / 60;
   width: 100%;
-  height: 100%;
-  min-height: calc(100dvh - 120px);
-  font-family: var(--sans);
-  color: var(--text);
-  user-select: none;
-  -webkit-user-select: none;
-  touch-action: none; /* canvas owns all gestures */
+  max-width: min(100%, calc(78vh * 100 / 60));
+  margin: 0 auto;
+  max-height: 100%;
+  position: relative;
+  background: transparent;
+  overflow: visible;
+  touch-action: none;
 }
 
+svg.wb-rink {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Marker (red/blue dots dragged onto rink) */
+.wb-marker {
+  cursor: grab;
+  touch-action: none;
+}
+.wb-marker.dragging { cursor: grabbing; }
+
+/* Strokes — drawn polylines */
+.wb-stroke {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: stroke;
+}
+
+/* Coach gate (carried over, unchanged behavior) */
 #whiteboard-root .wb-coach-gate {
   flex: 1;
   display: flex;
@@ -41,351 +81,195 @@
   max-width: 320px;
 }
 
-/* ── Top bar: presets + session controls ──────────────────────── */
-#whiteboard-root .wb-topbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  flex-wrap: wrap;
-}
-#whiteboard-root .wb-topbar select,
-#whiteboard-root .wb-topbar input[type="text"] {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 6px 8px;
-  border-radius: 6px;
-  font-family: var(--sans);
-  font-size: 12px;
-}
-#whiteboard-root .wb-topbar input[type="text"] { flex: 1; min-width: 120px; }
-#whiteboard-root .wb-topbar .wb-btn {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-family: var(--sans);
-  font-size: 11px;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  font-weight: 600;
-  cursor: pointer;
-  min-height: 32px;
-}
-#whiteboard-root .wb-topbar .wb-btn:hover { border-color: var(--accent); }
-#whiteboard-root .wb-topbar .wb-btn.primary {
-  background: var(--accent); color: #fff; border-color: var(--accent);
-}
-
-/* ── Marker toolbar (left rail / top on landscape) ────────────── */
-#whiteboard-root .wb-marker-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 8px 10px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-}
-#whiteboard-root .wb-marker {
-  width: 38px; height: 38px;
-  border-radius: 50%;
-  border: 2px solid var(--border);
-  background: var(--panel);
-  color: var(--text);
-  font-family: var(--sans);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .04em;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: transform .12s, box-shadow .12s, border-color .12s;
-  flex-shrink: 0;
-}
-#whiteboard-root .wb-marker.red  { background: var(--home); color: #fff; border-color: var(--home); }
-#whiteboard-root .wb-marker.blue { background: var(--away); color: #fff; border-color: var(--away); }
-#whiteboard-root .wb-marker.puck { background: #fff; color: #080810; border-color: #fff; font-size: 9px; }
-#whiteboard-root .wb-marker.armed {
-  transform: scale(1.08);
-  box-shadow: 0 0 0 3px var(--accent);
-}
-
-/* ── Canvas stage ─────────────────────────────────────────────── */
-#whiteboard-root .wb-stage {
-  position: relative;
-  flex: 1;
-  background: #0c0c14;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-#whiteboard-root .wb-canvas-wrap {
-  position: relative;
-  /* USA Hockey regulation aspect = 200 ft × 85 ft = 200 / 85 ≈ 2.353 */
-  aspect-ratio: 200 / 85;
-  width: 100%;
-  max-width: 100%;
-  max-height: 100%;
-}
-#whiteboard-root canvas.wb-rink,
-#whiteboard-root canvas.wb-strokes,
-#whiteboard-root canvas.wb-markers,
-#whiteboard-root canvas.wb-overlay {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-/* Stroke + marker layers sit above the rink; overlay handles input. */
-#whiteboard-root canvas.wb-rink     { z-index: 1; }
-#whiteboard-root canvas.wb-strokes  { z-index: 2; }
-#whiteboard-root canvas.wb-markers  { z-index: 3; }
-#whiteboard-root canvas.wb-overlay  { z-index: 4; touch-action: none; }
-
-/* Long-press menu over a placed marker */
-#whiteboard-root .wb-marker-menu {
-  position: absolute;
-  z-index: 5;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  box-shadow: var(--shadow);
-}
-#whiteboard-root .wb-marker-menu button {
-  background: transparent;
-  border: 0;
-  color: var(--text);
-  font-family: var(--sans);
-  font-size: 11px;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  padding: 8px 12px;
-  text-align: left;
-  cursor: pointer;
-  border-radius: 6px;
-}
-#whiteboard-root .wb-marker-menu button:hover { background: var(--border); }
-#whiteboard-root .wb-marker-menu button.danger { color: var(--red); }
-
-/* ── Stroke / tool toolbar (bottom) ───────────────────────────── */
-#whiteboard-root .wb-tool-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 8px 10px;
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-  align-items: center;
-}
-#whiteboard-root .wb-tool {
-  width: 40px; height: 40px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--panel);
-  color: var(--text);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex-shrink: 0;
-  position: relative;
-}
-#whiteboard-root .wb-tool svg {
-  width: 24px; height: 24px;
-  stroke: currentColor;
-  fill: none;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-#whiteboard-root .wb-tool.armed {
-  border-color: var(--accent);
-  color: var(--accent);
-  box-shadow: inset 0 0 0 1px var(--accent);
-}
-#whiteboard-root .wb-tool[data-variant="straight"]::after {
-  content: "";
-  position: absolute;
-  top: 4px; right: 4px;
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--gold);
-}
-#whiteboard-root .wb-color-swatches {
-  display: flex; gap: 4px; align-items: center;
-}
-#whiteboard-root .wb-color-swatch {
-  width: 22px; height: 22px;
-  border-radius: 50%;
-  border: 2px solid var(--border);
-  cursor: pointer;
-  flex-shrink: 0;
-}
-#whiteboard-root .wb-color-swatch.active { border-color: var(--text); transform: scale(1.1); }
-#whiteboard-root .wb-brush-size {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 80px;
-  height: 4px;
-  background: var(--border);
-  border-radius: 2px;
-}
-#whiteboard-root .wb-brush-size::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 14px; height: 14px;
-  background: var(--accent);
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-/* ── Action row + drill title ─────────────────────────────────── */
-#whiteboard-root .wb-action-bar {
-  display: flex;
-  gap: 6px;
-  padding: 6px 10px 10px;
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-  align-items: center;
-  flex-wrap: wrap;
-}
-#whiteboard-root .wb-action-bar .wb-action {
-  width: 38px; height: 38px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--panel);
-  color: var(--text);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-#whiteboard-root .wb-action svg {
-  width: 22px; height: 22px;
-  stroke: currentColor;
-  fill: none;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-#whiteboard-root .wb-action.armed { border-color: var(--accent); color: var(--accent); }
-#whiteboard-root .wb-action.danger { color: var(--red); border-color: rgba(255,107,107,.4); }
-#whiteboard-root .wb-action[disabled] { opacity: .35; pointer-events: none; }
-#whiteboard-root .wb-drill-title {
-  flex: 1;
-  min-width: 140px;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 8px 10px;
-  border-radius: 6px;
-  font-family: var(--sans);
-  font-size: 13px;
-}
-
-/* Animation strip — appears when any marker has a path */
-#whiteboard-root .wb-anim-bar {
-  display: flex;
-  gap: 6px;
-  padding: 6px 10px;
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-  align-items: center;
-  font-family: var(--sans);
-  font-size: 11px;
-  color: var(--text-muted);
-  letter-spacing: .04em;
-}
-#whiteboard-root .wb-anim-bar button {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 5px 10px;
-  border-radius: 5px;
-  font-family: var(--sans);
-  font-size: 11px;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  font-weight: 600;
-  cursor: pointer;
-  min-height: 28px;
-}
-#whiteboard-root .wb-anim-bar button.armed {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-/* Modal — confirm-clear and other prompts */
-#whiteboard-root .wb-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.85);
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-#whiteboard-root .wb-modal-card {
-  background: var(--bg-2);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 18px;
-  max-width: 360px;
-  width: 100%;
-}
-#whiteboard-root .wb-modal-card h3 {
-  margin: 0 0 8px;
-  font-family: var(--serif);
-  font-style: italic;
-  font-weight: 300;
-  font-size: 22px;
-  color: var(--stat);
-}
-#whiteboard-root .wb-modal-card p {
-  margin: 0 0 14px;
-  font-size: 13px;
-  color: var(--text-muted);
-}
-#whiteboard-root .wb-modal-actions {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-}
-
-/* Pen-only toggle indicator */
-#whiteboard-root .wb-pen-only {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 10px;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-#whiteboard-root .wb-pen-only input { accent-color: var(--accent); }
-
-/* Landscape: the bars compress so the rink can keep its 200:85 ratio. */
+/* === Landscape (iPad / iPhone) === */
 @media (orientation: landscape) and (max-height: 1024px) {
-  #whiteboard-root .wb-marker-bar,
-  #whiteboard-root .wb-tool-bar,
-  #whiteboard-root .wb-action-bar,
-  #whiteboard-root .wb-topbar {
-    padding: 4px 8px;
+
+  /* LEFT RAIL — body.on-whiteboard scoped, fixed position.
+     Empty tonight; reserved for animation tools post-audit. */
+  body.on-whiteboard #wbLeftRail {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 0;
+    position: fixed !important;
+    left: 0 !important;
+    top: 88px !important;
+    bottom: calc(40px + env(safe-area-inset-bottom));
+    width: 56px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    z-index: 60;
+    box-sizing: border-box;
   }
-  #whiteboard-root .wb-marker { width: 32px; height: 32px; font-size: 10px; }
-  #whiteboard-root .wb-tool   { width: 34px; height: 34px; }
-  #whiteboard-root .wb-action { width: 32px; height: 32px; }
+
+  /* PANEL — flex bottom-anchor, mirrors #panel-rink.active */
+  #panel-whiteboard.active {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    height: 100% !important;
+    padding: 0 0 8px 0 !important;
+    gap: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    isolation: isolate;
+  }
+
+  /* CENTER SURFACE — aspect-ratio 100/60 (identical to Rink) */
+  #panel-whiteboard.active .wb-rink-wrap {
+    height: 100% !important;
+    width: auto !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    aspect-ratio: 100 / 60 !important;
+    margin: 0 !important;
+    flex: 0 1 auto !important;
+  }
+
+  /* RIGHT RAIL — 100px, position fixed, mirrors lastShotBar geometry */
+  #panel-whiteboard.active #wbRightRail {
+    display: flex !important;
+    position: fixed !important;
+    top: 88px !important;
+    right: 0 !important;
+    width: 100px !important;
+    bottom: calc(40px + env(safe-area-inset-bottom)) !important;
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+    padding: 8px 6px !important;
+    background: var(--surface) !important;
+    border: 0 !important;
+    border-left: 1px solid var(--border) !important;
+    box-sizing: border-box;
+    z-index: 60;
+  }
+
+  /* Marker tray — red + blue drag sources */
+  #wbRightRail .wb-tray {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 0;
+  }
+  #wbRightRail .wb-tray-dot {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid var(--text);
+    cursor: grab;
+    touch-action: none;
+    box-sizing: border-box;
+    transition: transform .12s ease;
+  }
+  #wbRightRail .wb-tray-dot:active { cursor: grabbing; transform: scale(.92); }
+  #wbRightRail .wb-tray-dot.red  { background: #c8262b; }
+  #wbRightRail .wb-tray-dot.blue { background: #1f5fc4; }
+
+  /* Section dividers */
+  #wbRightRail .wb-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 6px;
+    flex: 0 0 1px;
+  }
+
+  /* Tool buttons — pen, eraser, clear */
+  #wbRightRail .wb-tool {
+    height: 44px;
+    width: 100%;
+    border: 1px solid var(--border);
+    background: var(--bg-2, var(--surface));
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 10px;
+    letter-spacing: .12em;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    text-transform: uppercase;
+  }
+  #wbRightRail .wb-tool.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+  }
+  #wbRightRail .wb-tool.danger {
+    border-color: var(--destructive, #c8262b);
+    color: var(--destructive, #c8262b);
+  }
+
+  /* Color swatches — black / blue / red */
+  #wbRightRail .wb-colors {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 2px;
+  }
+  #wbRightRail .wb-swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    padding: 0;
+    background: transparent;
+    box-sizing: border-box;
+  }
+  #wbRightRail .wb-swatch.active {
+    box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+  }
+  #wbRightRail .wb-swatch[data-color="black"] { background: #000000; }
+  #wbRightRail .wb-swatch[data-color="blue"]  { background: #1f5fc4; }
+  #wbRightRail .wb-swatch[data-color="red"]   { background: #c8262b; }
+
+  /* Line size slider */
+  #wbRightRail .wb-slider-wrap {
+    padding: 6px 4px 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+  }
+  #wbRightRail .wb-slider-label {
+    font-family: var(--sans);
+    font-size: 9px;
+    letter-spacing: .12em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+  #wbRightRail .wb-slider {
+    width: 100%;
+    margin: 0;
+    accent-color: var(--accent);
+  }
+
+  /* === iPhone-LS sub-rule (mirror Rink) === */
+  @media (max-height: 500px) {
+    body.on-whiteboard #wbLeftRail {
+      top: 56px !important;
+      gap: 10px;
+      padding: 8px 0;
+    }
+    #panel-whiteboard.active #wbRightRail {
+      top: 56px !important;
+      gap: 4px !important;
+      padding: 6px 4px !important;
+    }
+    #wbRightRail .wb-tray-dot { width: 34px; height: 34px; }
+    #wbRightRail .wb-tool { height: 32px; font-size: 9px; }
+    #wbRightRail .wb-swatch { width: 18px; height: 18px; }
+    #wbRightRail .wb-slider-label { font-size: 8px; }
+  }
 }

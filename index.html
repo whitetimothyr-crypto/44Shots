@@ -1720,6 +1720,9 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     // rail only shows when the Rink tab is active. Without this, the rail
     // would persist as an overlay on every tab (game-day 2026-05-10 fix).
     document.body.classList.toggle('on-rink', tab === 'rink');
+    // body.on-whiteboard scopes #wbLeftRail (body-direct, injected by
+    // js/whiteboard.js init). Mirrors Rink pattern — locked 2026-05-11.
+    document.body.classList.toggle('on-whiteboard', tab === 'whiteboard');
     if(tab==="stats") renderStats();
     if(tab==="report" && window.refreshReportInputs) window.refreshReportInputs();
     if(tab==="net"){
