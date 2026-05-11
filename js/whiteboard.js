@@ -29,7 +29,10 @@
   // ViewBox 1000 × 425 — regulation NHL aspect 200ft × 85ft (~2.353:1).
   // y-coords rescaled from prior 1000×600 by factor 425/600 = 0.7083.
   const RINK_W = 1000, RINK_H = 425;
-  const MARKER_R = 18;
+  // Placed marker radius. Tray drag-source size lives in CSS (.wb-tray-dot).
+  // Visual hierarchy: rink shot markers r=7 < swatches 22px < placed r=12
+  // < tray 32px. Reduced 18→12 (2026-05-11).
+  const MARKER_R = 12;
   const SVGNS = "http://www.w3.org/2000/svg";
 
   let _root = null;
@@ -142,11 +145,11 @@
     <rect x="50"  y="202" width="10" height="21" fill="#fff" stroke="#c8262b" stroke-width="1.5"/>
     <rect x="940" y="202" width="10" height="21" fill="#fff" stroke="#c8262b" stroke-width="1.5"/>
     <g>
-      <circle cx="80"  cy="212" r="14" fill="var(--bg)" stroke="#fff" stroke-width="2"/>
+      <circle cx="80"  cy="212" r="14" fill="#c8262b" stroke="#fff" stroke-width="2"/>
       <text   x="80"  y="216" text-anchor="middle" fill="#fff" font-family="var(--sans)" font-size="13" font-weight="700">H</text>
     </g>
     <g>
-      <circle cx="920" cy="212" r="14" fill="var(--bg)" stroke="#fff" stroke-width="2"/>
+      <circle cx="920" cy="212" r="14" fill="#1f5fc4" stroke="#fff" stroke-width="2"/>
       <text   x="920" y="216" text-anchor="middle" fill="#fff" font-family="var(--sans)" font-size="13" font-weight="700">A</text>
     </g>`;
 
@@ -330,7 +333,7 @@
     if (!_drawing) return;
     const p = clientToSVG(e.clientX, e.clientY);
     _drawing.points.push(p);
-    _drawing.el.setAttribute("d", pointsToPath(_drawing.points));
+    _drawing.el.setAttribute("d", smoothPath(_drawing.points));
   }
 
   function onStrokeUp() {
@@ -343,18 +346,71 @@
     _drawing = null;
   }
 
-  function pointsToPath(pts) {
-    if (pts.length === 0) return "";
-    let d = `M ${pts[0].x} ${pts[0].y}`;
-    for (let i = 1; i < pts.length; i++) d += ` L ${pts[i].x} ${pts[i].y}`;
+  // Midpoint quadratic Bézier smoothing. For ≥3 points, each interior
+  // point becomes a control point and the curve passes through midpoints
+  // of adjacent segments. Final segment is a straight line so the stroke
+  // terminates exactly where the pointer lifted.
+  function smoothPath(points) {
+    if (points.length < 2) {
+      return points.length === 1 ? `M ${points[0].x} ${points[0].y}` : "";
+    }
+    if (points.length === 2) {
+      return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
+    }
+    let d = `M ${points[0].x} ${points[0].y}`;
+    for (let i = 1; i < points.length - 1; i++) {
+      const xc = (points[i].x + points[i + 1].x) / 2;
+      const yc = (points[i].y + points[i + 1].y) / 2;
+      d += ` Q ${points[i].x} ${points[i].y} ${xc} ${yc}`;
+    }
+    const last = points[points.length - 1];
+    d += ` L ${last.x} ${last.y}`;
     return d;
   }
 
+  // Proximity-based stroke hit-test. The original DOM-target test
+  // (e.target.closest('.wb-stroke')) failed for finger taps because
+  // an iPad finger contact patch (~30px) is wider than the stroke
+  // (~3-12px). User would tap "on" a stroke but the underlying ice
+  // rect caught the event. Now we translate tap to SVG coords, then
+  // scan all strokes' polylines for closest segment within tolerance.
   function eraseAt(e) {
-    const target = e.target.closest(".wb-stroke");
-    if (!target) return;
-    const id = target.dataset.id;
-    _state.strokes = _state.strokes.filter((s) => s.id !== id);
-    if (target.parentNode) target.parentNode.removeChild(target);
+    const p = clientToSVG(e.clientX, e.clientY);
+    let bestId = null;
+    let bestDist = Infinity;
+    for (const s of _state.strokes) {
+      const tol = Math.max((s.size || 3) + 8, 12);
+      const d = strokeDistance(p, s.points);
+      if (d < tol && d < bestDist) {
+        bestDist = d;
+        bestId = s.id;
+      }
+    }
+    if (bestId == null) return;
+    const path = _strokeLayer.querySelector(`[data-id="${bestId}"]`);
+    _state.strokes = _state.strokes.filter((s) => s.id !== bestId);
+    if (path && path.parentNode) path.parentNode.removeChild(path);
+  }
+
+  // Minimum distance from point p to any segment of the polyline pts.
+  function strokeDistance(p, pts) {
+    if (!pts || pts.length === 0) return Infinity;
+    if (pts.length === 1) return Math.hypot(p.x - pts[0].x, p.y - pts[0].y);
+    let min = Infinity;
+    for (let i = 1; i < pts.length; i++) {
+      const d = pointToSegment(p, pts[i - 1], pts[i]);
+      if (d < min) min = d;
+    }
+    return min;
+  }
+
+  function pointToSegment(p, a, b) {
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const lenSq = dx * dx + dy * dy;
+    if (lenSq === 0) return Math.hypot(p.x - a.x, p.y - a.y);
+    let t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / lenSq;
+    t = Math.max(0, Math.min(1, t));
+    const cx = a.x + t * dx, cy = a.y + t * dy;
+    return Math.hypot(p.x - cx, p.y - cy);
   }
 })();

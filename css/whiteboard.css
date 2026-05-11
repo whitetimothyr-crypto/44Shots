@@ -159,8 +159,8 @@ svg.wb-rink {
     padding: 2px 0;
   }
   #wbRightRail .wb-tray-dot {
-    width: 44px;
-    height: 44px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     border: 2px solid var(--text);
     cursor: grab;
@@ -268,7 +268,7 @@ svg.wb-rink {
       gap: 4px !important;
       padding: 6px 4px !important;
     }
-    #wbRightRail .wb-tray-dot { width: 34px; height: 34px; }
+    #wbRightRail .wb-tray-dot { width: 26px; height: 26px; }
     #wbRightRail .wb-tool { height: 32px; font-size: 9px; }
     #wbRightRail .wb-swatch { width: 18px; height: 18px; }
     #wbRightRail .wb-slider-label { font-size: 8px; }
