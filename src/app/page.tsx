@@ -31,6 +31,8 @@ import GameUtilities from "@/components/features/GameUtilities";
 import ShotFeed from "@/components/features/ShotFeed";
 import QuickStats from "@/components/features/QuickStats";
 import NetPanel from "@/components/features/NetPanel";
+import Whiteboard from "@/components/features/Whiteboard";
+import LineupManager from "@/components/features/LineupManager";
 import BottomNav, { type TabId } from "@/components/shell/BottomNav";
 
 export default function Page() {
@@ -120,6 +122,8 @@ export default function Page() {
         {activeTab === "net" && (
           <NetPanel tracker={tracker} onNetEventLogged={onNetEventLogged} />
         )}
+        {activeTab === "whiteboard" && <Whiteboard />}
+        {activeTab === "lineup" && <LineupManager />}
       </div>
 
       <BottomNav activeTab={activeTab} onSelect={setActiveTab} />

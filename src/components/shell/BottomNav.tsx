@@ -88,7 +88,7 @@ const TABS: TabDef[] = [
   {
     id: "whiteboard",
     label: "Whiteboard",
-    enabled: false,
+    enabled: true,
     icon: (
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.6">
         <rect x="3" y="4" width="18" height="14" rx="1.5" />
@@ -101,7 +101,7 @@ const TABS: TabDef[] = [
   {
     id: "lineup",
     label: "Lineup",
-    enabled: false,
+    enabled: true,
     icon: (
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.6">
         <circle cx="7" cy="8" r="2.5" />
