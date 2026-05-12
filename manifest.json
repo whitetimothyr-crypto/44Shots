@@ -1,7 +1,7 @@
 {
-  "name": "44 Shots",
-  "short_name": "44 Shots",
-  "description": "44 Shots — Stat Tracker",
+  "name": "44Shots",
+  "short_name": "44Shots",
+  "description": "Elite Hockey Analytics for coaches, scorers, and goalies.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

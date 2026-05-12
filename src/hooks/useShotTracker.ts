@@ -15,7 +15,7 @@
  *
  * Non-responsibilities (out of scope by design):
  *   - DOM event binding (consumer components handle pointer plumbing)
- *   - Supabase calls (stub only; sync wires up in a later phase)
+ *   - Direct Supabase calls (delegated to sync-worker via startAutoSync)
  *   - Rendering (zero JSX in this file)
  *
  * Coordinate space: shot inputs land in 1000x425 viewBox px per
@@ -23,7 +23,13 @@
  * derives attackingNet from x position relative to centre line.
  */
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import {
+  saveToQueue,
+  getPendingQueue,
+  markAsSynced,
+} from "@/lib/indexed-db";
+import { startAutoSync } from "@/lib/sync-worker";
 import type {
   TrackerState,
   TrackerGameInfo,
@@ -116,6 +122,44 @@ export function useShotTracker(initial?: Partial<TrackerState>) {
   // during render are an accepted React pattern for non-state refs.
   const stateRef = useRef<TrackerState>(state);
   stateRef.current = state;
+
+  // Hydrate pending queue from IndexedDB on mount. Safe no-op on
+  // SSR or unsupported browsers (indexed-db.ts returns []).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const pending = await getPendingQueue();
+        if (!cancelled && pending.length > 0) {
+          setQueue((q) => {
+            const known = new Set(q.map((s) => s.id));
+            const fresh = pending.filter((s) => !known.has(s.id));
+            return fresh.length === 0 ? q : [...q, ...fresh];
+          });
+        }
+      } catch (err) {
+        console.warn("[useShotTracker] hydrate failed", err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Auto-sync: drain pending submissions to Supabase on mount and
+  // whenever navigator goes back online. Worker handles IDB row flip;
+  // callback below mirrors that flip into React state so a "pending"
+  // badge can disappear without a manual refresh.
+  useEffect(() => {
+    const detach = startAutoSync({
+      onSubmissionSynced: (id: string) => {
+        setQueue((q) =>
+          q.map((s) => (s.id === id ? { ...s, status: "synced" as const } : s))
+        );
+      },
+    });
+    return detach;
+  }, []);
 
   // --- Shot logging ---
 
@@ -232,15 +276,16 @@ export function useShotTracker(initial?: Partial<TrackerState>) {
     }));
   }, []);
 
-  // --- Offline submission queue (stub) ---
+  // --- Offline submission queue ---
   //
-  // Stub for now. Wires to Supabase nomos_submission + nomos_event
-  // INSERT in a later phase. Today it just snapshots current event
-  // arrays into a QueuedSubmission row and pushes onto queue state.
+  // Snapshots current event arrays into a QueuedSubmission row,
+  // persists to IndexedDB via saveToQueue, then pushes onto local
+  // queue state. Background sync-worker drains pending rows to
+  // nomos_submission + nomos_event whenever connectivity allows.
   // Consumer can observe queue.length for a pending-badge UI.
 
   const queueSubmission = useCallback(
-    (gameId: string | null = null) => {
+    async (gameId: string | null = null): Promise<QueuedSubmission | null> => {
       const cur = stateRef.current;
       if (
         cur.events.length === 0 &&
@@ -260,6 +305,11 @@ export function useShotTracker(initial?: Partial<TrackerState>) {
         retryCount: 0,
         lastError: null,
       };
+      try {
+        await saveToQueue(submission);
+      } catch (err) {
+        console.warn("[useShotTracker] saveToQueue threw", err);
+      }
       setQueue((q) => [...q, submission]);
       return submission;
     },
@@ -272,6 +322,9 @@ export function useShotTracker(initial?: Partial<TrackerState>) {
         s.id === submissionId ? { ...s, status: "synced" as const } : s
       )
     );
+    void markAsSynced(submissionId).catch((err) => {
+      console.warn("[useShotTracker] markAsSynced threw", err);
+    });
   }, []);
 
   const markFailed = useCallback((submissionId: string, error: string) => {

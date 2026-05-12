@@ -34,3 +34,4 @@ audit-tier2/inputs/*
 !audit-tier2/inputs/README.md
 audit-tier2/raw-responses/
 .tmp/
+.vercel

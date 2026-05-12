@@ -9,8 +9,20 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "44 Shots",
-  description: "44 Shots Next.js bootstrap",
+  title: "44Shots",
+  description: "Elite Hockey Analytics for coaches, scorers, and goalies.",
+  applicationName: "44Shots",
+  openGraph: {
+    title: "44Shots",
+    description: "Elite Hockey Analytics for coaches, scorers, and goalies.",
+    siteName: "44Shots",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "44Shots",
+    description: "Elite Hockey Analytics for coaches, scorers, and goalies.",
+  },
 };
 
 export default function RootLayout({

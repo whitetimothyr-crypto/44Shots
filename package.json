@@ -3,7 +3,7 @@
   "version": "3.0.0",
   "private": true,
   "type": "module",
-  "description": "44 Shots — youth hockey shot tracker. Multi-observer consensus, trust-weighted reconciliation. Production at 44shots.com.",
+  "description": "Elite Hockey Analytics for coaches, scorers, and goalies.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
