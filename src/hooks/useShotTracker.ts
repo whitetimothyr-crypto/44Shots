@@ -51,6 +51,27 @@ import type {
 const VIEWBOX_W = 1000;
 const VIEWBOX_H = 425;
 
+// Ported from index.html:2030-2039 (rink-tap constants).
+export const REBOUND_LINK_MAX_AGE_MS = 5000;
+export const DOUBLE_TAP_MS = 280;
+export const DOUBLE_TAP_MOVE_TOL = 40;
+const JITTER_RADIUS = 8;
+const JITTER_AMOUNT = 3;
+
+// Ported from index.html:2042-2048 (settings defaults). For Phase 2
+// transplant only reboundMode + reboundWindowSec matter; rest of
+// legacy settings (seenWhatsNew, seenGestureHints) are UI-shell
+// concerns not yet ported.
+export type ReboundMode = "time" | "doubletap" | "both" | "off";
+export interface TrackerSettings {
+  reboundMode: ReboundMode;
+  reboundWindowSec: 1 | 2 | 3;
+}
+const DEFAULT_SETTINGS: TrackerSettings = {
+  reboundMode: "doubletap",
+  reboundWindowSec: 3,
+};
+
 const DEFAULT_STATE: TrackerState = {
   events: [],
   netEvents: [],
@@ -101,6 +122,48 @@ function deriveAttackingNet(x: number): AttackingNet {
   return x < VIEWBOX_W / 2 ? "left" : "right";
 }
 
+/**
+ * Pure helper ported from index.html:1897-1904. Resolves which net
+ * "our" goalie defends in a given period, accounting for ends-swap
+ * at P2. Home defends left in P1/P3, right in P2.
+ */
+export function getOurDefendingSide(
+  period: Period,
+  weAre: TeamSide
+): AttackingNet {
+  const homeSide: AttackingNet = period === 2 ? "right" : "left";
+  if (weAre === "home") return homeSide;
+  return homeSide === "left" ? "right" : "left";
+}
+
+/**
+ * Jitter helper ported from index.html:2071-2084. If new point lands
+ * within JITTER_RADIUS of any same-period existing event, nudge it
+ * JITTER_AMOUNT in a random direction so markers stay visually
+ * distinct. Pure: no state mutation.
+ */
+function applyJitter(
+  events: ShotEventPayload[],
+  period: Period,
+  x: number,
+  y: number
+): { x: number; y: number } {
+  for (let i = events.length - 1; i >= 0; i--) {
+    const ev = events[i];
+    if (ev.period !== period) continue;
+    const dx = ev.x - x;
+    const dy = ev.y - y;
+    if (Math.sqrt(dx * dx + dy * dy) < JITTER_RADIUS) {
+      const ang = Math.random() * Math.PI * 2;
+      return {
+        x: x + Math.cos(ang) * JITTER_AMOUNT,
+        y: y + Math.sin(ang) * JITTER_AMOUNT,
+      };
+    }
+  }
+  return { x, y };
+}
+
 function makeClientId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
@@ -116,6 +179,7 @@ export function useShotTracker(initial?: Partial<TrackerState>) {
     ...initial,
   }));
   const [queue, setQueue] = useState<QueuedSubmission[]>([]);
+  const [settings, setSettings] = useState<TrackerSettings>(DEFAULT_SETTINGS);
 
   // Ref mirrors latest state so queueSubmission can read without
   // re-creating its useCallback on every state change. Ref writes
@@ -162,33 +226,79 @@ export function useShotTracker(initial?: Partial<TrackerState>) {
   }, []);
 
   // --- Shot logging ---
+  //
+  // Ported from index.html:2206-2289 (post-double-tap branch of
+  // handleRinkTap). Double-tap gesture detection itself lives in
+  // ShotCanvas pointer handler because it needs DOM-event timestamps;
+  // on a confirmed dbl-tap ShotCanvas calls markLastShotAsRebound
+  // instead of logShot.
+  //
+  // Caller responsibilities (handled in ShotCanvas):
+  //   - bounds check, zone-based attackingNet derivation
+  //   - neutral-zone team chooser to resolve forOrAgainst
+  //   - 80ms anti-jitter pointer gate
+  //
+  // Tracker responsibilities (this function):
+  //   - armed-mode rebound link (REB button flow)
+  //   - time-mode rebound auto-tag (settings.reboundMode time/both)
+  //   - applyJitter to nudge if landing on existing same-period marker
+  //   - push event, mirror lastPlacement in returned shape via lastShotIdForRebound disarm side-effect
 
-  const logShot = useCallback((input: LogShotInput) => {
+  const logShot = useCallback((input: LogShotInput): number | null => {
+    let newIdx: number | null = null;
     setState((prev) => {
-      const x = clamp(input.x, 0, VIEWBOX_W);
-      const y = clamp(input.y, 0, VIEWBOX_H);
+      const cx = clamp(input.x, 0, VIEWBOX_W);
+      const cy = clamp(input.y, 0, VIEWBOX_H);
       const now = Date.now();
-      const attackingNet = input.attackingNet ?? deriveAttackingNet(x);
+      const attackingNet = input.attackingNet ?? deriveAttackingNet(cx);
+      const period = prev.period;
 
+      // Resolve rebound: armed mode wins. Otherwise time-mode walks
+      // back recent events looking for a save on same net.
       let styles: ShotStyle[] = input.styles ? [...input.styles] : [];
       let linkedTo: number | null = null;
-      if (
+      let isRebound = false;
+
+      const armedOk =
         prev.armedForRebound &&
         prev.lastShotIdForRebound != null &&
-        prev.events[prev.lastShotIdForRebound]
-      ) {
-        if (!styles.includes("rebound")) styles = ["rebound", ...styles];
+        prev.events[prev.lastShotIdForRebound] != null;
+
+      if (armedOk) {
+        isRebound = true;
         linkedTo = prev.lastShotIdForRebound;
+      } else {
+        const mode = settings.reboundMode;
+        const checkTime = mode === "time" || mode === "both";
+        if (checkTime) {
+          const winMs = settings.reboundWindowSec * 1000;
+          for (let i = prev.events.length - 1; i >= 0; i--) {
+            const candidate = prev.events[i];
+            if (candidate.period !== period) break;
+            if (now - candidate.t > winMs) break;
+            if (candidate.result !== "shot") break;
+            if (candidate.attackingNet !== attackingNet) break;
+            isRebound = true;
+            linkedTo = i;
+            break;
+          }
+        }
       }
+      if (isRebound && !styles.includes("rebound")) {
+        styles = ["rebound", ...styles];
+      }
+
+      // Apply jitter so same-spot taps stay visually distinct.
+      const j = applyJitter(prev.events, period, cx, cy);
 
       const ev: ShotEventPayload = {
         client_event_id: makeClientId(),
-        x,
-        y,
+        x: j.x,
+        y: j.y,
         result: input.result ?? "shot",
         styles,
         linkedTo,
-        period: prev.period,
+        period,
         attackingNet,
         forOrAgainst: input.forOrAgainst,
         gameState: prev.gameState,
@@ -200,6 +310,7 @@ export function useShotTracker(initial?: Partial<TrackerState>) {
         t: now,
       };
 
+      newIdx = prev.events.length;
       return {
         ...prev,
         events: [...prev.events, ev],
@@ -208,7 +319,53 @@ export function useShotTracker(initial?: Partial<TrackerState>) {
         armTimer: null,
       };
     });
-  }, []);
+    return newIdx;
+  }, [settings]);
+
+  // Double-tap rebound dispatch. Ported from index.html:2169-2204.
+  // ShotCanvas decides "this was a double-tap" via pointer-event
+  // timestamps. On dispatch we mutate that just-placed marker into
+  // a rebound, linked to a prior same-net same-period shot found
+  // within REBOUND_LINK_MAX_AGE_MS. No new event is placed.
+  //
+  // Returns true if a rebound was applied; false if just-placed idx
+  // is stale or out of bounds.
+  const markLastShotAsRebound = useCallback(
+    (justPlacedIdx: number): boolean => {
+      let applied = false;
+      setState((prev) => {
+        const justPlaced = prev.events[justPlacedIdx];
+        if (!justPlaced) return prev;
+
+        // Find a prior shot in same period attacking same net,
+        // within 5s of justPlaced. Bail (priorIdx stays -1) if none.
+        let priorIdx = -1;
+        for (let i = justPlacedIdx - 1; i >= 0; i--) {
+          const candidate = prev.events[i];
+          if (candidate.period !== prev.period) {
+            if (candidate.period < prev.period) break;
+            continue;
+          }
+          if (candidate.attackingNet !== justPlaced.attackingNet) continue;
+          if (justPlaced.t - candidate.t > REBOUND_LINK_MAX_AGE_MS) break;
+          priorIdx = i;
+          break;
+        }
+
+        const styles: ShotStyle[] = justPlaced.styles
+          ? [...justPlaced.styles]
+          : [];
+        if (!styles.includes("rebound")) styles.push("rebound");
+        const updated = { ...justPlaced, styles, linkedTo: priorIdx >= 0 ? priorIdx : null };
+        const events = [...prev.events];
+        events[justPlacedIdx] = updated;
+        applied = true;
+        return { ...prev, events };
+      });
+      return applied;
+    },
+    []
+  );
 
   // --- Undo ---
 
@@ -359,8 +516,11 @@ export function useShotTracker(initial?: Partial<TrackerState>) {
 
   return {
     state,
+    settings,
+    setSettings,
     queue,
     logShot,
+    markLastShotAsRebound,
     undoLastEvent,
     updateLastShotResult,
     setPeriod,
