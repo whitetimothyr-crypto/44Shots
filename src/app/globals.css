@@ -1,0 +1,17 @@
+/* Tailwind v4 entrypoint. @config directive points at root config so
+   palette + typography tokens defined in tailwind.config.ts remain
+   reachable via compatibility layer until CSS-first migration lands. */
+@import "tailwindcss";
+@config "../../tailwind.config.ts";
+
+:root {
+  color-scheme: dark;
+}
+
+html, body {
+  background: #080810;
+  color: #E8E8E0;
+  margin: 0;
+  padding: 0;
+  min-height: 100dvh;
+}
