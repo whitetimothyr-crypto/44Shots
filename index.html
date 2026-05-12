@@ -206,6 +206,10 @@ touch-action:manipulation;
 }
 .rink-wrap{aspect-ratio: 200 / 85; width:100%;max-width:min(100%, calc(78vh * 200 / 85));margin:0 auto;max-height:100%;border-radius:0 !important;box-shadow:none !important;background:transparent !important;overflow:visible !important}
 .net-wrap{aspect-ratio: 6 / 4; width:100%}
+/* Landscape-only goalie indicators are display:none everywhere by
+   default; the @media (orientation: landscape) rule below promotes them
+   to fixed-position flex containers when body.on-rink is active. */
+.ls-goalie-indicator{display:none}
 .zone-pulse{animation:zonePulse 3.6s ease-in-out infinite}
 @keyframes zonePulse{0%,100%{opacity:0}50%{opacity:.05}}
 @media (prefers-reduced-motion: reduce){.zone-pulse{animation:none}}
@@ -486,6 +490,34 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
      don't fit the rail. Available via portrait or overflow menu. */
   #globalGoaliesRow { display: none !important; }
 
+  /* Landscape-only goalie indicators in the top header band. Absolutely
+     positioned over the 88px header at ~20%/~80% from left, aligning
+     vertically above the zone faceoff dots in the rink below. Hidden
+     on non-rink panels via body.on-rink scope. */
+  body.on-rink #landscapeGoalieH,
+  body.on-rink #landscapeGoalieA {
+    position: fixed; top: 0; height: 88px;
+    display: flex; align-items: center; gap: 8px;
+    z-index: 70; padding: 0 8px;
+    pointer-events: auto; cursor: pointer;
+    font-family: var(--sans);
+  }
+  body.on-rink #landscapeGoalieH { left: 20%; transform: translateX(-50%); }
+  body.on-rink #landscapeGoalieA { left: 80%; transform: translateX(-50%); }
+  body.on-rink .ls-goalie-indicator .lsg-circle {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 13px;
+    border: 2px solid #fff; box-sizing: border-box;
+  }
+  body.on-rink .ls-goalie-indicator .lsg-circle.home { background: #c8262b; }
+  body.on-rink .ls-goalie-indicator .lsg-circle.away { background: #1f5fc4; }
+  body.on-rink .ls-goalie-indicator .lsg-name {
+    color: var(--text); font-size: 12px; font-weight: 700;
+    letter-spacing: .04em; max-width: 120px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+
   /* Main: bounded box between rails + bottom nav. Left = 56 (leftRail),
      right = 100 (lastShotBar), bottom = 40 (nav) + safe-area. */
   main {
@@ -712,6 +744,18 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
          (accessed from MORE → Settings). -->
 
   </div>
+  <!-- Landscape-only goalie indicators. Mirror activeGoalie state above the
+       zone faceoff dots (~20% / ~80% from left). Hidden in portrait; shown
+       only on rink panel via body.on-rink scope. Tap → open change-goalie
+       modal (delegates to existing #hdrHomeGoalieChange / Away handlers). -->
+  <div id="landscapeGoalieH" class="ls-goalie-indicator" role="button" aria-label="Home goalie — tap to change" tabindex="0">
+    <span class="lsg-circle home">H</span>
+    <span class="lsg-name" id="lsgHomeName">—</span>
+  </div>
+  <div id="landscapeGoalieA" class="ls-goalie-indicator" role="button" aria-label="Away goalie — tap to change" tabindex="0">
+    <span class="lsg-circle away">A</span>
+    <span class="lsg-name" id="lsgAwayName">—</span>
+  </div>
 </header>
 
 <!-- Left rail: Photo / Video / Gallery / Feed shortcuts. Landscape only;
@@ -902,9 +946,11 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
       <circle cx="604" cy="305" r="3"/>
     </g>
 
-    <!-- Creases. Arc ry scaled 30 → 21, endpoints 270/330 → 191/234. -->
-    <path d="M 60 191 A 40 21 0 0 1 60 234 Z" fill="#1f5fc4" opacity=".55" stroke="#c8262b" stroke-width="1.5"/>
-    <path d="M 940 191 A 40 21 0 0 0 940 234 Z" fill="#1f5fc4" opacity=".55" stroke="#c8262b" stroke-width="1.5"/>
+    <!-- Creases. Regulation 6ft radius (= 30 viewBox units at 5 units/ft).
+         True semicircle (rx=ry=30). Goalposts at y=202..223; crease span
+         182..242 brackets the net. -->
+    <path d="M 60 182 A 30 30 0 0 1 60 242 Z" fill="#1f5fc4" opacity=".55" stroke="#c8262b" stroke-width="1.5"/>
+    <path d="M 940 182 A 30 30 0 0 0 940 242 Z" fill="#1f5fc4" opacity=".55" stroke="#c8262b" stroke-width="1.5"/>
 
     <!-- Goals -->
     <rect x="50" y="202" width="10" height="21" fill="#fff" stroke="#c8262b" stroke-width="1.5"/>
@@ -2319,16 +2365,19 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
 
   // 9 NHL faceoff dots, positioned to match the visible dots drawn on the rink graphic.
   // Names refer to position on the rink, not which team's zone (zone changes by period).
+  // y-coords rescaled 0.7083 for 1000x425 viewBox migration:
+  // 170→120, 300→212, 430→305. Matches rink circles (cy=120/305) and
+  // center dot (cy=212) drawn in #rinkSvg.
   const FACEOFF_DOTS = [
-    { id: "L_TOP",    x: 200, y: 170 }, // left zone, top  (matches rink circle)
-    { id: "L_BOT",    x: 200, y: 430 }, // left zone, bottom
-    { id: "LN_TOP",   x: 396, y: 170 }, // left neutral, top  (5 ft inside left blue line)
-    { id: "LN_BOT",   x: 396, y: 430 }, // left neutral, bottom
-    { id: "C",        x: 500, y: 300 }, // center
-    { id: "RN_TOP",   x: 604, y: 170 }, // right neutral, top (5 ft inside right blue line)
-    { id: "RN_BOT",   x: 604, y: 430 }, // right neutral, bottom
-    { id: "R_TOP",    x: 800, y: 170 }, // right zone, top
-    { id: "R_BOT",    x: 800, y: 430 }  // right zone, bottom
+    { id: "L_TOP",    x: 200, y: 120 }, // left zone, top  (matches rink circle)
+    { id: "L_BOT",    x: 200, y: 305 }, // left zone, bottom
+    { id: "LN_TOP",   x: 396, y: 120 }, // left neutral, top  (5 ft inside left blue line)
+    { id: "LN_BOT",   x: 396, y: 305 }, // left neutral, bottom
+    { id: "C",        x: 500, y: 212 }, // center
+    { id: "RN_TOP",   x: 604, y: 120 }, // right neutral, top (5 ft inside right blue line)
+    { id: "RN_BOT",   x: 604, y: 305 }, // right neutral, bottom
+    { id: "R_TOP",    x: 800, y: 120 }, // right zone, top
+    { id: "R_BOT",    x: 800, y: 305 }  // right zone, bottom
   ];
 
   if(!state.faceoffs) state.faceoffs = [];
@@ -3720,6 +3769,11 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     };
     setHdr("hdrHomeGoalieName", "hdrHomeGoalieNum", homeG);
     setHdr("hdrAwayGoalieName", "hdrAwayGoalieNum", awayG);
+    // Mirror to landscape-only indicators in the top header band.
+    const lsH = document.getElementById("lsgHomeName");
+    const lsA = document.getElementById("lsgAwayName");
+    if(lsH) lsH.textContent = (homeG && homeG.name) ? homeG.name : "—";
+    if(lsA) lsA.textContent = (awayG && awayG.name) ? awayG.name : "—";
   }
 
   // Wire the new home/away CHANGE buttons. Home-side CHANGE always edits OUR goalie
@@ -3804,6 +3858,20 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     showGoalieIntentPicker(weAreHome);
   });
   if(_hdrAC) _hdrAC.addEventListener("click", ()=>{
+    const weAreHome = (state.weAre || "home") === "home";
+    showGoalieIntentPicker(!weAreHome);
+  });
+
+  // Landscape goalie indicators: tap → same picker as the portrait
+  // CHANGE/EDIT buttons. Wired here so they share the showGoalieIntentPicker
+  // helper defined just above.
+  const _lsH = document.getElementById("landscapeGoalieH");
+  const _lsA = document.getElementById("landscapeGoalieA");
+  if(_lsH) _lsH.addEventListener("click", ()=>{
+    const weAreHome = (state.weAre || "home") === "home";
+    showGoalieIntentPicker(weAreHome);
+  });
+  if(_lsA) _lsA.addEventListener("click", ()=>{
     const weAreHome = (state.weAre || "home") === "home";
     showGoalieIntentPicker(!weAreHome);
   });
