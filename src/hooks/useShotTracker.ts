@@ -367,6 +367,21 @@ export function useShotTracker(initial?: Partial<TrackerState>) {
     []
   );
 
+  // --- Delete by index ---
+  //
+  // Ports legacy epDelete handler (index.html:2742-2750). Splices a
+  // single event out of state.events. Note legacy does NOT re-map
+  // linkedTo references on subsequent events, so a delete can leave
+  // stale linkedTo indices. Render-side guards in ShotCanvas
+  // (origin == null check) keep this from drawing wrong link lines.
+  const deleteEventAt = useCallback((idx: number) => {
+    setState((prev) => {
+      if (idx < 0 || idx >= prev.events.length) return prev;
+      const events = [...prev.events.slice(0, idx), ...prev.events.slice(idx + 1)];
+      return { ...prev, events };
+    });
+  }, []);
+
   // --- Undo ---
 
   const undoLastEvent = useCallback(() => {
@@ -521,6 +536,7 @@ export function useShotTracker(initial?: Partial<TrackerState>) {
     queue,
     logShot,
     markLastShotAsRebound,
+    deleteEventAt,
     undoLastEvent,
     updateLastShotResult,
     setPeriod,

@@ -1,35 +1,36 @@
+"use client";
+
 /**
  * BottomNav
  *
- * Visible bottom-nav rail. Matches js/nav.js DEFAULT_ORDER_COACH:
- *   ["rink", "whiteboard", "lineup", "more"]
+ * Visible bottom-nav rail. Tab IDs match legacy js/nav.js TABS
+ * registry (rink, feed, stats, whiteboard, lineup, more).
+ * DEFAULT_ORDER_COACH in legacy is 4 rails (rink/whiteboard/lineup/
+ * more) with feed + stats off-rail behind MORE. Phase 3 directive
+ * promotes feed + stats to a visible-clickable position so a coach
+ * can switch between rink, feed, and stats without an extra hop.
  *
- * Off-rail destinations (Stats, Report, Feed, Calendar, Settings,
- * Profile) live behind "More" in legacy and stay there. Visible
- * surface is exactly 4 buttons.
+ * Enabled tabs (clickable): rink, feed, stats.
+ * Disabled placeholders: whiteboard, lineup, more (Phase 2 ports
+ * not yet landed; aria-disabled so a click is a no-op).
  *
- * SVG icon markup ported verbatim from js/nav.js TABS registry so
- * visual parity is preserved during cutover.
- *
- * Behaviour: only "Rink" is active. Other tabs render with
- * aria-disabled so a click does not 404 a non-existent route.
- * Tab routing wires up in a follow-up phase per Tim's directive.
- *
- * Server component. No interactivity yet.
+ * SVG icon markup ported verbatim from js/nav.js TABS registry.
  */
 
-type TabId = "rink" | "whiteboard" | "lineup" | "more";
+export type TabId = "rink" | "feed" | "stats" | "whiteboard" | "lineup" | "more";
 
 interface TabDef {
   id: TabId;
   label: string;
   icon: React.ReactNode;
+  enabled: boolean;
 }
 
 const TABS: TabDef[] = [
   {
     id: "rink",
     label: "Rink",
+    enabled: true,
     icon: (
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.6">
         <rect x="2.5" y="6" width="19" height="12" rx="6" />
@@ -39,8 +40,34 @@ const TABS: TabDef[] = [
     ),
   },
   {
+    id: "feed",
+    label: "Feed",
+    enabled: true,
+    icon: (
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.6">
+        <line x1="3" y1="6" x2="21" y2="6" />
+        <line x1="3" y1="12" x2="21" y2="12" />
+        <line x1="3" y1="18" x2="21" y2="18" />
+      </svg>
+    ),
+  },
+  {
+    id: "stats",
+    label: "Stats",
+    enabled: true,
+    icon: (
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.6">
+        <line x1="6" y1="20" x2="6" y2="12" />
+        <line x1="12" y1="20" x2="12" y2="6" />
+        <line x1="18" y1="20" x2="18" y2="14" />
+        <line x1="3" y1="20" x2="21" y2="20" />
+      </svg>
+    ),
+  },
+  {
     id: "whiteboard",
     label: "Whiteboard",
+    enabled: false,
     icon: (
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.6">
         <rect x="3" y="4" width="18" height="14" rx="1.5" />
@@ -53,6 +80,7 @@ const TABS: TabDef[] = [
   {
     id: "lineup",
     label: "Lineup",
+    enabled: false,
     icon: (
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.6">
         <circle cx="7" cy="8" r="2.5" />
@@ -66,6 +94,7 @@ const TABS: TabDef[] = [
   {
     id: "more",
     label: "More",
+    enabled: false,
     icon: (
       <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
         <circle cx="6" cy="12" r="1.6" />
@@ -76,9 +105,12 @@ const TABS: TabDef[] = [
   },
 ];
 
-const ACTIVE_ID: TabId = "rink";
+interface Props {
+  activeTab: TabId;
+  onSelect: (tab: TabId) => void;
+}
 
-export default function BottomNav() {
+export default function BottomNav({ activeTab, onSelect }: Props) {
   return (
     <nav
       aria-label="Primary views"
@@ -95,14 +127,16 @@ export default function BottomNav() {
       }}
     >
       {TABS.map((tab) => {
-        const active = tab.id === ACTIVE_ID;
+        const active = tab.id === activeTab;
+        const clickable = tab.enabled;
         return (
           <button
             key={tab.id}
             type="button"
             aria-current={active ? "page" : undefined}
-            aria-disabled={!active}
+            aria-disabled={!clickable}
             data-tab={tab.id}
+            onClick={clickable ? () => onSelect(tab.id) : undefined}
             style={{
               display: "flex",
               flexDirection: "column",
@@ -113,14 +147,14 @@ export default function BottomNav() {
               minHeight: 56,
               background: "transparent",
               border: 0,
-              color: active ? "#C9A84C" : "#888899",
-              cursor: active ? "default" : "not-allowed",
+              color: active ? "#C9A84C" : clickable ? "#E8E8E0" : "#444450",
+              cursor: clickable ? (active ? "default" : "pointer") : "not-allowed",
               fontFamily: "var(--font-inter), system-ui, sans-serif",
               fontSize: 10,
               letterSpacing: "0.16em",
               textTransform: "uppercase",
               fontWeight: 700,
-              opacity: active ? 1 : 0.65,
+              opacity: clickable ? 1 : 0.5,
               touchAction: "manipulation",
             }}
           >

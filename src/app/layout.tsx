@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "@/app/globals.css";
 import TopBar from "@/components/shell/TopBar";
-import BottomNav from "@/components/shell/BottomNav";
 import Footer from "@/components/shell/Footer";
 
 const inter = Inter({
@@ -50,7 +49,6 @@ export default function RootLayout({
         <main style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
           {children}
         </main>
-        <BottomNav />
         <Footer />
       </body>
     </html>
