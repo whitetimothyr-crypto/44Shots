@@ -59,6 +59,8 @@ export default function ShotCanvas() {
   );
 
   const events = tracker.state.events;
+  const activePeriod = tracker.state.period;
+  const visibleEvents = events.filter((ev) => ev.period === activePeriod);
   const lastIdx = events.length - 1;
   const hasShot = lastIdx >= 0;
 
@@ -127,9 +129,9 @@ export default function ShotCanvas() {
         <rect x={50} y={202} width={10} height={21} fill="#fff" stroke={LINE_RED} strokeWidth={1.5} />
         <rect x={940} y={202} width={10} height={21} fill="#fff" stroke={LINE_RED} strokeWidth={1.5} />
 
-        {/* Shot markers */}
+        {/* Shot markers (filtered to active period) */}
         <g aria-label="Shot markers">
-          {events.map((ev, i) => {
+          {visibleEvents.map((ev, i) => {
             const isGoal = ev.result === "goal";
             const isMiss = ev.result === "miss";
             const fill = isGoal
