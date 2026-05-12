@@ -394,15 +394,93 @@ export function useShotTracker(initial?: Partial<TrackerState>) {
   // Mutate result on most recent event (e.g. promote "shot" to "goal"
   // or demote to "miss"). Used by transient Goal/Miss buttons in
   // ShotCanvas after a single-tap shot lands as default "shot".
+  //
+  // Ports legacy edit-popover goal branch (index.html:2645-2649):
+  // when result becomes "goal", auto-set pendingNetGoalTeam so a
+  // Net panel switch can tag where it went in. Preserves existing
+  // pendingNetGoalTeam value on other results.
   const updateLastShotResult = useCallback((result: ShotResult) => {
     setState((prev) => {
       if (prev.events.length === 0) return prev;
       const updated = [...prev.events];
       const idx = updated.length - 1;
-      updated[idx] = { ...updated[idx], result };
-      return { ...prev, events: updated };
+      const next = { ...updated[idx], result };
+      updated[idx] = next;
+      const pendingNetGoalTeam =
+        result === "goal"
+          ? next.forOrAgainst || "against"
+          : prev.pendingNetGoalTeam;
+      return { ...prev, events: updated, pendingNetGoalTeam };
     });
   }, []);
+
+  // --- Net events (Phase 4) ---
+  //
+  // Ports handleNetTap (index.html:2965-2988): pushes a NetEventPayload
+  // tagged with team derived from pendingNetGoalTeam (or "against" as
+  // default per legacy 2972). Clears pendingNetGoalTeam after.
+  const logNetEvent = useCallback(
+    (input: {
+      x: number;
+      y: number;
+      zone: string;
+    }): NetEventPayload | null => {
+      let pushed: NetEventPayload | null = null;
+      setState((prev) => {
+        const team: ForOrAgainst = prev.pendingNetGoalTeam || "against";
+        const ev: NetEventPayload = {
+          client_event_id: makeClientId(),
+          zone: 0, // unused numeric slot in payload type; zone label below
+          result: "goal",
+          period: prev.period,
+          forOrAgainst: team,
+          gameState: prev.gameState,
+          weAre: prev.weAre,
+          goalie: prev.activeGoalie
+            ? { name: prev.activeGoalie.name, num: prev.activeGoalie.num }
+            : null,
+          t: Date.now(),
+          // Carry geometry + zone label as payload extras. Type's
+          // numeric zone field stays as 0 placeholder; consumers read
+          // these instead.
+          ...{ _x: input.x, _y: input.y, _zoneLabel: input.zone },
+        } as NetEventPayload;
+        pushed = ev;
+        return {
+          ...prev,
+          netEvents: [...prev.netEvents, ev],
+          pendingNetGoalTeam: null,
+        };
+      });
+      return pushed;
+    },
+    []
+  );
+
+  // Ports legacy undoNetBtn handler (index.html:3007). Pops most-recent
+  // net event.
+  const undoLastNetEvent = useCallback(() => {
+    setState((prev) => {
+      if (prev.netEvents.length === 0) return prev;
+      return { ...prev, netEvents: prev.netEvents.slice(0, -1) };
+    });
+  }, []);
+
+  // Ports legacy clearNetBtn intent (index.html:1014). Wipes all net
+  // events for current game.
+  const clearNetEvents = useCallback(() => {
+    setState((prev) => ({ ...prev, netEvents: [] }));
+  }, []);
+
+  // Manual setter for pendingNetGoalTeam. Lets a coach pre-arm a net
+  // tap without going through a goal-result toggle (matches legacy
+  // "Net taps stand alone too" tip at index.html:1017).
+  const setPendingNetGoalTeam = useCallback(
+    (team: ForOrAgainst | null) => {
+      setState((prev) => ({ ...prev, pendingNetGoalTeam: team }));
+    },
+    []
+  );
 
   // --- Game context setters ---
 
@@ -537,6 +615,10 @@ export function useShotTracker(initial?: Partial<TrackerState>) {
     logShot,
     markLastShotAsRebound,
     deleteEventAt,
+    logNetEvent,
+    undoLastNetEvent,
+    clearNetEvents,
+    setPendingNetGoalTeam,
     undoLastEvent,
     updateLastShotResult,
     setPeriod,

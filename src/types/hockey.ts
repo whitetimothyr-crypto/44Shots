@@ -58,6 +58,11 @@ export type EventType =
 export interface GoalieRef {
   name: string;
   num: string | number;
+  // Catch hand. "left" = regular (glove on goalie's left), "right" = full
+  // right (glove on goalie's right). Drives net-zone Glove/Blocker labels
+  // per index.html:2946-2961. Optional for backward compatibility with
+  // pre-Phase-4 events.
+  hand?: "left" | "right";
 }
 
 /**
@@ -210,6 +215,10 @@ export interface TrackerGameInfo {
   opponent?: string;
   ourTeam?: string;
   endGameNotes?: string;
+  // Per-game default goalie hand. Used by net-zone label math when
+  // activeGoalie.hand is absent. Mirrors legacy
+  // index.html:3654 (load-game modal field).
+  goalieHandedness?: "left" | "right";
 }
 
 // === Whiteboard module types (js/whiteboard.js) ===

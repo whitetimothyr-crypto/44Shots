@@ -22,7 +22,7 @@
  * aspect per NOMOS_AUDIT; feed and stats scroll vertically.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useShotTracker } from "@/hooks/useShotTracker";
 import ShotCanvas from "@/components/features/ShotCanvas";
 import PeriodControls from "@/components/features/PeriodControls";
@@ -30,11 +30,25 @@ import GameStateControls from "@/components/features/GameStateControls";
 import GameUtilities from "@/components/features/GameUtilities";
 import ShotFeed from "@/components/features/ShotFeed";
 import QuickStats from "@/components/features/QuickStats";
+import NetPanel from "@/components/features/NetPanel";
 import BottomNav, { type TabId } from "@/components/shell/BottomNav";
 
 export default function Page() {
   const tracker = useShotTracker();
   const [activeTab, setActiveTab] = useState<TabId>("rink");
+
+  // Auto-switch to Net tab when a goal sets pendingNetGoalTeam.
+  // Ports legacy switchTab("net") in updateLastShotResult goal branch
+  // (index.html:2649). Single-fire per pending-team transition.
+  const pendingTeam = tracker.state.pendingNetGoalTeam;
+  useEffect(() => {
+    if (pendingTeam) setActiveTab("net");
+  }, [pendingTeam]);
+
+  // After a net tap clears pendingNetGoalTeam (logNetEvent does this),
+  // return to rink. Mirrors legacy 600ms-delay setTimeout switchTab
+  // (index.html:2980), simplified to immediate transition.
+  const onNetEventLogged = () => setActiveTab("rink");
 
   return (
     <div
@@ -103,6 +117,9 @@ export default function Page() {
 
         {activeTab === "feed" && <ShotFeed tracker={tracker} />}
         {activeTab === "stats" && <QuickStats tracker={tracker} />}
+        {activeTab === "net" && (
+          <NetPanel tracker={tracker} onNetEventLogged={onNetEventLogged} />
+        )}
       </div>
 
       <BottomNav activeTab={activeTab} onSelect={setActiveTab} />
