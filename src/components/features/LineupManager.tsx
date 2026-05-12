@@ -26,7 +26,13 @@
  * presentational shape.
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+const STORAGE_KEY = "felix-lineup-v1";
+
+function hasLocalStorage(): boolean {
+  return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+}
 
 type Team = "home" | "away";
 type Slot = "lw" | "c" | "rw" | "ld" | "rd";
@@ -392,6 +398,39 @@ function Row({ lineNum, slots, roster, assignments, onAssign }: RowProps) {
 export default function LineupManager() {
   const [home, setHome] = useState<TeamState>(emptyTeam);
   const [away, setAway] = useState<TeamState>(emptyTeam);
+  const hydratedRef = useRef<boolean>(false);
+
+  // Hydrate roster + line combos from localStorage on mount.
+  useEffect(() => {
+    if (!hasLocalStorage()) {
+      hydratedRef.current = true;
+      return;
+    }
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { home?: TeamState; away?: TeamState };
+        if (parsed.home) setHome(parsed.home);
+        if (parsed.away) setAway(parsed.away);
+      }
+    } catch (err) {
+      console.warn("[LineupManager] hydrate failed", err);
+    }
+    hydratedRef.current = true;
+  }, []);
+
+  // Persist on any change post-hydrate.
+  useEffect(() => {
+    if (!hydratedRef.current || !hasLocalStorage()) return;
+    try {
+      window.localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ home, away })
+      );
+    } catch (err) {
+      console.warn("[LineupManager] persist failed", err);
+    }
+  }, [home, away]);
 
   return (
     <div

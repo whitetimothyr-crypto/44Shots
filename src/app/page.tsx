@@ -33,6 +33,7 @@ import QuickStats from "@/components/features/QuickStats";
 import NetPanel from "@/components/features/NetPanel";
 import Whiteboard from "@/components/features/Whiteboard";
 import LineupManager from "@/components/features/LineupManager";
+import MorePanel from "@/components/features/MorePanel";
 import BottomNav, { type TabId } from "@/components/shell/BottomNav";
 
 export default function Page() {
@@ -124,6 +125,7 @@ export default function Page() {
         )}
         {activeTab === "whiteboard" && <Whiteboard />}
         {activeTab === "lineup" && <LineupManager />}
+        {activeTab === "more" && <MorePanel />}
       </div>
 
       <BottomNav activeTab={activeTab} onSelect={setActiveTab} />

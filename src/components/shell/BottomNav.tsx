@@ -115,7 +115,7 @@ const TABS: TabDef[] = [
   {
     id: "more",
     label: "More",
-    enabled: false,
+    enabled: true,
     icon: (
       <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
         <circle cx="6" cy="12" r="1.6" />

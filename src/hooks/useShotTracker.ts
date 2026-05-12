@@ -171,6 +171,14 @@ function makeClientId(): string {
   return "wb_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 9);
 }
 
+// === Persistence keys (match legacy js/db.js + index.html:2042) ===
+const STATE_STORAGE_KEY = "felix-shot-tracker-v1";
+const SETTINGS_STORAGE_KEY = "felix-settings-v6";
+
+function hasLocalStorage(): boolean {
+  return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+}
+
 // === Hook ========================================================
 
 export function useShotTracker(initial?: Partial<TrackerState>) {
@@ -181,11 +189,74 @@ export function useShotTracker(initial?: Partial<TrackerState>) {
   const [queue, setQueue] = useState<QueuedSubmission[]>([]);
   const [settings, setSettings] = useState<TrackerSettings>(DEFAULT_SETTINGS);
 
+  // Track whether localStorage hydration has completed. Persist
+  // effects skip writing until hydrate finishes so a brief default-
+  // state render doesn't overwrite stored data before load.
+  const hydratedRef = useRef<boolean>(false);
+
   // Ref mirrors latest state so queueSubmission can read without
   // re-creating its useCallback on every state change. Ref writes
   // during render are an accepted React pattern for non-state refs.
   const stateRef = useRef<TrackerState>(state);
   stateRef.current = state;
+
+  // Hydrate state + settings from localStorage on mount. Mirrors
+  // legacy keys felix-shot-tracker-v1 (state) + felix-settings-v6
+  // (settings) so a Next.js refresh after legacy use loads same
+  // data shape. armTimer is non-serializable so any persisted value
+  // is dropped on load.
+  useEffect(() => {
+    if (!hasLocalStorage()) {
+      hydratedRef.current = true;
+      return;
+    }
+    try {
+      const raw = window.localStorage.getItem(STATE_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Partial<TrackerState>;
+        setState((prev) => ({ ...prev, ...parsed, armTimer: null }));
+      }
+    } catch (err) {
+      console.warn("[useShotTracker] state hydrate failed", err);
+    }
+    try {
+      const raw = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Partial<TrackerSettings>;
+        setSettings((prev) => ({ ...prev, ...parsed }));
+      }
+    } catch (err) {
+      console.warn("[useShotTracker] settings hydrate failed", err);
+    }
+    hydratedRef.current = true;
+  }, []);
+
+  // Persist state to localStorage on every change after hydrate.
+  // Strips armTimer (setTimeout handle) since it cannot serialize.
+  useEffect(() => {
+    if (!hydratedRef.current || !hasLocalStorage()) return;
+    try {
+      const { armTimer: _armTimer, ...persistable } = state;
+      window.localStorage.setItem(
+        STATE_STORAGE_KEY,
+        JSON.stringify(persistable)
+      );
+    } catch (err) {
+      console.warn("[useShotTracker] state persist failed", err);
+    }
+  }, [state]);
+
+  useEffect(() => {
+    if (!hydratedRef.current || !hasLocalStorage()) return;
+    try {
+      window.localStorage.setItem(
+        SETTINGS_STORAGE_KEY,
+        JSON.stringify(settings)
+      );
+    } catch (err) {
+      console.warn("[useShotTracker] settings persist failed", err);
+    }
+  }, [settings]);
 
   // Hydrate pending queue from IndexedDB on mount. Safe no-op on
   // SSR or unsupported browsers (indexed-db.ts returns []).
