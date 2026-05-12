@@ -26,10 +26,10 @@
 
 import { useCallback, useRef, useState } from "react";
 import {
-  useShotTracker,
   getOurDefendingSide,
   DOUBLE_TAP_MS,
   DOUBLE_TAP_MOVE_TOL,
+  type UseShotTrackerReturn,
 } from "@/hooks/useShotTracker";
 import {
   clientToViewBox,
@@ -43,6 +43,10 @@ import type {
   Period,
   TeamSide,
 } from "@/types/hockey";
+
+interface ShotCanvasProps {
+  tracker: UseShotTrackerReturn;
+}
 
 const RINK_FILL = "#e8f1ff";
 const RINK_OUTLINE = "#1a1a2e";
@@ -78,8 +82,7 @@ function deriveForAgainstFromZone(
   return attackingNet === ourSide ? "against" : "for";
 }
 
-export default function ShotCanvas() {
-  const tracker = useShotTracker();
+export default function ShotCanvas({ tracker }: ShotCanvasProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const lastHandledRef = useRef<number>(0);
   const lastPlacementRef = useRef<LastPlacement | null>(null);
