@@ -2136,7 +2136,9 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     }
   }
   function handleRinkPointerUp(evt){
-    if(lpStart && lpStart.pointerId !== evt.pointerId) return;
+    // Rink is single-tap. Apple Pencil tilt on iPadOS can issue a fresh
+    // pointerId mid-touch (contact reclassification); rejecting on
+    // mismatch silently drops the tap. Honor whatever lpStart we have.
     const wasFired = lpFired;
     const wasCancelled = lpCancelled;
     const start = lpStart;
@@ -2145,7 +2147,11 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     if(!start) return;
     handleRinkTap(start.origEvt);
   }
-  function handleRinkPointerCancel(){
+  function handleRinkPointerCancel(evt){
+    // Palm-rejection / pointerleave on a sibling pointer can fire while
+    // the real tap is mid-flight. Only cancel if this event's pointerId
+    // matches the active tap.
+    if(lpStart && evt && evt.pointerId != null && lpStart.pointerId !== evt.pointerId) return;
     lpCancelled = true;
     clearLongPress();
   }
