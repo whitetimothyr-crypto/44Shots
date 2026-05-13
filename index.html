@@ -996,6 +996,7 @@
 <script src="js/nav.js"></script>
 <script src="js/settings-engine.js"></script>
 <script src="js/game-engine.js"></script>
+<script src="js/supabase-config.js"></script>
 
 <script>
   // Tabs
@@ -3031,8 +3032,6 @@
       if(!game || !game.id) return;
       if(!window.supabase || !window.supabase.createClient) return;
 
-      const SB_URL = "https://qshgschhudiryjnslzof.supabase.co";
-      const SB_KEY = "sb_publishable_hdrc9mYaGocDhJVesn0FRw_wELl6Tnv";
       const c = window.supabase.createClient(SB_URL, SB_KEY, { auth:{ persistSession:true, autoRefreshToken:true } });
 
       const { data: subs } = await c
