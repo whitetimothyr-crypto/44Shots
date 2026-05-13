@@ -994,6 +994,7 @@
 <script src="js/lineup-api.js"></script>
 <script src="js/lineup.js"></script>
 <script src="js/nav.js"></script>
+<script src="js/settings-engine.js"></script>
 
 <script>
   const STORAGE_KEY = "felix-shot-tracker-v1";
@@ -1412,26 +1413,6 @@
   const REBOUND_LINK_MAX_AGE_MS = 5000; // max age of the prior shot that a rebound can link to
   const JITTER_RADIUS = 8;              // SVG units; nudge new shot if landing this close to existing
   const JITTER_AMOUNT = 3;              // SVG units of nudge
-
-  // ---- Settings (separate localStorage key, persists across game resets) ----
-  const SETTINGS_KEY = "felix-settings-v6";
-  const SETTINGS_DEFAULTS = {
-    reboundMode: "doubletap", // "time" | "doubletap" | "both" | "off" — double-tap is the default
-    reboundWindowSec: 3,      // 1 | 2 | 3 — only used by Time mode
-    seenWhatsNew: "",         // last version the user dismissed the popup for
-    seenGestureHints: false   // first-launch gesture hints toast dismissed
-  };
-  let settings = (function loadSettings(){
-    try {
-      const raw = localStorage.getItem(SETTINGS_KEY);
-      if(!raw) return {...SETTINGS_DEFAULTS};
-      return {...SETTINGS_DEFAULTS, ...JSON.parse(raw)};
-    } catch(e) { return {...SETTINGS_DEFAULTS}; }
-  })();
-  function saveSettings(){
-    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch(e){}
-  }
-  window.felixSettings = () => settings; // for debugging
 
   function findEventNearPoint(p){
     // Search in reverse so most recent shots are found first
