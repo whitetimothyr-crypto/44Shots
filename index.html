@@ -5934,31 +5934,7 @@ ${photos.length ? `<h2>Game Photos (${photos.length})</h2>
 
 <!-- Mesh sync connection indicator: drives the existing #syncIndicator dot.
      green = synced & online, yellow = pending events, red = offline. -->
-<script>
-(function () {
-  const dot = document.getElementById("syncIndicator");
-  if (!dot || typeof NomosSync === "undefined") return;
-  const COLORS = {
-    online_clean:   "#3AAEAC", // synced (accent teal — matches "good")
-    online_pending: "#C9A84C", // pending events (warning gold)
-    offline:        "#A0364E", // offline (destructive red)
-  };
-  function paint() {
-    const s = NomosSync.getStatus();
-    let color, label;
-    if (!s.online) { color = COLORS.offline; label = "Offline — events queued locally"; }
-    else if (s.pending > 0) { color = COLORS.online_pending; label = s.pending + " event(s) pending sync"; }
-    else { color = COLORS.online_clean; label = "Synced"; }
-    dot.style.color = color;
-    dot.setAttribute("title", label);
-    dot.setAttribute("aria-label", label);
-  }
-  paint();
-  NomosSync.onStatusChange(paint);
-  window.addEventListener("online", paint);
-  window.addEventListener("offline", paint);
-})();
-</script>
+<script src="js/sync-indicator.js"></script>
 
 <!-- Apple Pencil input mode.
      - Default: Finger (no class, no indicator, normal sizes).
