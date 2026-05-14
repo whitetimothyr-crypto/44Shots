@@ -4,7 +4,14 @@ const BASE_URL = process.env.AUDIT_BASE_URL || 'https://44shots.com';
 
 const SECRET_PATTERNS = [
   { name: 'AWS Access Key', regex: /AKIA[0-9A-Z]{16}/ },
-  { name: 'AWS Secret Key', regex: /(?<![A-Za-z0-9/+=])[A-Za-z0-9/+=]{40}(?![A-Za-z0-9/+=])/ },
+  // Tightened from /[A-Za-z0-9/+=]{40}/ which fired on 40-char comment
+  // dividers ("=" x40), button-list strings ("GOAL+MISS+...+FACEOFF"), and
+  // vendor namespace URLs ("com/office/2006/...") with no AWS connection.
+  // Real AWS Secret Access Keys are 40 chars in strict Base64 alphabet
+  // (no "=" padding since 30 raw bytes encode to exactly 40 chars) and
+  // in practice always appear with a keyword anchor like
+  // aws_secret_access_key=, AWS_SECRET_ACCESS_KEY:, etc.
+  { name: 'AWS Secret Key', regex: /aws[_\s-]?secret[_\s-]?(?:access[_\s-]?)?key\s*[:=]\s*["']?([A-Za-z0-9/+]{40})\b/i },
   { name: 'GitHub Token', regex: /gh[pousr]_[A-Za-z0-9]{36,255}/ },
   { name: 'Stripe Live Key', regex: /sk_live_[A-Za-z0-9]{24,}/ },
   { name: 'Stripe Test Key', regex: /sk_test_[A-Za-z0-9]{24,}/ },
