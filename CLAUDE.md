@@ -68,7 +68,7 @@ Senior Staff Engineer. Long-term-success bias, never short-cut bias.
 
 \## REPO
 
-\- GitHub: https://github.com/whitetimothyr-crypto/Felix-Tracker
+\- GitHub: https://github.com/whitetimothyr-crypto/44Shots
 
 \- Vercel: https://vercel.com/whitetimothyr-5641s-projects/felix-tracker
 
@@ -80,7 +80,7 @@ Senior Staff Engineer. Long-term-success bias, never short-cut bias.
 
 \## STACK
 
-\- Frontend: index.html (4,895 lines, 547K, single-file architecture, plain inline JS)
+\- Frontend: index.html (~5,048 lines, 315K, post-decompose: /js/* modules + /css/app.css extracted; main inline kept for UI wiring only)
 
 \- Backend: Supabase project ref qshgschhudiryjnslzof
 
