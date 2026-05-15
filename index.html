@@ -1541,7 +1541,14 @@
 
   function redrawAll(){
     markersG.innerHTML = "";
+    // Rink markers and rebound link-lines are scoped to the active period.
+    // Without this filter, placing a shot in P2 would re-render all P1 markers
+    // because shot-logic.js:267 calls redrawAll() to refresh rebound lines.
+    // Rebound linkedTo only ever points within the same period (see shot-logic.js
+    // double-tap and time-window guards), so a single ev.period === state.period
+    // filter is sufficient for both the line loop and the marker loop.
     state.events.forEach((ev, idx) => {
+      if(ev.period !== state.period) return;
       if(ev.linkedTo == null) return;
       const origin = state.events[ev.linkedTo];
       if(!origin) return;
@@ -1553,7 +1560,7 @@
       line.setAttribute("stroke-dasharray", "4 3");
       markersG.appendChild(line);
     });
-    state.events.forEach(ev=>drawMarker(ev,false));
+    state.events.forEach(ev=>{ if(ev.period === state.period) drawMarker(ev,false); });
     netG.innerHTML = "";
     const team = state.pendingNetGoalTeam || (state.netEvents.length ? state.netEvents[state.netEvents.length-1].forOrAgainst : "against");
     state.netEvents.filter(ev => ev.forOrAgainst === team).forEach(ev=>drawNetMarker(ev,false));
