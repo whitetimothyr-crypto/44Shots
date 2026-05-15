@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="css/nav.css" />
 <link rel="stylesheet" href="css/lineup.css" />
 <link rel="stylesheet" href="css/whiteboard.css" />
+<link rel="stylesheet" href="css/entry.css" />
 <meta name="apple-mobile-web-app-title" content="44 Shots" />
 <title>44 Shots</title>
 <!-- Sentry error tracking. Loads asynchronously, lazy-loads SDK, captures unhandled errors before SDK fully loads. -->
@@ -39,6 +40,38 @@
 <div id="offlineBar" style="display:none;background:#c0392b;color:#fff;text-align:center;padding:6px;font-size:13px;font-weight:600;">Offline — changes saved locally</div>
 <div id="storageWarnBar" style="display:none;background:#e67e22;color:#fff;text-align:center;padding:6px;font-size:13px;font-weight:600;">Storage nearly full</div>
 <div id="gestureHintToast" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;z-index:9999;pointer-events:none;">Long-press shots to edit</div>
+<section id="entryHub" hidden aria-label="Start screen">
+  <header class="entry-hub__brand">
+    <h1>44 <span class="accent">SHOTS</span></h1>
+    <p class="entry-hub__tag">Track every shot. Online or off.</p>
+  </header>
+  <nav class="entry-hub__grid" role="menu">
+    <button class="entry-tile" data-entry="create" role="menuitem" type="button">
+      <span class="entry-tile__icon" aria-hidden="true">+</span>
+      <span class="entry-tile__label">Create</span>
+      <span class="entry-tile__sub">Start a new game</span>
+    </button>
+    <button class="entry-tile" data-entry="join" role="menuitem" type="button">
+      <span class="entry-tile__icon" aria-hidden="true">&#8646;</span>
+      <span class="entry-tile__label">Join</span>
+      <span class="entry-tile__sub">Enter code</span>
+    </button>
+    <button class="entry-tile" data-entry="rejoin" data-state="empty" role="menuitem" type="button">
+      <span class="entry-tile__icon" aria-hidden="true">&#8635;</span>
+      <span class="entry-tile__label">Rejoin</span>
+      <span class="entry-tile__sub" data-rejoin-meta>No game in progress</span>
+    </button>
+    <button class="entry-tile" data-entry="practice" data-state="disabled" role="menuitem" type="button" aria-disabled="true">
+      <span class="entry-tile__icon" aria-hidden="true">&#9678;</span>
+      <span class="entry-tile__label">Practice (coming soon)</span>
+      <span class="entry-tile__sub">Solo drill mode</span>
+    </button>
+  </nav>
+  <footer class="entry-hub__status" hidden>
+    <span class="dot" data-net="online"></span>
+    <span data-sync-status>Ready</span>
+  </footer>
+</section>
 
 <header id="topBar">
   <!-- TODO: Felix photo placement is a temporary restore from accidental
@@ -978,7 +1011,9 @@
 <script src="js/auth.js"></script>
 <script src="js/game.js"></script>
 <script src="js/sync.js"></script>
+<script src="js/sync-readonly.js"></script>
 <script src="js/welcome.js"></script>
+<script src="js/entry.js"></script>
 
 <!-- V3.0 media: camera/mic capture engine -->
 <script src="js/media.js"></script>
@@ -2625,7 +2660,7 @@
     try { return new URLSearchParams(window.location.search).has("game"); }
     catch(e) { return false; }
   })();
-  if(!state.gameInfo.configured && !_hasMeshJoinParam){
+  if(!state.gameInfo.configured && !_hasMeshJoinParam && !window.__felixEntryHubActive){
     (async () => {
       let role = 'user';
       try { if (typeof FelixAuth !== 'undefined') role = await FelixAuth.getRole(); } catch (e) {}

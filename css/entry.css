@@ -1,0 +1,135 @@
+/* css/entry.css -- Entry Hub overlay (4-tile launcher above z-index 9000)
+   Loads via index.html <link> after css/whiteboard.css and before
+   css/app.css. Consumes existing :root tokens from css/app.css
+   (--bg, --primary, --text, --text-muted, --border-hi, --panel-hi,
+   --accent-2, --sans). No new globals introduced. */
+
+#entryHub {
+  position: fixed;
+  inset: 0;
+  z-index: 9100;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: max(env(safe-area-inset-top), 24px) 20px max(env(safe-area-inset-bottom), 24px);
+  background: radial-gradient(120% 80% at 50% 0%, var(--panel-hi) 0%, var(--bg) 60%);
+  font-family: var(--sans);
+  color: var(--text);
+}
+
+#entryHub[hidden] { display: none; }
+
+.entry-hub__brand {
+  text-align: center;
+  margin-bottom: clamp(24px, 6vh, 56px);
+}
+
+.entry-hub__brand h1 {
+  font-size: clamp(40px, 8vw, 72px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--text);
+}
+
+.entry-hub__brand .accent { color: var(--primary); }
+
+.entry-hub__tag {
+  margin: 0.25em 0 0;
+  opacity: 0.6;
+  font-size: 14px;
+}
+
+.entry-hub__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 520px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+@media (min-width: 1024px) {
+  .entry-hub__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    max-width: 960px;
+  }
+}
+
+.entry-tile {
+  appearance: none;
+  border: 1px solid var(--border-hi);
+  background: rgba(20, 24, 36, 0.7);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border-radius: 16px;
+  padding: 22px 18px;
+  min-height: 128px;
+  min-width: 88px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+
+.entry-tile:hover,
+.entry-tile:focus-visible {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+  background: rgba(28, 34, 50, 0.85);
+  outline: none;
+}
+
+.entry-tile:active { transform: translateY(0); }
+
+.entry-tile[data-state="empty"],
+.entry-tile[data-state="disabled"] {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.entry-tile__icon {
+  font-size: 28px;
+  line-height: 1;
+  color: var(--primary);
+}
+
+.entry-tile__label {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.entry-tile__sub {
+  font-size: 12px;
+  opacity: 0.65;
+}
+
+.entry-hub__status {
+  margin-top: clamp(24px, 5vh, 48px);
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+.entry-hub__status[hidden] { display: none; }
+
+.entry-hub__status .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  display: inline-block;
+}
+
+.entry-hub__status .dot[data-net="offline"] { background: var(--accent-2); }
