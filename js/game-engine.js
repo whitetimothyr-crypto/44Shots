@@ -60,7 +60,23 @@ state.armedForRebound = false;
 state.lastShotIdForRebound = null;
 state.armTimer = null;
 
-function load(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)); }catch(e){ return null; } }
+// Page-load hydration guard helper. A persisted state with
+// status='completed' (or 'finalized') is the residue of an End Game
+// flow whose inner-setTimeout reset never ran -- typically because the
+// browser was closed in the ~250ms window between the status stamp
+// (index.html endGame, set during B2 sub-commit) and the field-clear
+// reset that follows. Hydrating it would resurrect every marker /
+// netEvent of the just-finalized game.
+function _isFinalizedSnapshot(s){
+  return !!(s && (s.status === "completed" || s.status === "finalized"));
+}
+function load(){
+  try{
+    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if(_isFinalizedSnapshot(parsed)) return null;
+    return parsed;
+  }catch(e){ return null; }
+}
 function save(){
   try{
     const json = JSON.stringify(state);
@@ -103,7 +119,16 @@ if((!state.events||state.events.length===0) && (!state.netEvents||state.netEvent
     const stamp = localStorage.getItem("felix-backup-stamp");
     if(backup){
       const parsed = JSON.parse(backup);
-      if((parsed.events&&parsed.events.length) || (parsed.netEvents&&parsed.netEvents.length)){
+      // Same guard as load(): a backup snapshotted after the End Game
+      // status stamp but before the inner-setTimeout reset is residue
+      // from an aborted close. Drop it so we don't prompt this launch
+      // OR the next.
+      if(_isFinalizedSnapshot(parsed)){
+        try{
+          localStorage.removeItem("felix-backup-latest");
+          localStorage.removeItem("felix-backup-stamp");
+        }catch(_){}
+      } else if((parsed.events&&parsed.events.length) || (parsed.netEvents&&parsed.netEvents.length)){
         setTimeout(()=>{
           // Re-check that state is still empty — the user may have started tapping
           // during the 500ms delay; accepting recovery would clobber their work.
