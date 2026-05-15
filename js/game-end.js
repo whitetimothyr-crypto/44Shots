@@ -54,6 +54,12 @@
   function clearPending() {
     try { localStorage.removeItem(PENDING_KEY); } catch (_) {}
   }
+  function loadPending() {
+    try {
+      const raw = localStorage.getItem(PENDING_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (_) { return null; }
+  }
 
   // Direct UPDATE. Resolves true on success, false on any failure
   // (network, RLS, missing client). Never throws -- callers reason on
@@ -101,9 +107,50 @@
     return { status: 'queued' };
   }
 
+  // Drain a queued finalization left by an offline End Game. Idempotent:
+  //   - returns 'no_pending' if the cell is empty or malformed
+  //   - returns 'offline' without touching Supabase if connectivity is gone
+  //   - returns 'sent' on successful UPDATE; the cell is cleared and a
+  //     GAME_ENDED rebroadcast fires (with drained:true) so other tabs
+  //     that may have missed the original broadcast can react now
+  //   - returns 'failed' on UPDATE failure; the cell is left in place so
+  //     the next 'online' event triggers another attempt
+  async function drainPending() {
+    const payload = loadPending();
+    if (!payload || !payload.game_id) {
+      // Nothing to drain, or malformed cell -- drop it either way.
+      if (payload) clearPending();
+      return { status: 'no_pending' };
+    }
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      return { status: 'offline' };
+    }
+    const ok = await pushToSupabase(payload.game_id);
+    if (ok) {
+      clearPending();
+      broadcastEnded({ client_game_id: payload.client_game_id, drained: true });
+      return { status: 'sent' };
+    }
+    return { status: 'failed' };
+  }
+
   window.GameEnd = {
     finalize,
+    drainPending,
     PENDING_KEY,
     CHANNEL_NAME
   };
+
+  // Drain triggers. 'online' fires when the OS reconnects (rink wifi back,
+  // mobile data resumed). One-shot 1500ms drain at load mirrors the
+  // js/sync.js pattern -- gives FelixAuth + FelixGame a beat to settle so
+  // the RLS-gated UPDATE on nomos_game has an authenticated session.
+  if (typeof window !== 'undefined') {
+    window.addEventListener('online', () => {
+      drainPending().catch(() => {});
+    });
+    setTimeout(() => {
+      drainPending().catch(() => {});
+    }, 1500);
+  }
 })();
