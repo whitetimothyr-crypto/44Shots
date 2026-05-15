@@ -4797,6 +4797,24 @@
     }
     const notes = prompt("Game notes (optional):\nObservations, things to work on, anything memorable.", "") || "";
     archiveCurrentGame(notes);
+    // Stamp local state and push 'completed' to Supabase / notify tabs.
+    // status='completed' is set BEFORE the inner-setTimeout reset so a
+    // browser close mid-flow leaves a finalized marker that B3's
+    // page-load guard recognizes (state.gameInfo.configured is only
+    // flipped 250ms later inside the report-render setTimeout).
+    // GameEnd.finalize is fire-and-forget: it tries a direct UPDATE if
+    // online, queues to felix-finalize-pending-v1 otherwise. Either
+    // path emits the BroadcastChannel GAME_ENDED for second tabs.
+    state.status = "completed";
+    state.local_ended_at = Date.now();
+    if (typeof GameEnd !== "undefined") {
+      const _g = (typeof FelixGame !== "undefined" && FelixGame.getActiveGame) ? FelixGame.getActiveGame() : null;
+      GameEnd.finalize({
+        game_id: _g && _g.id ? _g.id : null,
+        client_game_id: _g && (_g.client_game_id || _g.code) || null,
+        ended_at: state.local_ended_at
+      }).catch((err) => { try { console.warn("GameEnd.finalize:", err); } catch(_){} });
+    }
     // Pipe notes into the existing notesInput + localStorage so the report
     // generator includes them automatically. Append rather than overwrite if
     // the user already typed something in the report tab earlier.
@@ -4837,6 +4855,8 @@
         state.period = 1;
         state.gameState = "5v5";
         state.gameStateExpiresAt = null;
+        delete state.status;
+        delete state.local_ended_at;
         if (state.gameInfo) {
           state.gameInfo.configured = false;
           state.gameInfo.opponent = "";
@@ -5038,6 +5058,13 @@
 <!-- Mesh sync connection indicator: drives the existing #syncIndicator dot.
      green = synced & online, yellow = pending events, red = offline. -->
 <script src="js/sync-indicator.js"></script>
+
+<!-- End Game finalizer: stamps nomos_game.status='completed' on Supabase
+     when the coach ends a game, queues to localStorage if offline,
+     broadcasts GAME_ENDED across tabs. NomosSync (sync.js) only handles
+     nomos_event INSERTs and is byte-for-byte locked, so this owns its
+     own write path. See migration 17 header for the state machine. -->
+<script src="js/game-end.js"></script>
 
 <!-- Apple Pencil input mode.
      - Default: Finger (no class, no indicator, normal sizes).
