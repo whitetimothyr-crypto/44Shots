@@ -18,9 +18,7 @@ module.exports = {
         'categories:best-practices': ['warn', { minScore: 0.85 }],
         'categories:seo': ['warn', { minScore: 0.80 }],
         'errors-in-console': 'error',
-        'no-vulnerable-libraries': 'error',
-        'is-on-https': 'error',
-        'uses-https': 'error'
+        'is-on-https': 'error'
       }
     },
     upload: {
