@@ -3797,7 +3797,8 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     const oppGoals = opp.totals.goals;
     const goalieSaves = oppShots - oppGoals;
     const savePct = oppShots>0 ? Math.round(goalieSaves*100/oppShots*10)/10 : 0;
-    const svDisplay = "."+String(Math.round(savePct*10)).padStart(3,"0").slice(-3);
+    // Shutout = savePct 100 → 1.000. Plain formatter slices "1000" to "000".
+    const svDisplay = savePct >= 100 ? "1.000" : "."+String(Math.round(savePct*10)).padStart(3,"0").slice(-3);
     const ourShootPct = ourShots>0 ? Math.round(ourGoals*100/ourShots*10)/10 : 0;
     const oppGoalieSavePct = ourShots>0 ? Math.round((ourShots-ourGoals)*100/ourShots*10)/10 : 0;
 
@@ -4648,7 +4649,8 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
     const oppShots = opp.totals.shotsOnNet, oppGoals = opp.totals.goals;
     const goalieSaves = oppShots - oppGoals;
     const sv = oppShots>0 ? Math.round(goalieSaves*100/oppShots) : 0;
-    const svDisplay = "."+String(Math.round(sv*10)).padStart(3,"0").slice(-3);
+    // Shutout = sv 100 → 1.000. Plain formatter slices "1000" to "000".
+    const svDisplay = sv >= 100 ? "1.000" : "."+String(Math.round(sv*10)).padStart(3,"0").slice(-3);
     const goalieRecs = state._lastGoalieRecs || [];
     const defenseRecs = state._lastDefenseRecs || [];
     const offenseRecs = state._lastOffenseRecs || [];
