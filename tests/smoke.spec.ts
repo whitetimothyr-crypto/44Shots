@@ -52,7 +52,12 @@ test.describe('44 Shots smoke', () => {
     // ===== 4. Anonymous signup =====
     // Open the account modal. The top-right button reads "SIGN IN" when signed
     // out. We click it to open the modal.
-    await page.locator('#topAccountBtn').click();
+    // Join Game modal opens on load for non-coaches; close it first.
+    await page.evaluate(() => { const jg = document.querySelector('#joinGameBackdrop') as HTMLElement | null; if (jg) jg.style.display = 'none'; });
+    // Account button now lives in the Settings panel (Manage Account opens the modal).
+    await page.locator('nav.bottom-nav button[data-tab="more"]').click();
+    await page.locator('#panel-more [data-more="settings"]').click();
+    await page.locator('#settingsAccountBtn').click();
 
     // Modal should be visible. The "Continue as Guest" button is the path we
     // exercise — it calls FelixAuth.signInAnonymously() → Supabase auth.
