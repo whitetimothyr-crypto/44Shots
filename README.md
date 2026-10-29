@@ -15,8 +15,9 @@ See `docs/` and Notion 44 Shots project for module specs and design docs.
 
 ## Repo notes
 
-GitHub repo and Vercel project names retain "Felix-Tracker" / "felix-tracker" 
-identifiers from the project's pre-rebrand history. Rename pending.
+GitHub repo and Vercel project are both named 44Shots / 44shots (rename from felix-tracker done).
+Internal identifiers `felix_db` (IndexedDB), `felix.*` localStorage keys and `Felix*` JS globals are
+intentionally kept: renaming them would orphan saved data on users' devices.
 
 ## Local dev
 
