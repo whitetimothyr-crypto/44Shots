@@ -27,6 +27,8 @@ async function dismissModals(page: Page) {
     if (wn) wn.style.display = 'none';
     const lg = document.querySelector('#loadGameModal') as HTMLElement | null;
     if (lg) lg.style.display = 'none';
+    const jg = document.querySelector('#joinGameBackdrop') as HTMLElement | null;
+    if (jg) jg.style.display = 'none';
   });
 }
 
