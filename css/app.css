@@ -172,6 +172,9 @@ touch-action:manipulation;
 }
 .rink-wrap{aspect-ratio: 200 / 85; width:100%;max-width:min(100%, calc(78vh * 200 / 85));margin:0 auto;max-height:100%;border-radius:0 !important;box-shadow:none !important;background:transparent !important;overflow:visible !important}
 .net-wrap{aspect-ratio: 6 / 4; width:100%}
+/* Landscape-only goalie indicators: hidden by default; the landscape rule
+   below shows them in the header band when body.on-rink is active. */
+.ls-goalie-indicator{display:none}
 .zone-pulse{animation:zonePulse 3.6s ease-in-out infinite}
 @keyframes zonePulse{0%,100%{opacity:0}50%{opacity:.05}}
 @media (prefers-reduced-motion: reduce){.zone-pulse{animation:none}}
@@ -451,6 +454,32 @@ letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;
   /* Goalies row: drop in landscape — long names + dual change buttons
      don't fit the rail. Available via portrait or overflow menu. */
   #globalGoaliesRow { display: none !important; }
+
+  /* Landscape-only goalie indicators in the top header band, positioned at
+     ~20%/~80% from left to sit above the zone faceoff dots. Rink panel only. */
+  body.on-rink #landscapeGoalieH,
+  body.on-rink #landscapeGoalieA {
+    position: fixed; top: 0; height: 88px;
+    display: flex; align-items: center; gap: 8px;
+    z-index: 70; padding: 0 8px;
+    pointer-events: auto; cursor: pointer;
+    font-family: var(--sans);
+  }
+  body.on-rink #landscapeGoalieH { left: 20%; transform: translateX(-50%); }
+  body.on-rink #landscapeGoalieA { left: 80%; transform: translateX(-50%); }
+  body.on-rink .ls-goalie-indicator .lsg-circle {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 13px;
+    border: 2px solid #fff; box-sizing: border-box;
+  }
+  body.on-rink .ls-goalie-indicator .lsg-circle.home { background: #c8262b; }
+  body.on-rink .ls-goalie-indicator .lsg-circle.away { background: #1f5fc4; }
+  body.on-rink .ls-goalie-indicator .lsg-name {
+    color: var(--text); font-size: 12px; font-weight: 700;
+    letter-spacing: .04em; max-width: 120px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
 
   /* Main: bounded box between rails + bottom nav. Left = 56 (leftRail),
      right = 100 (lastShotBar), bottom = 40 (nav) + safe-area. */
