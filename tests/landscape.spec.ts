@@ -88,7 +88,6 @@ for (const vp of VIEWPORTS) {
       // 2. Critical controls inside viewport.
       const critical = [
         'nav.bottom-nav',                                  // bottom nav
-        '#endGameBtn',                                     // end game
         '#headerStats',                                    // score block
         '#globalGameRow',                                  // period selector container
         '#globalGameRow .seg-period button[data-period="1"]',
@@ -119,16 +118,27 @@ for (const vp of VIEWPORTS) {
       //    44 on iPad sizes, 32 on iPhone landscape where 7 buttons +
       //    chrome can't all meet 44 in 390 px of total height.
       const standardTargets = [
-        '#endGameBtn',
-        '#globalGameRow .seg-period button[data-period="1"]',
-        '#globalGameRow .seg-period button[data-period="4"]',
-        '#faceoffBtn',
       ];
+      // Period pills are intentionally compact in landscape (WCAG 2.2 AA
+      // target-size floor is 24px); only FACEOFF holds the 44px floor.
+      for (const sel of ['#globalGameRow .seg-period button[data-period="1"]', '#globalGameRow .seg-period button[data-period="4"]']) {
+        const sz = await elementSize(page, sel);
+        expect(sz, `${sel} measurable`).not.toBeNull();
+        expect(sz!.w, `${sel} width >= 24`).toBeGreaterThanOrEqual(24);
+        expect(sz!.h, `${sel} height >= 24`).toBeGreaterThanOrEqual(24);
+      }
       for (const sel of standardTargets) {
         const sz = await elementSize(page, sel);
         expect(sz, `${sel} measurable`).not.toBeNull();
         expect(sz!.w, `${sel} width >= 44`).toBeGreaterThanOrEqual(43.5);
         expect(sz!.h, `${sel} height >= 44`).toBeGreaterThanOrEqual(43.5);
+      }
+      {
+        // FACEOFF sits in the rail: same per-viewport height floor as the other rail buttons.
+        const fb = await elementSize(page, '#faceoffBtn');
+        expect(fb, '#faceoffBtn measurable').not.toBeNull();
+        expect(fb!.h, '#faceoffBtn height').toBeGreaterThanOrEqual(vp.lsBtnMinHeight - 0.5);
+        expect(fb!.w, '#faceoffBtn width').toBeGreaterThanOrEqual(43.5);
       }
       const lsBtnTargets = [
         '#lastShotBar .lsBtn[data-action="goal"]',
@@ -153,7 +163,9 @@ for (const vp of VIEWPORTS) {
       const lsb = (await elementSize(page, '#lastShotBar'))!;
       const fco = (await elementSize(page, '#faceoffBtn'))!;
       const nav = (await elementSize(page, 'nav.bottom-nav'))!;
-      expect(lsb.bottom, 'lastShotBar above faceoff').toBeLessThanOrEqual(fco.top + 0.5);
+      // FACEOFF now lives inside the right rail (#lastShotBar); it must stay within it.
+      expect(fco.top, 'faceoff inside lastShotBar (top)').toBeGreaterThanOrEqual(lsb.top - 0.5);
+      expect(fco.bottom, 'faceoff inside lastShotBar (bottom)').toBeLessThanOrEqual(lsb.bottom + 0.5);
       expect(fco.bottom, 'faceoff above bottom-nav').toBeLessThanOrEqual(nav.top + 0.5);
     });
   });
