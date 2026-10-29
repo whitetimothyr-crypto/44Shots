@@ -721,7 +721,7 @@
   </div>
 </div>
 
-<footer>44 Shots <span style="color:var(--accent)" id="footerVersion">v2.2</span> · Goalie #<span id="numEdit" style="text-decoration:underline" role="button" tabindex="0">?</span></footer>
+<footer>44 Shots <span style="color:var(--accent)" id="footerVersion">v3.0</span> · Goalie #<span id="numEdit" style="text-decoration:underline" role="button" tabindex="0">?</span></footer>
 
 <div class="toast" id="toast">Saved</div>
 
@@ -1760,7 +1760,7 @@
         cb.innerHTML =
           '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">'+
             '<span style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-muted);font-family:Helvetica,sans-serif">'+goalieName+' #'+goalieNum+' · Save %</span>'+
-            '<span style="font-size:24px;font-weight:700;color:var(--accent-2)">.'+String(Math.round(sv*10)).padStart(3,"0").slice(-3)+'</span>'+
+            '<span style="font-size:24px;font-weight:700;color:var(--accent-2)">'+fmtSvPct(sv)+'</span>'+
           '</div>'+
           '<div style="display:flex;justify-content:space-between;margin-bottom:6px">'+
             '<span>'+saves+' saves on '+shots+' shots</span>'+
@@ -3004,7 +3004,7 @@
     const oppGoals = opp.totals.goals;
     const goalieSaves = oppShots - oppGoals;
     const savePct = oppShots>0 ? Math.round(goalieSaves*100/oppShots*10)/10 : 0;
-    const svDisplay = "."+String(Math.round(savePct*10)).padStart(3,"0").slice(-3);
+    const svDisplay = fmtSvPct(savePct);
     const ourShootPct = ourShots>0 ? Math.round(ourGoals*100/ourShots*10)/10 : 0;
     const oppGoalieSavePct = ourShots>0 ? Math.round((ourShots-ourGoals)*100/ourShots*10)/10 : 0;
 
@@ -3904,7 +3904,7 @@
     const oppText = b.opponent && b.opponent!=="Unknown" ? " vs "+b.opponent : "";
     const scoreText = b.score && b.score!=="Not recorded" ? " ("+b.score+")" : "";
     const goalieName = (state.activeGoalie && state.activeGoalie.name) || "Goalie";
-    const txt = goalieName + " in net" + oppText + scoreText + ": " + saves + " saves on " + shots + " shots, ." + String(Math.round(sv*10)).padStart(3,"0").slice(-3) + " save %. #hockey #goalie #44shots";
+    const txt = goalieName + " in net" + oppText + scoreText + ": " + saves + " saves on " + shots + " shots, " + fmtSvPct(sv) + " save %. #hockey #goalie #44shots";
 
     if(navigator.share){
       try{
@@ -4885,6 +4885,9 @@
   }
 
   // ============ What's New popup ============
+  // Save % formatter: 0-99.9 -> ".950"; 100 (shutout) -> "1.000" (slice(-3) used to yield ".000")
+  function fmtSvPct(p){ const n=Math.round(p*10); return n>=1000 ? "1.000" : "."+String(n).padStart(3,"0").slice(-3); }
+  window.fmtSvPct = fmtSvPct;
   const APP_VERSION = "v3.0"; window.APP_VERSION = APP_VERSION;
   const footerVersionEl = document.getElementById("footerVersion"); if(footerVersionEl) footerVersionEl.textContent = APP_VERSION;
   const whatsNewBackdrop = document.getElementById("whatsNewBackdrop");
