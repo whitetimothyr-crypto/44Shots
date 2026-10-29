@@ -28,7 +28,7 @@
     dot.setAttribute("aria-label", label);
   }
   paint();
-  NomosSync.onStatusChange(paint);
+  if (typeof NomosSync.onStatusChange === "function") NomosSync.onStatusChange(paint);
   window.addEventListener("online", paint);
   window.addEventListener("offline", paint);
 })();
