@@ -88,6 +88,15 @@
          (accessed from MORE → Settings). -->
 
   </div>
+  <!-- Landscape-only goalie indicators (rink panel only). Tap opens the change-goalie picker. -->
+  <div id="landscapeGoalieH" class="ls-goalie-indicator" role="button" aria-label="Home goalie, tap to change" tabindex="0">
+    <span class="lsg-circle home">H</span>
+    <span class="lsg-name" id="lsgHomeName">—</span>
+  </div>
+  <div id="landscapeGoalieA" class="ls-goalie-indicator" role="button" aria-label="Away goalie, tap to change" tabindex="0">
+    <span class="lsg-circle away">A</span>
+    <span class="lsg-name" id="lsgAwayName">—</span>
+  </div>
 </header>
 
 <!-- Left rail: Photo / Video / Gallery / Feed shortcuts. Landscape only;
@@ -278,9 +287,9 @@
       <circle cx="604" cy="305" r="3"/>
     </g>
 
-    <!-- Creases. Arc ry scaled 30 → 21, endpoints 270/330 → 191/234. -->
-    <path d="M 60 191 A 40 21 0 0 1 60 234 Z" fill="#1f5fc4" opacity=".55" stroke="#c8262b" stroke-width="1.5"/>
-    <path d="M 940 191 A 40 21 0 0 0 940 234 Z" fill="#1f5fc4" opacity=".55" stroke="#c8262b" stroke-width="1.5"/>
+    <!-- Creases. Regulation 6ft radius (30 viewBox units at 5 units/ft): true semicircle, y=182..242 around the net (y=202..223). -->
+    <path d="M 60 182 A 30 30 0 0 1 60 242 Z" fill="#1f5fc4" opacity=".55" stroke="#c8262b" stroke-width="1.5"/>
+    <path d="M 940 182 A 30 30 0 0 0 940 242 Z" fill="#1f5fc4" opacity=".55" stroke="#c8262b" stroke-width="1.5"/>
 
     <!-- Goals -->
     <rect x="50" y="202" width="10" height="21" fill="#fff" stroke="#c8262b" stroke-width="1.5"/>
@@ -1097,16 +1106,17 @@
 
   // 9 NHL faceoff dots, positioned to match the visible dots drawn on the rink graphic.
   // Names refer to position on the rink, not which team's zone (zone changes by period).
+  // y-coords rescaled x0.7083 for the 1000x425 viewBox (170->120, 300->212, 430->305) to match rink circles.
   const FACEOFF_DOTS = [
-    { id: "L_TOP",    x: 200, y: 170 }, // left zone, top  (matches rink circle)
-    { id: "L_BOT",    x: 200, y: 430 }, // left zone, bottom
-    { id: "LN_TOP",   x: 396, y: 170 }, // left neutral, top  (5 ft inside left blue line)
-    { id: "LN_BOT",   x: 396, y: 430 }, // left neutral, bottom
-    { id: "C",        x: 500, y: 300 }, // center
-    { id: "RN_TOP",   x: 604, y: 170 }, // right neutral, top (5 ft inside right blue line)
-    { id: "RN_BOT",   x: 604, y: 430 }, // right neutral, bottom
-    { id: "R_TOP",    x: 800, y: 170 }, // right zone, top
-    { id: "R_BOT",    x: 800, y: 430 }  // right zone, bottom
+    { id: "L_TOP",    x: 200, y: 120 }, // left zone, top  (matches rink circle)
+    { id: "L_BOT",    x: 200, y: 305 }, // left zone, bottom
+    { id: "LN_TOP",   x: 396, y: 120 }, // left neutral, top  (5 ft inside left blue line)
+    { id: "LN_BOT",   x: 396, y: 305 }, // left neutral, bottom
+    { id: "C",        x: 500, y: 212 }, // center
+    { id: "RN_TOP",   x: 604, y: 120 }, // right neutral, top (5 ft inside right blue line)
+    { id: "RN_BOT",   x: 604, y: 305 }, // right neutral, bottom
+    { id: "R_TOP",    x: 800, y: 120 }, // right zone, top
+    { id: "R_BOT",    x: 800, y: 305 }  // right zone, bottom
   ];
 
   if(!state.faceoffs) state.faceoffs = [];
@@ -2364,6 +2374,11 @@
     };
     setHdr("hdrHomeGoalieName", "hdrHomeGoalieNum", homeG);
     setHdr("hdrAwayGoalieName", "hdrAwayGoalieNum", awayG);
+    // Mirror to landscape-only indicators in the top header band.
+    const lsH = document.getElementById("lsgHomeName");
+    const lsA = document.getElementById("lsgAwayName");
+    if(lsH) lsH.textContent = (homeG && homeG.name) ? homeG.name : "—";
+    if(lsA) lsA.textContent = (awayG && awayG.name) ? awayG.name : "—";
   }
 
   // Wire the new home/away CHANGE buttons. Home-side CHANGE always edits OUR goalie
@@ -2448,6 +2463,18 @@
     showGoalieIntentPicker(weAreHome);
   });
   if(_hdrAC) _hdrAC.addEventListener("click", ()=>{
+    const weAreHome = (state.weAre || "home") === "home";
+    showGoalieIntentPicker(!weAreHome);
+  });
+
+  // Landscape goalie indicators: tap opens the same picker as the portrait CHANGE buttons.
+  const _lsH = document.getElementById("landscapeGoalieH");
+  const _lsA = document.getElementById("landscapeGoalieA");
+  if(_lsH) _lsH.addEventListener("click", ()=>{
+    const weAreHome = (state.weAre || "home") === "home";
+    showGoalieIntentPicker(weAreHome);
+  });
+  if(_lsA) _lsA.addEventListener("click", ()=>{
     const weAreHome = (state.weAre || "home") === "home";
     showGoalieIntentPicker(!weAreHome);
   });
@@ -4947,7 +4974,9 @@
       saveSettings();
     }, 3000);
   }
-  maybeShowWhatsNew();
+  // What's New auto-popup suppressed: V3.0 shipped and the modal blocked the UI on load.
+  // Still reachable via the What's New button (helpBtn).
+  if(settings.seenWhatsNew !== APP_VERSION){ settings.seenWhatsNew = APP_VERSION; saveSettings(); }
 </script>
 <script src="js/shot-logic.js"></script>
 
