@@ -140,8 +140,8 @@
       <circle cx="604" cy="120" r="3"/>
       <circle cx="604" cy="305" r="3"/>
     </g>
-    <path d="M 60 191 A 40 21 0 0 1 60 234 Z" fill="#1f5fc4" opacity=".55" stroke="#c8262b" stroke-width="1.5"/>
-    <path d="M 940 191 A 40 21 0 0 0 940 234 Z" fill="#1f5fc4" opacity=".55" stroke="#c8262b" stroke-width="1.5"/>
+    <path d="M 60 182 A 30 30 0 0 1 60 242 Z" fill="#1f5fc4" opacity=".55" stroke="#c8262b" stroke-width="1.5"/>
+    <path d="M 940 182 A 30 30 0 0 0 940 242 Z" fill="#1f5fc4" opacity=".55" stroke="#c8262b" stroke-width="1.5"/>
     <rect x="50"  y="202" width="10" height="21" fill="#fff" stroke="#c8262b" stroke-width="1.5"/>
     <rect x="940" y="202" width="10" height="21" fill="#fff" stroke="#c8262b" stroke-width="1.5"/>
     <g>
@@ -374,6 +374,11 @@
   function onStrokeUp(e) {
     if (!_drawing) return;
     if (_drawing.pointerId != null && e.pointerId !== _drawing.pointerId) return;
+    // Final smoothing pass on lift: one Chaikin iteration rounds corners.
+    if (_drawing.points.length >= 3) {
+      _drawing.points = chaikinSmooth(_drawing.points);
+      _drawing.el.setAttribute("d", smoothPath(_drawing.points));
+    }
     endStroke();
   }
 
@@ -396,6 +401,20 @@
   }
 
   function cancelDrawing() { endStroke(); }
+
+  // Chaikin corner-cutting: replace each segment with points at 25%/75%.
+  // Endpoints preserved.
+  function chaikinSmooth(points) {
+    if (points.length < 3) return points;
+    const out = [points[0]];
+    for (let i = 0; i < points.length - 1; i++) {
+      const p0 = points[i], p1 = points[i + 1];
+      out.push({ x: 0.75 * p0.x + 0.25 * p1.x, y: 0.75 * p0.y + 0.25 * p1.y });
+      out.push({ x: 0.25 * p0.x + 0.75 * p1.x, y: 0.25 * p0.y + 0.75 * p1.y });
+    }
+    out.push(points[points.length - 1]);
+    return out;
+  }
 
   // Midpoint quadratic Bézier smoothing. For ≥3 points, each interior
   // point becomes a control point and the curve passes through midpoints
