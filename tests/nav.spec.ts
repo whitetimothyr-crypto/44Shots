@@ -22,13 +22,15 @@ async function dismissModals(page: import('@playwright/test').Page) {
     if (wn) wn.style.display = 'none';
     const lg = document.querySelector('#loadGameModal') as HTMLElement | null;
     if (lg) lg.style.display = 'none';
+    const jg = document.querySelector('#joinGameBackdrop') as HTMLElement | null;
+    if (jg) jg.style.display = 'none';
   });
 }
 
 test.describe('Modular bottom nav', () => {
   test.use({ viewport: { width: 414, height: 896 } });
 
-  test('renders 5 tabs in the coach default order, no NET tab', async ({ page }) => {
+  test('renders 4 tabs in the coach default order (Feed is off-rail in MORE), no NET tab', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(800);
     await dismissModals(page);
@@ -36,7 +38,7 @@ test.describe('Modular bottom nav', () => {
     const tabs = await page.evaluate(() =>
       Array.from(document.querySelectorAll('nav.bottom-nav button')).map((b) => (b as HTMLElement).dataset.tab)
     );
-    expect(tabs).toEqual(['rink', 'whiteboard', 'feed', 'lineup', 'more']);
+    expect(tabs).toEqual(['rink', 'whiteboard', 'lineup', 'more']);
     // RINK active by default
     const active = await page.evaluate(() => {
       const b = document.querySelector('nav.bottom-nav button.active') as HTMLElement | null;
@@ -50,9 +52,16 @@ test.describe('Modular bottom nav', () => {
     await page.waitForTimeout(800);
     await dismissModals(page);
 
-    // Whiteboard + Feed are still stub modules (real builds next sprint).
-    for (const id of ['whiteboard', 'feed']) {
-      await page.click(`nav.bottom-nav button[data-tab="${id}"]`);
+    // Whiteboard is a real module now; Feed is an off-rail stub reached via MORE.
+    {
+      await page.click('nav.bottom-nav button[data-tab="whiteboard"]');
+      await page.waitForTimeout(120);
+      const wbActive = await page.evaluate(() => !!document.getElementById('panel-whiteboard')?.classList.contains('active'));
+      expect(wbActive, 'whiteboard panel active').toBe(true);
+    }
+    for (const id of ['feed']) {
+      await page.click('nav.bottom-nav button[data-tab="more"]');
+      await page.click('#panel-more [data-more="feed"]');
       await page.waitForTimeout(120);
       const r = await page.evaluate((tabId) => {
         const p = document.getElementById('panel-' + tabId);
@@ -97,7 +106,7 @@ test.describe('Modular bottom nav', () => {
     const items = await page.evaluate(() =>
       Array.from(document.querySelectorAll('#panel-more .more-item')).map((b) => (b as HTMLElement).dataset.more)
     );
-    expect(items).toEqual(['stats', 'report', 'settings', 'profile']);
+    expect(items).toEqual(['stats', 'report', 'feed', 'calendar', 'settings', 'profile']);
 
     // MORE -> Stats: should activate panel-stats
     await page.click('#panel-more [data-more="stats"]');
@@ -114,7 +123,7 @@ test.describe('Modular bottom nav', () => {
     await dismissModals(page);
 
     await page.evaluate(() => {
-      (window as any).FelixNav.setOrder(['rink', 'lineup', 'feed', 'whiteboard', 'more']);
+      (window as any).FelixNav.setOrder(['rink', 'lineup', 'whiteboard', 'more']);
     });
     await page.waitForTimeout(50);
 
@@ -122,8 +131,8 @@ test.describe('Modular bottom nav', () => {
       stored: JSON.parse(localStorage.getItem('felix.tabOrder') || 'null'),
       rendered: Array.from(document.querySelectorAll('nav.bottom-nav button')).map((b) => (b as HTMLElement).dataset.tab),
     }));
-    expect(persisted.stored).toEqual(['rink', 'lineup', 'feed', 'whiteboard', 'more']);
-    expect(persisted.rendered).toEqual(['rink', 'lineup', 'feed', 'whiteboard', 'more']);
+    expect(persisted.stored).toEqual(['rink', 'lineup', 'whiteboard', 'more']);
+    expect(persisted.rendered).toEqual(['rink', 'lineup', 'whiteboard', 'more']);
   });
 
   test('FelixNav public API exists', async ({ page }) => {
