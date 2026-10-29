@@ -70,9 +70,9 @@ Senior Staff Engineer. Long-term-success bias, never short-cut bias.
 
 \- GitHub: https://github.com/whitetimothyr-crypto/44Shots
 
-\- Vercel: https://vercel.com/whitetimothyr-5641s-projects/felix-tracker
+\- Vercel: https://vercel.com/whitetimothyr-5641s-projects/44shots
 
-\- Live: https://felix-tracker-nu.vercel.app
+\- Live: https://44shots.com
 
 \- Branch: main
 
@@ -158,7 +158,7 @@ Forward-compat to V4.0 native iOS:
 
 \- Crowdsource: trust-weighted EMA, anyone with join code can submit
 
-\- Game ID: UUID + 6-char short URL (felix-tracker-nu.vercel.app/g/\[code])
+\- Game ID: UUID + 6-char short URL (44shots.com/g/\[code])
 
 \- Calendar: TeamSnap API + iCal subscription, manual fallback
 
