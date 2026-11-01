@@ -12,7 +12,7 @@ on:
 jobs:
   a11y:
     name: Accessibility (axe-core, WCAG 2.1 AA)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
@@ -36,7 +36,7 @@ jobs:
 
   security:
     name: Security (headers, secrets, mixed content)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
@@ -60,7 +60,7 @@ jobs:
 
   lighthouse:
     name: Lighthouse (perf, a11y, BP, SEO)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -79,7 +79,7 @@ jobs:
 
   summary:
     name: Audit Summary
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [a11y, security, lighthouse]
     if: always()
     steps:
@@ -94,7 +94,7 @@ jobs:
 
   create-issues:
     name: Create GitHub Issues for findings
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [a11y, security, lighthouse]
     if: failure() && github.event_name != 'pull_request'
     permissions:
