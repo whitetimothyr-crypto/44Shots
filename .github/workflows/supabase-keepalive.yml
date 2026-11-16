@@ -1,21 +1,43 @@
 name: Supabase keep-alive
 
-# Free-tier Supabase projects pause after 1 week of inactivity.
-# This pings the public REST endpoint every 2 days to keep it awake.
+# Free-tier Supabase projects pause when they see too little *database*
+# activity over 7 days ("a few requests a day" per Supabase docs). The
+# original every-2-days single read was not enough: the project paused
+# again on 2026-11-09. This version runs 4x/day and executes real SQL:
+#   - table reads via PostgREST (Prefer: count=exact runs a count query too)
+#   - the Calendar's schedule RPC (also keeps the TeamSnap schedule fresh)
+# 401/403 (RLS denied) still executed SQL, so they count as success.
+# 000 / 5xx (DNS failure = paused, or server error) fail the run loudly.
 on:
   schedule:
-    - cron: '17 9 */2 * *'
+    - cron: '23 */6 * * *'
   workflow_dispatch:
 
 jobs:
   ping:
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 3
     steps:
-      - name: Query Supabase (nomos_game, 1 row)
+      - name: Query Supabase (tables + schedule RPC)
+        env:
+          SB_URL: https://qshgschhudiryjnslzof.supabase.co
+          SB_KEY: sb_publishable_hdrc9mYaGocDhJVesn0FRw_wELl6Tnv
         run: |
-          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 \
-            "https://qshgschhudiryjnslzof.supabase.co/rest/v1/nomos_game?select=id&limit=1" \
-            -H "apikey: sb_publishable_hdrc9mYaGocDhJVesn0FRw_wELl6Tnv")
-          echo "HTTP $code"
-          test "$code" = "200"
+          fail=0
+          for t in nomos_game profiles players teams; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 \
+              "$SB_URL/rest/v1/$t?select=*&limit=1" \
+              -H "apikey: $SB_KEY" -H "Prefer: count=exact")
+            echo "GET $t -> HTTP $code"
+            case "$code" in 2*|401|403) ;; *) fail=1 ;; esac
+          done
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 -X POST \
+            "$SB_URL/rest/v1/rpc/get_team_schedule" \
+            -H "apikey: $SB_KEY" -H "Content-Type: application/json" \
+            -d '{"p_team_name":"Biggby Black"}')
+          echo "RPC get_team_schedule -> HTTP $code"
+          case "$code" in 2*) ;; *) fail=1 ;; esac
+          if [ "$fail" != "0" ]; then
+            echo "::error::Supabase did not answer. If DNS fails the project is paused: resume it at https://supabase.com/dashboard/project/qshgschhudiryjnslzof"
+            exit 1
+          fi
