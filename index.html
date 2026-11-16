@@ -2421,9 +2421,14 @@
     }, 600);
   });
 
+  // Always closable. With no game set up yet, land on the Calendar, where
+  // today's scheduled game starts with one tap (NEW GAME stays in Settings).
   document.getElementById("loadGameCloseBtn").addEventListener("click", ()=>{
-    if(state.gameInfo.configured){ hideLoadGame(); }
-    else { toast("Configure to start"); }
+    hideLoadGame();
+    if(!state.gameInfo.configured){
+      try { if (window.FelixNav && FelixNav.activate) FelixNav.activate("calendar"); } catch(e) {}
+      toast("Pick a game on the Calendar");
+    }
   });
 
   function updateGoalieBanner(){
@@ -2642,17 +2647,17 @@
   })();
   if(!state.gameInfo.configured && !_hasMeshJoinParam){
     (async () => {
+      // Already joined a game on this device (FelixGame.resumeFromCache
+      // restores it): keep tracking instead of re-prompting, coach or not.
+      try {
+        const s = (typeof FelixDB !== 'undefined') ? await FelixDB.getSession() : null;
+        if (s && s.active_game_id) return;
+      } catch (e) {}
       let role = 'user';
       try { if (typeof FelixAuth !== 'undefined') role = await FelixAuth.getRole(); } catch (e) {}
       if (role === 'coach') {
         setTimeout(showLoadGame, 200);
       } else {
-        // Already joined a game on this device (FelixGame.resumeFromCache
-        // restores it): keep tracking instead of re-prompting for a code.
-        try {
-          const s = (typeof FelixDB !== 'undefined') ? await FelixDB.getSession() : null;
-          if (s && s.active_game_id) return;
-        } catch (e) {}
         // Non-coach: open JOIN GAME modal as primary entry. Falls back to
         // showLoadGame if the modal is missing for any reason.
         setTimeout(() => {
