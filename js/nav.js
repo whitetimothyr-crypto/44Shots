@@ -84,6 +84,11 @@
       label: "Stats",
       icon: '<svg viewBox="0 0 24 24"><line x1="6" y1="20" x2="6" y2="12"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="18" y1="20" x2="18" y2="14"/><line x1="3" y1="20" x2="21" y2="20"/></svg>',
     },
+    profile: {
+      module: () => window.FelixProfile,
+      label: "Profile",
+      icon: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>',
+    },
     report: {
       legacy: true,
       label: "Report",
@@ -123,9 +128,11 @@
     return btn ? btn.dataset.tab : null;
   }
 
-  function activateModuleTab(tabId) {
-    const tab = TABS[tabId];
-    if (!tab || tab.legacy) return;
+  // Create the module's panel if it is not in the markup yet. Must run
+  // BEFORE switchTab(): switchTab only toggles .active on panels that
+  // already exist, so a panel created afterwards stayed hidden (this is
+  // why Calendar rendered blank the first time it was opened).
+  function ensurePanel(tabId) {
     let panel = document.getElementById("panel-" + tabId);
     if (!panel) {
       panel = document.createElement("section");
@@ -133,6 +140,17 @@
       panel.id = "panel-" + tabId;
       const main = document.querySelector("main");
       if (main) main.appendChild(panel);
+    }
+    return panel;
+  }
+
+  function activateModuleTab(tabId) {
+    const tab = TABS[tabId];
+    if (!tab || tab.legacy) return;
+    const panel = ensurePanel(tabId);
+    // Belt and braces: make sure the panel we are activating is visible.
+    if (!panel.classList.contains("active")) {
+      document.querySelectorAll(".panel").forEach((p) => p.classList.toggle("active", p === panel));
     }
     const mod = typeof tab.module === "function" ? tab.module() : null;
     if (mod && !tab._inited) {
@@ -209,6 +227,7 @@
       // lifecycle so module-backed off-rail tabs (currently feed) get
       // onActivate / onDeactivate fired. Legacy tabs (stats, report)
       // early-return inside activateModuleTab — safe no-op.
+      if (TABS[id] && !TABS[id].legacy) ensurePanel(id);
       if (typeof window.switchTab === "function") {
         try { window.switchTab(id); } catch (_) {}
       } else {

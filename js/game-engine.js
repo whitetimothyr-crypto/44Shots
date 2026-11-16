@@ -44,9 +44,9 @@ if(typeof state.rinkRotation !== "number") state.rinkRotation = 0;
 // Game info (set via Load Game screen)
 if(!state.gameInfo){
   state.gameInfo = {
-    ourTeam: "Phantoms",
+    ourTeam: (window.FelixTeam && FelixTeam.get().short) || "Biggby Black",
     opponent: "",
-    date: new Date().toISOString().slice(0,10),
+    date: window.FelixTeam ? FelixTeam.today() : new Date().toISOString().slice(0,10),
     goalieHandedness: "left", // "left" = catches with left (glove on left as you face them); "right" = full right
     configured: false
   };

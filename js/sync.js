@@ -103,6 +103,8 @@
   }
 
   function getClient() {
+    // Prefer the app-wide shared client (js/auth.js) so there is one GoTrue instance.
+    if (window.FelixAuth && typeof FelixAuth.client === "function") { const shared = FelixAuth.client(); if (shared) return shared; }
     if (_client) return _client;
     if (typeof window.supabase === "undefined") return null;
     _client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
@@ -184,7 +186,7 @@
         .from("submitter_trust")
         .select("trust_score")
         .eq("submitter_id", userId)
-        .single();
+        .maybeSingle(); // no row yet for new scorers: null, not a 406
       return data && typeof data.trust_score === "number" ? data.trust_score : DEFAULT_TRUST_WEIGHT;
     } catch (_) {
       return DEFAULT_TRUST_WEIGHT;

@@ -6,7 +6,11 @@
 (function () {
   const SUPABASE_URL = 'https://qshgschhudiryjnslzof.supabase.co';
   const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_hdrc9mYaGocDhJVesn0FRw_wELl6Tnv';
-  const TEAM_SLUG = 'PLYM'; // Plymouth Phantoms
+  // Game-code prefix + home team come from the active team (js/team.js).
+  function team() {
+    return (window.FelixTeam && FelixTeam.get()) || { slug: 'BGBYG14B', name: 'Biggby Black 14U' };
+  }
+  const RESUMABLE = ['scheduled', 'in_progress'];
 
   // Active game context for this session
   let _activeGame = null;
@@ -16,11 +20,21 @@
     _listeners.forEach((fn) => { try { fn(evt); } catch (e) { console.error('FelixGame listener:', e); } });
   }
 
+  // Shared client from FelixAuth (one GoTrue instance app-wide). The old
+  // version created a brand-new client on every call.
+  let _fallbackClient = null;
   function getClient() {
+    if (window.FelixAuth && typeof FelixAuth.client === 'function') {
+      const c = FelixAuth.client();
+      if (c) return c;
+    }
     if (typeof window.supabase === 'undefined') throw new Error('Supabase SDK not loaded');
-    return window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-      auth: { persistSession: true, autoRefreshToken: true }
-    });
+    if (!_fallbackClient) {
+      _fallbackClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+        auth: { persistSession: true, autoRefreshToken: true }
+      });
+    }
+    return _fallbackClient;
   }
 
   // Pad game number: 1 → "0001"
@@ -28,35 +42,60 @@
     return String(n).padStart(4, '0');
   }
 
-  // Generate next game code: PLYM-0001, PLYM-0002, etc.
-  // Queries nomos_game for the highest existing code for this slug.
+  // Generate next game code: BGBYG14B-0011, etc. Uses client_game_id
+  // (zero-padded, so text order == numeric order). The TeamSnap sync uses
+  // the same max+1 rule, so hand-made and synced games share one sequence.
   async function generateGameCode() {
+    const slug = team().slug;
     const client = getClient();
     const { data, error } = await client
       .from('nomos_game')
-      .select('match_probe')
-      .ilike('match_probe', `${TEAM_SLUG}-%`)
-      .order('match_probe', { ascending: false })
+      .select('client_game_id')
+      .like('client_game_id', `${slug}-%`)
+      .order('client_game_id', { ascending: false })
       .limit(1);
 
     if (error) throw new Error('generateGameCode query failed: ' + error.message);
 
-    if (!data || data.length === 0) return `${TEAM_SLUG}-0001`;
+    if (!data || data.length === 0) return `${slug}-0001`;
 
-    const last = data[0].match_probe; // e.g. "PLYM-0003_20260509"
-    const parts = last.split('-');
-    const numPart = parts[1] ? parseInt(parts[1].split('_')[0], 10) : 0;
-    return `${TEAM_SLUG}-${padGameNum(numPart + 1)}`;
+    const last = data[0].client_game_id || ''; // e.g. "BGBYG14B-0010"
+    const numPart = parseInt(last.split('-').pop(), 10) || 0;
+    return `${slug}-${padGameNum(numPart + 1)}`;
   }
 
-  // Build match_probe: "PLYM-0001_20260509"
+  // Build match_probe: "BGBYG14B-0011_20261212"
   function buildMatchProbe(code, dateStr) {
     return `${code}_${dateStr.replace(/-/g, '')}`;
   }
 
-  // Get today's date as YYYY-MM-DD
-  function todayISO() {
-    return new Date().toISOString().split('T')[0];
+  // Today's LOCAL date as YYYY-MM-DD (toISOString is UTC and flips to
+  // tomorrow during evening games).
+  function todayISO(when) {
+    if (window.FelixTeam) return FelixTeam.today(when);
+    const d = when instanceof Date ? when : new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  // QR image for a URL. Renders locally with qrcode-generator (loaded from
+  // jsDelivr in index.html). The old Google Charts QR endpoint was shut
+  // down and returned 404, so the share QR was a broken image.
+  function qrDataURL(text) {
+    try {
+      if (typeof window.qrcode === 'function') {
+        const qr = window.qrcode(0, 'M');
+        qr.addData(text);
+        qr.make();
+        return qr.createDataURL(6, 2);
+      }
+    } catch (e) { console.warn('QR render failed:', e && e.message); }
+    return 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data=' + encodeURIComponent(text);
+  }
+
+  async function persistActive(game, code) {
+    try {
+      await FelixDB.setSession({ ...(await FelixDB.getSession()), active_game_id: game.id, active_game_code: code });
+    } catch (e) { console.warn('FelixGame persist:', e && e.message); }
   }
 
   // ============================================================
@@ -117,7 +156,7 @@
           client_game_id: code,
           created_by: user.id,
           game_date: today,
-          home_team_name: gameInfo.home_team_name || 'Plymouth Phantoms',
+          home_team_name: gameInfo.home_team_name || team().name,
           away_team_name: gameInfo.away_team_name || null,
           rink_name: gameInfo.rink_name || null,
           age_bracket: gameInfo.age_bracket || null,
@@ -140,12 +179,12 @@
 
       _activeGame = { ...data, code };
       // Persist to IndexedDB for offline resume
-      await FelixDB.setSession({ ...(await FelixDB.getSession()), active_game_id: data.id, active_game_code: code });
+      await persistActive(data, code);
       emit({ type: 'game_created', game: _activeGame });
       return _activeGame;
     },
 
-    // Join an existing game by short code (e.g. "PLYM-0001").
+    // Join an existing game by short code (e.g. "BGBYG14B-0009").
     // Scorers do not need to log in. If no session exists we silently sign
     // the user in anonymously: that gives them an auth.uid() (required by
     // the nomos_game SELECT and nomos_submission INSERT RLS policies)
@@ -168,24 +207,28 @@
       const normalized = code.trim().toUpperCase();
       const client = getClient();
 
+      // Exact match on client_game_id. The old match_probe ILIKE
+      // "CODE_%" treated "_" as a wildcard, so BGBYG14B-0001 also matched
+      // BGBYG14B-0010 and could join the wrong game.
       const { data, error } = await client
         .from('nomos_game')
         .select('*')
-        .ilike('match_probe', `${normalized}_%`)
-        .in('status', ['in_progress', 'scheduled'])
+        .eq('client_game_id', normalized)
+        .in('status', RESUMABLE)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (error || !data) throw new Error(`Game "${normalized}" not found or not active`);
+      if (error) throw new Error(`Could not look up "${normalized}": ${error.message}`);
+      if (!data) throw new Error(`Game "${normalized}" not found or already finished`);
 
       _activeGame = { ...data, code: normalized };
-      await FelixDB.setSession({ ...(await FelixDB.getSession()), active_game_id: data.id, active_game_code: normalized });
+      await persistActive(data, normalized);
       emit({ type: 'game_joined', game: _activeGame });
       return _activeGame;
     },
 
-    // Detect ?game=PLYM-0001 in URL and auto-join
+    // Detect ?game=BGBYG14B-0009 in URL and auto-join
     async detectGameFromURL() {
       const params = new URLSearchParams(window.location.search);
       const code = params.get('game');
@@ -202,25 +245,59 @@
       }
     },
 
-    // Resume active game from IndexedDB on page load
+    // Resume the joined/created game after a reload. Called on load (see
+    // bottom of file). Without this, a scorer who joined a game lost the
+    // game context on refresh and their taps stopped syncing. Offline: the
+    // cached id/code is enough for NomosSync to queue events; the row is
+    // re-read when back online. Finished games clear the pointer.
     async resumeFromCache() {
       try {
         const session = await FelixDB.getSession();
         if (!session || !session.active_game_id) return null;
+        const cached = { id: session.active_game_id, code: session.active_game_code, client_game_id: session.active_game_code };
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+          _activeGame = cached;
+          emit({ type: 'game_resumed', game: _activeGame, offline: true });
+          return _activeGame;
+        }
+        const user = await FelixAuth.getUser();
+        if (!user) return null; // RLS needs a session; joinGame re-establishes one
         const client = getClient();
-        const { data } = await client
+        const { data, error } = await client
           .from('nomos_game')
           .select('*')
           .eq('id', session.active_game_id)
-          .single();
-        if (!data) return null;
-        _activeGame = { ...data, code: session.active_game_code };
+          .maybeSingle();
+        if (error) throw new Error(error.message);
+        // Past games stay 'scheduled' in the DB if nobody ended them; don't
+        // resume anything more than a day old.
+        const y = new Date(); y.setDate(y.getDate() - 1);
+        const stale = data && data.game_date && data.game_date < todayISO(y);
+        if (!data || !RESUMABLE.includes(data.status) || stale) {
+          await this.leaveGame({ silent: true });
+          return null;
+        }
+        _activeGame = { ...data, code: session.active_game_code || data.client_game_id };
         emit({ type: 'game_resumed', game: _activeGame });
         return _activeGame;
       } catch (e) {
         console.warn('FelixGame resumeFromCache:', e.message);
         return null;
       }
+    },
+
+    // Stop following/tracking the current mesh game on this device.
+    async leaveGame(opts = {}) {
+      const prev = _activeGame;
+      _activeGame = null;
+      try {
+        const s = (await FelixDB.getSession()) || {};
+        delete s.active_game_id;
+        delete s.active_game_code;
+        if (Object.keys(s).some((k) => k !== 'key' && k !== 'updated_at')) await FelixDB.setSession(s);
+        else await FelixDB.clearSession();
+      } catch (e) { console.warn('FelixGame leaveGame:', e && e.message); }
+      if (!opts.silent) emit({ type: 'game_left', game: prev });
     },
 
     // Transition active scheduled game to in_progress.
@@ -262,24 +339,28 @@
       emit({ type: 'game_ended', game: _activeGame });
     },
 
-    // Generate shareable URL for current active game
-    getShareURL() {
-      if (!_activeGame) return null;
-      return `https://44shots.com?game=${_activeGame.code}`;
+    // Shareable join URL for a code (defaults to the active game)
+    getShareURL(code) {
+      const c = code || (_activeGame && _activeGame.code);
+      if (!c) return null;
+      return `https://44shots.com/?game=${encodeURIComponent(c)}`;
     },
 
-    // Generate QR code data URL (uses Google Charts API, no lib needed)
-    getQRUrl() {
-      const url = this.getShareURL();
-      if (!url) return null;
-      const encoded = encodeURIComponent(url);
-      return `https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encoded}&choe=UTF-8`;
-    }
+    // QR image (data: URL) for a join link. Defaults to the active game.
+    getQRUrl(code) {
+      const url = this.getShareURL(code);
+      return url ? qrDataURL(url) : null;
+    },
+    qrDataURL,
+    todayISO
   };
 
-  // Auto-detect game from URL on load
+  // On load: ?game=CODE joins that game; otherwise resume the last
+  // joined/created game so syncing continues after a refresh.
   document.addEventListener('DOMContentLoaded', () => {
-    FelixGame.detectGameFromURL().catch((e) => console.warn('FelixGame init:', e.message));
+    const hasParam = new URLSearchParams(window.location.search).has('game');
+    const p = hasParam ? FelixGame.detectGameFromURL() : FelixGame.resumeFromCache();
+    p.catch((e) => console.warn('FelixGame init:', e.message));
   });
 
 })();

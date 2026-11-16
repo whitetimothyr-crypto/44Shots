@@ -222,7 +222,7 @@
       navigator.clipboard.writeText(link).then(() => {
         document.getElementById('nomosCopyLink').textContent = '✅ Copied!';
         setTimeout(() => { document.getElementById('nomosCopyLink').textContent = '📋 Copy Link'; }, 2000);
-      });
+      }).catch(() => { window.prompt('Copy this link:', link); });
     });
 
     // Create game cancel
