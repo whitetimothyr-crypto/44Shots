@@ -7,7 +7,7 @@ import { test, expect } from '@playwright/test';
  *   - Bottom nav renders RINK / WHITEBOARD / FEED / LINEUP / MORE
  *   - NET tab is removed from the visible rail (panel-net stays in DOM)
  *   - Tab clicks toggle .panel.active correctly
- *   - Whiteboard / Feed / Lineup stub modules render their placeholders
+ *   - Whiteboard / Feed / Lineup modules render their real roots (no stubs)
  *   - MORE panel hosts Stats / Report / Settings / Profile entries
  *   - MORE -> Stats activates panel-stats via legacy switchTab()
  *   - Tab order persists to localStorage["felix.tabOrder"]
@@ -47,12 +47,12 @@ test.describe('Modular bottom nav', () => {
     expect(active).toBe('rink');
   });
 
-  test('clicking each new tab activates its panel; whiteboard/feed render the stub, lineup renders its full root', async ({ page }) => {
+  test('clicking each new tab activates its panel; feed renders the live feed, lineup renders its full root', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(800);
     await dismissModals(page);
 
-    // Whiteboard is a real module now; Feed is an off-rail stub reached via MORE.
+    // Whiteboard is a real module; Feed is an off-rail module reached via MORE.
     {
       await page.click('nav.bottom-nav button[data-tab="whiteboard"]');
       await page.waitForTimeout(120);
@@ -65,16 +65,17 @@ test.describe('Modular bottom nav', () => {
       await page.waitForTimeout(120);
       const r = await page.evaluate((tabId) => {
         const p = document.getElementById('panel-' + tabId);
-        const stub = p?.querySelector('.stub-panel');
         return {
           panelActive: !!p?.classList.contains('active'),
-          hasStub: !!stub,
-          h2: stub?.querySelector('h2')?.textContent || '',
+          hasStub: !!p?.querySelector('.stub-panel'),
+          hasRoot: !!p?.querySelector('.feed-root'),
+          heading: p?.querySelector('.feed-heading')?.textContent || '',
         };
       }, id);
       expect(r.panelActive, `${id} panel active`).toBe(true);
-      expect(r.hasStub, `${id} renders stub-panel`).toBe(true);
-      expect(r.h2.toLowerCase(), `${id} title matches`).toContain(id);
+      expect(r.hasStub, `${id} no longer a stub`).toBe(false);
+      expect(r.hasRoot, `${id} renders feed-root`).toBe(true);
+      expect(r.heading.toLowerCase(), `${id} heading`).toContain('live feed');
     }
 
     // Lineup is now the full module (PR 3+). Asserts the real scaffold,
