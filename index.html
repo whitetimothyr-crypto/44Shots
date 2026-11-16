@@ -599,6 +599,8 @@
   <section class="panel" id="panel-whiteboard"></section>
   <section class="panel" id="panel-feed"></section>
   <section class="panel" id="panel-lineup"></section>
+  <section class="panel" id="panel-calendar"></section>
+  <section class="panel" id="panel-profile"></section>
 
   <section class="panel" id="panel-more">
     <div class="more-list">
@@ -652,7 +654,7 @@
     <div style="font-size:11px;letter-spacing:.18em;color:var(--text-muted);margin-bottom:14px">SET UP THIS GAME</div>
 
 <label style="display:block;font-size:10px;letter-spacing:.16em;color:var(--text-muted);margin-bottom:4px">OUR TEAM NAME</label>
-<input id="lgOurTeam" placeholder="Phantoms" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:#fff;font-size:14px;margin-bottom:8px;box-sizing:border-box"/>
+<input id="lgOurTeam" placeholder="Biggby Black" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:var(--panel);color:#fff;font-size:14px;margin-bottom:8px;box-sizing:border-box"/>
 
 <div style="margin-bottom:14px">
   <div style="font-size:9px;letter-spacing:.16em;color:var(--text-muted);margin-bottom:4px">STARTING GOALIE</div>
@@ -730,7 +732,7 @@
   </div>
 </div>
 
-<footer>44 Shots <span style="color:var(--accent)" id="footerVersion">v3.0</span> · Goalie #<span id="numEdit" style="text-decoration:underline" role="button" tabindex="0">?</span></footer>
+<footer>44 Shots <span style="color:var(--accent)" id="footerVersion">v3.1</span> · Goalie #<span id="numEdit" style="text-decoration:underline" role="button" tabindex="0">?</span></footer>
 
 <div class="toast" id="toast">Saved</div>
 
@@ -760,12 +762,12 @@
     </div>
 
     <div class="group">
-      <div class="label">Coming in v2.3</div>
+      <div class="label">Cloud Backup</div>
       <div class="row">
-        <button class="opt" disabled>Breakaway</button>
-        <button class="opt" disabled>Drive sync</button>
+        <button class="opt" id="settingsBackupBtn" type="button">Back up now</button>
+        <button class="opt" id="settingsRestoreBtn" type="button">Restore</button>
       </div>
-      <div class="desc">Breakaway flag and Google Drive auto-sync are next. Not yet wired in.</div>
+      <div class="desc" id="backupStatusDesc">Sign in with Google or an email code and every ended game is backed up to your account automatically, so a new phone can restore them.</div>
     </div>
 
     <div class="group">
@@ -775,7 +777,7 @@
         <button class="opt" id="settingsImportBtn">Import (JSON)</button>
         <input type="file" id="settingsImportFile" accept="application/json,.json" style="display:none"/>
       </div>
-      <div class="desc">Each ended game is archived locally on this device. Export creates a downloadable backup. Import restores from a backup file. Drive sync coming next.</div>
+      <div class="desc">Each ended game is archived on this device (and in Cloud Backup when signed in). Export saves a JSON file; on a phone it opens the share sheet so you can save it to Files or Google Drive. Import restores from that file.</div>
     </div>
 
     <div class="group">
@@ -816,6 +818,12 @@
 
     <div id="accountSignedOut" style="display:none">
       <div class="group">
+        <div class="label">Google</div>
+        <div class="row">
+          <button class="opt" id="accountGoogleBtn" type="button" style="flex:1;padding:12px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Continue with Google</button>
+        </div>
+      </div>
+      <div class="group">
         <div class="label">Email Sign-In</div>
         <div id="accountStep1" style="display:flex;flex-direction:column;gap:8px">
           <input type="email" id="accountEmailInput" placeholder="you@example.com" autocomplete="email" style="padding:10px;background:var(--bg);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--text);font-size:13px;font-family:var(--sans);box-sizing:border-box"/>
@@ -827,7 +835,7 @@
           <button class="opt" id="accountVerifyCodeBtn" style="padding:12px;font-weight:700;background:var(--accent);color:var(--bg)">Verify</button>
           <button class="opt" id="accountResendCodeBtn" style="padding:8px;font-size:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)">Resend code · change email</button>
         </div>
-        <div class="desc">We'll email a sign-in code. Coach role unlocks automatically if the email matches a TeamSnap roster entry.</div>
+        <div class="desc">We'll email a 6-digit sign-in code. Coach tools unlock automatically if your account is on a team's coaching staff.</div>
       </div>
 
       <div class="group">
@@ -932,8 +940,15 @@
 <div id="whatsNewBackdrop">
   <div class="modal-card">
     <button id="whatsNewXBtn" aria-label="Close What's New" style="position:absolute;top:8px;right:12px;background:none;border:none;color:var(--muted);font-size:24px;line-height:1;cursor:pointer;padding:4px 8px;">×</button>
-    <h2>What's New in V3.0</h2>
+    <h2>What's New in V3.1</h2>
     <div tabindex="0" style="font-size:12px;color:var(--text);line-height:1.55;max-height:50vh;overflow-y:auto;padding-right:4px">
+
+      <div style="font-size:10px;letter-spacing:.16em;color:var(--accent);font-weight:700;margin-top:0;margin-bottom:6px">V3.1 · SCHEDULE, FEED &amp; PROFILE</div>
+      <p style="margin:0 0 8px"><b style="color:var(--accent)">Calendar from TeamSnap.</b> MORE → Calendar shows upcoming games with arrival times and rinks, synced from TeamSnap automatically. Tap a game for its join code, QR and share link, or to join it. Coaches can start tracking straight from the schedule.</p>
+      <p style="margin:0 0 8px"><b style="color:var(--accent)">Live Feed.</b> Play-by-play of every shot, save, goal, faceoff, goalie change and photo, including other scorers in the same game.</p>
+      <p style="margin:0 0 8px"><b style="color:var(--accent)">Profile.</b> Your account, team, goalie number, current game, sync and backup status in one place.</p>
+      <p style="margin:0 0 8px"><b style="color:var(--accent)">Cloud Backup + Google sign-in.</b> Sign in with Google or an email code and ended games back up to your account automatically.</p>
+      <p style="margin:0 0 8px"><b style="color:var(--accent)">Fixes.</b> Joined games survive a refresh and keep syncing, share QR codes render again, evening games keep the right date.</p>
 
       <div style="font-size:10px;letter-spacing:.16em;color:var(--accent);font-weight:700;margin-top:0;margin-bottom:6px">FACEOFFS &amp; PRESSURE ANALYSIS</div>
       <p style="margin:0 0 8px"><b style="color:var(--accent)">FACEOFF button</b> next to 5v5/PP/PK. Tap → 9 dots pulse on the rink. Tap a dot → <code>&lt; O &gt;</code> picker appears. <code>&lt;</code> = left team won, <code>O</code> = neutral, <code>&gt;</code> = right team won. Winner mapped to home/away by period side automatically.</p>
@@ -957,14 +972,14 @@
       <div style="font-size:10px;letter-spacing:.16em;color:var(--accent);font-weight:700;margin-top:14px;margin-bottom:6px">STATS &amp; REPORTS</div>
       <p style="margin:0 0 8px"><b style="color:var(--accent)">Stats by team name.</b> No more "Our Team" / "Opponent." Both team tabs labeled with the actual team names everywhere — stats, reports, exports.</p>
       <p style="margin:0 0 8px"><b style="color:var(--accent)">Two stats tabs</b> instead of three. Goalie content merged into the team that goalie plays for.</p>
-      <p style="margin:0 0 8px"><b style="color:var(--accent)">Game archive.</b> Every End Game saved locally. Settings → Saved Games → Export/Import JSON. Drive sync arriving in v2.3.</p>
+      <p style="margin:0 0 8px"><b style="color:var(--accent)">Game archive.</b> Every End Game saved locally. Settings → Saved Games → Export/Import JSON. Signed-in accounts also get automatic Cloud Backup.</p>
 
       <div style="font-size:10px;letter-spacing:.16em;color:var(--accent);font-weight:700;margin-top:14px;margin-bottom:6px">PENALTIES</div>
       <p style="margin:0 0 8px"><b style="color:var(--accent)">PP/PK persistent pulse.</b> Aggressive top-bar bar + pill + segmented-control button pulse so you can't forget a penalty is active. No auto-revert timer; tap 5v5 to clear.</p>
 
       <div style="font-size:10px;letter-spacing:.16em;color:var(--accent);font-weight:700;margin-top:14px;margin-bottom:6px">UNDER THE HOOD</div>
       <p style="margin:0 0 8px"><b style="color:var(--accent)">Distance calibrated</b> to NHL-spec rink geometry. Real Euclidean distance to the goal mouth, axis-aware feet-per-unit conversion.</p>
-      <p style="margin:0;color:var(--text-muted);font-size:11px">Settings menu via ⚙ button at the top of the rink view. Rebound mode, time window, and game archive controls live there.</p>
+      <p style="margin:0;color:var(--text-muted);font-size:11px">Settings live under MORE → Settings: rebound mode, time window, saved games, cloud backup, account and game tools.</p>
     </div>
     <div class="close-row">
       <button id="whatsNewCloseBtn">Got it</button>
@@ -981,12 +996,16 @@
 
 <!-- V3.0 hybrid storage: IndexedDB layer (felix_db) -->
 <script src="js/db.js"></script>
+<script src="js/team.js"></script>
 
 <!-- V3.0 auth: Supabase JS SDK + FelixAuth wrapper -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/auth.js"></script>
+<!-- Local QR rendering for game share codes (Google Charts QR API is shut down). -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="js/game.js"></script>
 <script src="js/sync.js"></script>
+<script src="js/backup.js"></script>
 <script src="js/welcome.js"></script>
 
 <!-- V3.0 media: camera/mic capture engine -->
@@ -1000,6 +1019,7 @@
 <script src="js/whiteboard.js"></script>
 <script src="js/feed.js"></script>
 <script src="js/calendar.js"></script>
+<script src="js/profile.js"></script>
 <script src="js/lineup-api.js"></script>
 <script src="js/lineup.js"></script>
 <script src="js/nav.js"></script>
@@ -1052,7 +1072,8 @@
     switchTab(b.dataset.tab);
   });
   // MORE panel: secondary destinations. Stats/Report -> switch tab;
-  // Settings -> open settings modal via existing handler; Profile -> stub.
+  // Settings -> open settings modal via existing handler; Feed / Calendar /
+  // Profile -> module tabs via FelixNav.
   const _morePanel = document.getElementById("panel-more");
   if (_morePanel) {
     _morePanel.addEventListener("click", (e) => {
@@ -1061,7 +1082,7 @@
       const dest = item.dataset.more;
       if (dest === "stats" || dest === "report") {
         switchTab(dest);
-      } else if (dest === "feed" || dest === "calendar") {
+      } else if (dest === "feed" || dest === "calendar" || dest === "profile") {
         // Off-rail module tab — route through FelixNav so module
         // lifecycle (onActivate) fires alongside panel switch.
         if (window.FelixNav && typeof window.FelixNav.activate === 'function') {
@@ -1074,8 +1095,6 @@
         // openSettings(). The Game & App Tools section inside the modal
         // hosts the previously-overflow items.
         if (typeof openSettings === "function") openSettings();
-      } else if (dest === "profile") {
-        if (typeof toast === "function") toast("Profile coming soon");
       }
     });
   }
@@ -2038,7 +2057,7 @@
       const wb = XLSX.utils.book_new();
       const ourTeam = (state.gameInfo && state.gameInfo.ourTeam) || "Our Team";
       const oppTeam = (state.gameInfo && state.gameInfo.opponent) || "Opponent";
-      const date = (state.gameInfo && state.gameInfo.date) || new Date().toISOString().slice(0,10);
+      const date = (state.gameInfo && state.gameInfo.date) || (window.FelixTeam ? FelixTeam.today() : new Date().toISOString().slice(0,10));
 
       // === Sheet 1: Game Info ===
       const usEvents = state.events.filter(x=>x.forOrAgainst === "for");
@@ -2184,20 +2203,81 @@
   });
 
   // New Game button (works from both Report panel and Rink top bar)
-  async function startNewGame(){
-    if(!await ensureCoach()) return;
-    if(!confirm("Start a new game? This clears all current game data.\nMake sure you've exported the JSON or XLSX if you want to keep it.")) return;
+  // Shared reset for START GAME and Calendar -> Start tracking.
+  function resetLiveGameState(){
     state.events = [];
     state.netEvents = [];
+    state.faceoffs = [];   // was missing: old faceoffs leaked into the next game
     state.goalies = [];
     state.activeGoalie = null;
     state.period = 1;
     state.gameState = "5v5";
     state.gameStateExpiresAt = null;
     state.pendingNetGoalTeam = null;
+    state.gameInfo = state.gameInfo || {};
     state.gameInfo.configured = false;
+    state.gameId = (typeof FelixDB !== "undefined" && FelixDB.uuid) ? FelixDB.uuid() : ("g_" + Date.now());
+  }
+
+  // Calendar -> "Start tracking" (coach). Joins the scheduled game so every
+  // tap syncs to it, marks it live, saves any game already in progress to
+  // the archive, resets local state and opens New Game prefilled with the
+  // opponent and date. Resolves true when the New Game form opened.
+  window.startScheduledGame = async function(g){
+    if(!g || !g.code) return false;
+    if(!await ensureCoach()) return false;
+    const hasData = (state.events && state.events.length) || (state.netEvents && state.netEvents.length) || (state.faceoffs && state.faceoffs.length);
+    if(state.gameInfo && state.gameInfo.configured && hasData){
+      const cur = (state.gameInfo.ourTeam || "Us") + " vs " + (state.gameInfo.opponent || "Opponent");
+      if(!confirm("You're still tracking " + cur + ".\n\nIt will be saved to your archive and closed so " + g.code + " can start. Continue?")) return false;
+      archiveCurrentGame("Auto-saved when " + g.code + " was started from the Calendar.");
+      if (window.FelixBackup) FelixBackup.backupAll().catch(() => {});
+    }
+    await FelixGame.joinGame(g.code);
+    if(g.status !== "in_progress"){
+      try { await FelixGame.beginGame(); }
+      catch(e){ console.warn("beginGame:", e); toast("Joined " + g.code + ", but could not mark it live"); }
+    }
+    resetLiveGameState();
+    const t = window.FelixTeam ? (FelixTeam.fromName(g.home_team_name) || FelixTeam.get()) : null;
+    state.gameInfo.ourTeam = (t && t.short) || state.gameInfo.ourTeam || "Biggby Black";
+    state.gameInfo.opponent = g.away_team_name || "";
+    state.gameInfo.date = g.game_date || (window.FelixTeam ? FelixTeam.today() : state.gameInfo.date);
+    state.weAre = "home";
+    save();
+    redrawAll();
+    syncSegs();
+    if(typeof applyGameStateHighlight === "function") applyGameStateHighlight();
+    updateGoalieBanner();
+    if(typeof refreshMediaCount === "function") refreshMediaCount();
+    if(window.FelixNav) FelixNav.activate("rink"); else switchTab("rink");
+    showLoadGame();
+    return true;
+  };
+
+  // Joined / resumed a mesh game while no local game is configured: label
+  // the local game with the scheduled matchup so the scoreboard, Feed,
+  // stats and New Game form show the right teams and date.
+  if (typeof FelixGame !== "undefined" && FelixGame.onGameChange) {
+    FelixGame.onGameChange((evt) => {
+      const g = evt && evt.game;
+      if (!g || !/joined|resumed|created/.test(evt.type || "")) return;
+      if (state.gameInfo && state.gameInfo.configured) return;
+      state.gameInfo = state.gameInfo || {};
+      if (g.away_team_name) state.gameInfo.opponent = g.away_team_name;
+      if (g.game_date) state.gameInfo.date = g.game_date;
+      const t = window.FelixTeam && FelixTeam.fromName(g.home_team_name);
+      if (t) state.gameInfo.ourTeam = t.short;
+      try { save(); } catch (_) {}
+    });
+  }
+
+  async function startNewGame(){
+    if(!await ensureCoach()) return;
+    if(!confirm("Start a new game? This clears all current game data.\nMake sure you've exported the JSON or XLSX if you want to keep it.")) return;
+    resetLiveGameState();
     state.gameInfo.opponent = "";
-    state.gameInfo.date = new Date().toISOString().slice(0,10);
+    state.gameInfo.date = (window.FelixTeam ? FelixTeam.today() : new Date().toISOString().slice(0,10));
     save();
     redrawAll();
     syncSegs();
@@ -2238,9 +2318,9 @@
 
   function showLoadGame(){
     const m = document.getElementById("loadGameModal");
-    document.getElementById("lgOurTeam").value = state.gameInfo.ourTeam || "Phantoms";
+    document.getElementById("lgOurTeam").value = state.gameInfo.ourTeam || ((window.FelixTeam && FelixTeam.get().short) || "Biggby Black");
     document.getElementById("lgOpponent").value = state.gameInfo.opponent || "";
-    document.getElementById("lgDate").value = state.gameInfo.date || new Date().toISOString().slice(0,10);
+    document.getElementById("lgDate").value = state.gameInfo.date || (window.FelixTeam ? FelixTeam.today() : new Date().toISOString().slice(0,10));
     // Sync segs
     document.querySelectorAll("#lgWeAreSeg button").forEach(b=>{
       const on = b.dataset.we === (state.weAre||"home");
@@ -2295,9 +2375,9 @@
   bindModalSeg("lgOppHandSeg", "hand", v=>{ lgOppHand = v; });
 
   document.getElementById("loadGameStartBtn").addEventListener("click", ()=>{
-    const ourTeam = document.getElementById("lgOurTeam").value.trim() || "Phantoms";
+    const ourTeam = document.getElementById("lgOurTeam").value.trim() || ((window.FelixTeam && FelixTeam.get().short) || "Biggby Black");
     const opponent = document.getElementById("lgOpponent").value.trim() || "Opponent";
-    const date = document.getElementById("lgDate").value || new Date().toISOString().slice(0,10);
+    const date = document.getElementById("lgDate").value || (window.FelixTeam ? FelixTeam.today() : new Date().toISOString().slice(0,10));
     const goalieName = document.getElementById("lgGoalieName").value.trim() || "Starting Goalie";
     const goalieNum = document.getElementById("lgGoalieNum").value.trim() || "?";
     const oppGoalieName = document.getElementById("lgOppGoalieName").value.trim() || "";
@@ -2567,6 +2647,12 @@
       if (role === 'coach') {
         setTimeout(showLoadGame, 200);
       } else {
+        // Already joined a game on this device (FelixGame.resumeFromCache
+        // restores it): keep tracking instead of re-prompting for a code.
+        try {
+          const s = (typeof FelixDB !== 'undefined') ? await FelixDB.getSession() : null;
+          if (s && s.active_game_id) return;
+        } catch (e) {}
         // Non-coach: open JOIN GAME modal as primary entry. Falls back to
         // showLoadGame if the modal is missing for any reason.
         setTimeout(() => {
@@ -2973,9 +3059,11 @@
       if(typeof FelixGame === "undefined") return;
       const game = FelixGame.getActiveGame();
       if(!game || !game.id) return;
-      if(!window.supabase || !window.supabase.createClient) return;
-
-      const c = window.supabase.createClient(SB_URL, SB_KEY, { auth:{ persistSession:true, autoRefreshToken:true } });
+      const c = (window.FelixAuth && FelixAuth.client && FelixAuth.client()) ||
+        (window.supabase && window.supabase.createClient
+          ? window.supabase.createClient(SB_URL, SB_KEY, { auth:{ persistSession:true, autoRefreshToken:true } })
+          : null);
+      if(!c) return;
 
       const { data: subs } = await c
         .from("nomos_submission")
@@ -3972,7 +4060,8 @@
     const showWindow = (settings.reboundMode === "time" || settings.reboundMode === "both");
     reboundWindowGroup.style.display = showWindow ? "" : "none";
   }
-  function openSettings(){ settingsBackdrop.classList.add("active"); refreshSettingsUI(); }
+  function openSettings(){ settingsBackdrop.classList.add("active"); refreshSettingsUI(); refreshBackupUI(); }
+  window.openSettings = openSettings;
   function closeSettings(){ settingsBackdrop.classList.remove("active"); }
   if (settingsBtn) settingsBtn.addEventListener("click", openSettings);
 
@@ -4093,7 +4182,8 @@
       const user = await FelixAuth.getUser();
       const role = await FelixAuth.getRole();
       if (user) {
-        accountSignedOut.style.display = "none";
+        // Guests can still upgrade to Google / email from here.
+        accountSignedOut.style.display = user.is_anonymous ? "block" : "none";
         accountSignedIn.style.display = "block";
         accountUserEmail.textContent = user.is_anonymous ? "Guest (no account)" : (user.email || "(no email)");
         accountUserRole.textContent = ROLE_LABEL[role] || role;
@@ -4116,6 +4206,43 @@
   }
 
   function openAccount(){ accountBackdrop.classList.add("active"); refreshAccountUI(); }
+  window.openAccount = openAccount;
+
+  // ============ Cloud Backup (Settings) ============
+  // Replaces the old v2.3 Drive placeholder group. js/backup.js
+  // does the work; this wires the two buttons and the status line.
+  const settingsBackupBtn = document.getElementById("settingsBackupBtn");
+  const settingsRestoreBtn = document.getElementById("settingsRestoreBtn");
+  const backupStatusDesc = document.getElementById("backupStatusDesc");
+  async function refreshBackupUI(){
+    if(!backupStatusDesc) return;
+    if(!window.FelixBackup){ backupStatusDesc.textContent = "Cloud backup failed to load. Reload the app to retry."; return; }
+    let signedIn = false;
+    try { const u = (typeof FelixAuth !== "undefined") ? await FelixAuth.getUser() : null; signedIn = !!(u && !u.is_anonymous); } catch(_){}
+    backupStatusDesc.textContent = signedIn
+      ? FelixBackup.status().text
+      : "Sign in with Google or an email code (Manage Account) and every ended game is backed up to your account automatically, so a new phone can restore them.";
+  }
+  async function runBackupAction(btn, fn, busyLabel){
+    const orig = btn.textContent;
+    btn.disabled = true; btn.textContent = busyLabel;
+    try { await fn(); }
+    catch(e){
+      const msg = (e && e.message) || "unknown error";
+      toast(msg);
+      if(/sign in/i.test(msg)){ closeSettings(); openAccount(); }
+    }
+    finally { btn.disabled = false; btn.textContent = orig; refreshBackupUI(); }
+  }
+  if(settingsBackupBtn) settingsBackupBtn.addEventListener("click", () => runBackupAction(settingsBackupBtn, async () => {
+    const r = await FelixBackup.backupAll({ force: true });
+    toast(r.uploaded ? "Backed up " + r.uploaded + " game(s)" : "Nothing to back up yet");
+  }, "Backing up…"));
+  if(settingsRestoreBtn) settingsRestoreBtn.addEventListener("click", () => runBackupAction(settingsRestoreBtn, async () => {
+    const r = await FelixBackup.restore();
+    toast(r.added ? "Restored " + r.added + " game(s)" : "No new games to restore (" + r.total + " in backup)");
+  }, "Restoring…"));
+  if(window.FelixBackup) FelixBackup.onChange(refreshBackupUI);
   function closeAccount(){ accountBackdrop.classList.remove("active"); if (typeof resetOtpUI === 'function') resetOtpUI(); }
   if (settingsAccountBtn) settingsAccountBtn.addEventListener("click", () => { closeSettings(); openAccount(); });
   if (accountCloseBtn) accountCloseBtn.addEventListener("click", closeAccount);
@@ -4144,6 +4271,22 @@
     }
   }
   if (accountSendCodeBtn) accountSendCodeBtn.addEventListener("click", sendLoginCode);
+
+  // Google SSO (provider enabled in Supabase). Navigates to Google; on
+  // return, FelixAuth's detectSessionInUrl restores the session.
+  const accountGoogleBtn = document.getElementById("accountGoogleBtn");
+  if (accountGoogleBtn) accountGoogleBtn.addEventListener("click", async () => {
+    if (typeof FelixAuth === "undefined") { toast("Sign-in unavailable. Reload the app."); return; }
+    accountGoogleBtn.disabled = true;
+    try {
+      const { error } = await FelixAuth.signInWithGoogle();
+      if (error) throw error;
+    } catch (e) {
+      console.error("Google sign-in failed:", e);
+      toast("Google sign-in failed: " + (e.message || "unknown"));
+      accountGoogleBtn.disabled = false;
+    }
+  });
 
   if (accountVerifyCodeBtn) accountVerifyCodeBtn.addEventListener("click", async () => {
     const code = (accountCodeInput.value || "").trim();
@@ -4682,6 +4825,7 @@
     const snapshot = {
       archivedAt: Date.now(),
       version: APP_VERSION,
+      gameId: state.gameId || null,
       gameInfo: JSON.parse(JSON.stringify(state.gameInfo || {})),
       weAre: state.weAre,
       events: JSON.parse(JSON.stringify(state.events || [])),
@@ -4732,6 +4876,7 @@
     }
     const notes = prompt("Game notes (optional):\nObservations, things to work on, anything memorable.", "") || "";
     archiveCurrentGame(notes);
+    if (window.FelixBackup) setTimeout(() => FelixBackup.backupAll().catch((e) => console.warn("Cloud backup:", e && e.message)), 1500);
     // Stamp local state and push 'completed' to Supabase / notify tabs.
     // status='completed' is set BEFORE the inner-setTimeout reset so a
     // browser close mid-flow leaves a finalized marker that B3's
@@ -4792,6 +4937,8 @@
         state.gameStateExpiresAt = null;
         delete state.status;
         delete state.local_ended_at;
+        // Fresh media/game id so the next game's gallery starts empty.
+        state.gameId = (typeof FelixDB !== "undefined" && FelixDB.uuid) ? FelixDB.uuid() : ("g_" + Date.now());
         if (state.gameInfo) {
           state.gameInfo.configured = false;
           state.gameInfo.opponent = "";
@@ -4862,14 +5009,33 @@
       toast("No saved games to export");
       return;
     }
-    const blob = new Blob([JSON.stringify(archive, null, 2)], {type:"application/json"});
-    const a = document.createElement("a");
+    const json = JSON.stringify(archive, null, 2);
     const stamp = new Date().toISOString().slice(0,16).replace(/[-:T]/g,"");
-    a.href = URL.createObjectURL(blob);
-    a.download = "44shots-archive-"+stamp+".json";
-    a.click();
-    setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
-    toast("Exported "+archive.length+" game(s)");
+    const name = "44shots-archive-"+stamp+".json";
+    const download = () => {
+      const blob = new Blob([json], {type:"application/json"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+      toast("Exported "+archive.length+" game(s)");
+    };
+    // Phones / tablets: open the share sheet (Save to Files, Google Drive,
+    // AirDrop, email). Desktop: plain download.
+    try {
+      const coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+      if(coarse && navigator.canShare && typeof File === "function"){
+        const file = new File([json], name, {type:"application/json"});
+        if(navigator.canShare({ files:[file] })){
+          navigator.share({ files:[file], title:"44 Shots saved games" })
+            .then(()=>toast("Exported "+archive.length+" game(s)"))
+            .catch((e)=>{ if(!(e && e.name === "AbortError")) download(); });
+          return;
+        }
+      }
+    } catch(_){}
+    download();
   }
   function importArchiveJSON(file){
     const reader = new FileReader();
@@ -4915,7 +5081,7 @@
   // Save % formatter: 0-99.9 -> ".950"; 100 (shutout) -> "1.000" (slice(-3) used to yield ".000")
   function fmtSvPct(p){ const n=Math.round(p*10); return n>=1000 ? "1.000" : "."+String(n).padStart(3,"0").slice(-3); }
   window.fmtSvPct = fmtSvPct;
-  const APP_VERSION = "v3.0"; window.APP_VERSION = APP_VERSION;
+  const APP_VERSION = "v3.1"; window.APP_VERSION = APP_VERSION;
   const footerVersionEl = document.getElementById("footerVersion"); if(footerVersionEl) footerVersionEl.textContent = APP_VERSION;
   const whatsNewBackdrop = document.getElementById("whatsNewBackdrop");
   const whatsNewCloseBtn = document.getElementById("whatsNewCloseBtn");
